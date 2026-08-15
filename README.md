@@ -33,4 +33,4 @@ O `.env` fica na raiz do repositório (não em `crm/`) — `crm/vite.config.ts` 
 
 ## Status do projeto
 
-Subetapas 01.0 (leitura de referências e planejamento) e 01.1 (bootstrap do repositório) concluídas — app Vite+React+TS+PWA em `crm/`, conectado ao Supabase, autenticação validada. Próximo passo: Subetapa 01.2 do Claude CODE (núcleo + `aba_people`) — ver `handoffs/HANDOFF_CODE.md`. Roteiro completo em `docs/00_PLANO_E_CRITERIOS.md`. Dicas técnicas e armadilhas conhecidas em `handoffs/instrucoes.md`. Histórico de versões em `CHANGELOG.md`.
+Subetapas 01.0–01.2 concluídas — app Vite+React+TS+PWA em `crm/` conectado ao Supabase; núcleo (`public`/`access`/`licensing`) e `aba_people` aplicados, com suíte de RLS 100% verde. Próximo passo: Subetapa 01.3 do Claude CODE (`aba_catalog`/`aba_scheduling`/`aba_finance`) — ver `handoffs/HANDOFF_CODE.md`. Roteiro completo em `docs/00_PLANO_E_CRITERIOS.md`. Dicas técnicas e armadilhas conhecidas em `handoffs/instrucoes.md`. Histórico de versões em `CHANGELOG.md`.

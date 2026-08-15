@@ -61,6 +61,7 @@ Evidência: query mostrando pessoa com papel `lead` convertida para `cliente` ma
 Esforço máximo do /goal: 4 tentativas
 Escalonamento de LLM: Sonnet nas 3 primeiras; Opus na última.
 Se esgotar: parar e emitir relatório curto (problema + causas + alternativas).
+Status: ✅ CONCLUÍDA — núcleo (`001_core_public.sql`, `002_core_licensing.sql`, `003_core_access.sql`) + `aba_people` (`004_aba_people.sql`) aplicados via MCP; hardening de privilégio de função (`005_harden_function_privileges.sql`) e de exposição/GRANT de schema (`006_expose_schemas_and_narrow_grants.sql`) aplicados na mesma subetapa, fechando dois achados reais medidos ao vivo (não hipotéticos) — ver `handoffs/instrucoes.md` §5. Suíte de RLS portada (`crm/tests/rls/`, fixture via `crm/scripts/seed_test_users.mjs`) — 11/11 testes verdes, incluindo `converter_lead()` idempotente com `pessoa_id`/tags/notas preservados e a prova da camada `access.can()` isolada de `is_account_member`.
 
 ### Subetapa 01.3 — Portar `aba_catalog`, `aba_scheduling`, `aba_finance` [Plan] [Accept] [LLM: Sonnet]
 Objetivo: traduzir e aplicar as migrations dessas três schemas a partir do original do Maximus (mapa em `docs/02` §7 e `db/migrations/README.md`), ajustando FKs para `aba_people.clientes(id)`.
