@@ -47,10 +47,11 @@ Status: ✅ CONCLUÍDA
 Objetivo: inicializar projeto Vite+PWA+TS+Supabase, `.gitignore`/`.env` reais a partir dos `.example`, conexão com projeto Supabase confirmada.
 Conclusão: `npm run dev` sobe local; client Supabase conecta e autentica um usuário de teste.
 Qualidade: nenhuma credencial commitada; estrutura de pastas `src/` alinhada ao padrão do CRM Sindcom.
-Evidência: print do app rodando local + query de teste retornando linha do `public.accounts`.
+Evidência: print do app rodando local + query de teste retornando linha do `public.accounts`. **Adaptado na execução:** o schema núcleo (`public.accounts`) só é aplicado na Subetapa 01.2 — nesta subetapa o projeto Supabase tinha `public` vazio. A evidência de conectividade usou `auth.users` (schema de plataforma, existe em todo projeto Supabase, independente do schema aplicado): um usuário de teste foi criado via Admin API, autenticado de ponta a ponta pelo app real (login → dashboard → logout) e depois apagado. Ver `handoffs/instrucoes.md` §5.
 Esforço máximo do /goal: 3 tentativas
 Escalonamento de LLM: Sonnet nas 2 primeiras; Opus na última.
 Se esgotar: parar e emitir relatório curto (problema + causas + alternativas).
+Status: ✅ CONCLUÍDA
 
 ### Subetapa 01.2 — Núcleo + `aba_people` [Plan] [Accept] [LLM: Sonnet]
 Objetivo: aplicar migrations do núcleo (`public`, `access`, `licensing`) e de `aba_people` completo (pessoas + 4 papéis + tags/notas/campos customizados + `converter_lead()`), conforme `docs/02_MODELO_DE_DADOS.md` §3.

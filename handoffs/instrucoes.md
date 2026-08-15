@@ -104,6 +104,12 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Evidência:** `wc -l *.sql` em `C:\GitHub\CRM_Maximus\supabase\migrations` — 79 arquivos, ~10.7k linhas totais.
 - **Fonte:** Subetapa 01.0, sessão de 2026-08-15.
 
+### `auth.users` valida conectividade antes de o schema núcleo existir
+- **Gatilho:** Subetapa 01.1 — a evidência original pedia "query de teste retornando linha do `public.accounts`", mas `public.accounts` só é criado na Subetapa 01.2. `list_tables` confirmou `public` vazio no projeto Supabase nesta subetapa.
+- **Ação:** `auth.users` é schema de plataforma, existe em todo projeto Supabase independente de qualquer migration nossa. Criado usuário de teste via Admin API (`supabase.auth.admin.createUser({ email_confirm: true })`, script local com a `service_role` key, nunca commitado) — `email_confirm: true` evita a armadilha que o Maximus já registrou (usuário criado via `signUp` público fica com e-mail não confirmado e não consegue logar por senha). Login testado de ponta a ponta pelo app real (LoginPage → RoleGate → AppShell/DashboardPage → signOut), depois o usuário de teste foi apagado.
+- **Evidência:** print do dashboard autenticado (Subetapa 01.1) + `docs/00_PLANO_E_CRITERIOS.md`, nota de adaptação na Conclusão da 01.1.
+- **Fonte:** Subetapa 01.1, sessão de 2026-08-15. Padrão de `admin.createUser` em vez de `signUp` já vinha registrado em CRM_Maximus §5 ("`TEST_OWNER_EMAIL`/`TEST_ADMIN_EMAIL` nunca confirmaram e-mail").
+
 ### Conexão direta ao Postgres do Supabase falha em rede sem IPv6 — usar MCP
 - **Gatilho:** aplicar migration com `supabase db push --db-url $SUPABASE_DB_URL` em projeto Supabase novo.
 - **Ação:** `db.<ref>.supabase.co` resolve só para endereço IPv6 sem o add-on pago de IPv4 — falha com `ENOTFOUND` em rede sem rota IPv6 de saída. Caminho escolhido para o Vitrine: MCP Supabase (`apply_migration`), que não passa pela conexão direta — decisão confirmada com Max na Subetapa 01.0. Alternativa registrada, não escolhida: connection string do Supavisor (Shared Pooler, IPv4).

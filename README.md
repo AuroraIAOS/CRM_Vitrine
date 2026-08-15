@@ -23,8 +23,14 @@ Max precisa vender CRMs configurados por cliente o quanto antes, sem reconstruir
 
 ## Como rodar
 
-Preenchido de fato na Etapa 01 do Claude CODE (ver `handoffs/HANDOFF_CODE.md`).
+```bash
+cd crm
+npm install
+npm run dev
+```
+
+O `.env` fica na raiz do repositório (não em `crm/`) — `crm/vite.config.ts` aponta `envDir` para lá.
 
 ## Status do projeto
 
-Fundação recém-gerada pelo ESTÁGIO CRIATIVO (aurora-criativa); Subetapa 01.0 (leitura de referências e planejamento) concluída. Próximo passo: Subetapa 01.1 do Claude CODE (ver `handoffs/HANDOFF_CODE.md`). Roteiro completo em `docs/00_PLANO_E_CRITERIOS.md`. Dicas técnicas e armadilhas conhecidas em `handoffs/instrucoes.md`. Histórico de versões em `CHANGELOG.md`.
+Subetapas 01.0 (leitura de referências e planejamento) e 01.1 (bootstrap do repositório) concluídas — app Vite+React+TS+PWA em `crm/`, conectado ao Supabase, autenticação validada. Próximo passo: Subetapa 01.2 do Claude CODE (núcleo + `aba_people`) — ver `handoffs/HANDOFF_CODE.md`. Roteiro completo em `docs/00_PLANO_E_CRITERIOS.md`. Dicas técnicas e armadilhas conhecidas em `handoffs/instrucoes.md`. Histórico de versões em `CHANGELOG.md`.
