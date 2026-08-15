@@ -1,0 +1,237 @@
+# =======================================================================
+# ARQUIVO .gitignore
+# =======================================================================
+
+# >> CRM_Vitrine
+# >> repositório local = C:\GitHub\CRM_Vitrine
+# >> repositório remoto = https://github.com/AuroraIAOS/CRM_Vitrine.git
+# >> gerado pelo ESTÁGIO CRIATIVO (aurora-criativa) em 2026-08-14
+
+# --------------------------------------------------------------------
+# Dependências
+
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/versions
+
+# --------------------------------------------------------------------
+# Builds (Next.js)
+
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# --------------------------------------------------------------------
+# Ambiente — NUNCA versionar chaves
+
+.env
+.env.*
+.secrets_tmp/
+
+# --------------------------------------------------------------------
+# Logs
+
+logs/
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --------------------------------------------------------------------
+# Testes e cobertura
+
+coverage/
+*.lcov
+.vitest/
+
+# --------------------------------------------------------------------
+# Supabase CLI
+
+supabase/.temp/
+supabase/.branches/
+
+# --------------------------------------------------------------------
+# Docker (override local não é do repositório)
+
+docker-compose.override.yml
+.docker/
+
+# --------------------------------------------------------------------
+# Deploy
+
+.vercel/
+
+# --------------------------------------------------------------------
+# Sistema operacional
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --------------------------------------------------------------------
+# Editores
+
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# =======================================================================
+# SEGREDOS E DADOS SENSÍVEIS — NUNCA COMMITAR
+# =======================================================================
+
+# --------------------------------------------------------------------
+# Planilhas e exportações com dados reais
+
+dados/
+*.csv
+!docs/**/*.csv
+!seed/**/*.csv
+*.xls
+*.xlsx
+
+# --------------------------------------------------------------------
+# Dado clínico — nenhuma exportação de prontuário entra no repositório
+
+# A regra mira EXPORTAÇÃO de dado clínico — planilha, PDF, dump — não
+# código que tenha a palavra no nome. `*prontuario*` e `*anamnese*`
+# amplos bloqueariam `src/app/prontuario/page.tsx`, que é exatamente o
+# arquivo que a Subetapa 02.6 vai criar: a tela seria escrita, o
+# `git status` diria "nothing to commit", e o deploy (que leva só o que
+# está no commit) subiria sem ela. Verificado na auditoria adversarial.
+
+prontuarios/
+anamneses/
+exportacoes-clinicas/
+*anamnese*.csv
+*anamnese*.xlsx
+*anamnese*.xls
+*anamnese*.pdf
+*anamnese*.json
+*anamnese*.sql
+*prontuario*.csv
+*prontuario*.xlsx
+*prontuario*.xls
+*prontuario*.pdf
+*prontuario*.json
+*prontuario*.sql
+
+# --------------------------------------------------------------------
+# Termos sensíveis (qualquer arquivo com estas palavras no nome)
+
+# Mesma lógica do bloco de `secret` abaixo: mirar arquivo de credencial
+# por convenção de nome, não qualquer arquivo que contenha a palavra —
+# `src/lib/credentials.ts` é nome de código perfeitamente normal.
+
+*credencial*.json
+*credencial*.env
+*credencial*.txt
+*credenciais*.json
+*credenciais*.env
+*credenciais*.txt
+*credential*.json
+*credential*.env
+*credential*.txt
+*credential*.pem
+*credential*.key
+*credentials*.json
+*credentials*.env
+*credentials*.txt
+*credentials*.pem
+*credentials*.key
+
+# "secret" no nome é caso à parte: é palavra corrente em NOME DE CÓDIGO
+# legítimo, não só em arquivo de credencial. O padrão amplo `*secret*`
+# excluiu silenciosamente, três vezes, arquivo que precisava ser
+# versionado — a rota `[secret]` do Next.js na Subetapa 01.9, e depois
+# a migration `056_webhook_secret_hash.sql` e o script de backfill, na
+# auditoria adversarial. Silenciosamente é o problema: `git status`
+# mostra "nothing to commit", o commit sai verde e o arquivo
+# simplesmente não vai.
+#
+# Cada caso desses foi resolvido com uma exceção pontual, e o problema
+# voltou com nome novo. Então a regra passa a mirar o que de fato
+# carrega segredo — convenção de nome de arquivo de credencial — em vez
+# de qualquer arquivo que contenha a palavra.
+#
+# A defesa real contra segredo commitado não é esta lista: é o
+# `gitleaks detect` sobre todo o histórico (Subetapa 01.10, portão de
+# fase), que olha o CONTEÚDO. Esta lista é conveniência complementar, e
+# não vale o custo de esconder código sem avisar.
+
+*.secret
+*.secrets
+secrets/
+*secret*.json
+*secret*.yaml
+*secret*.yml
+*secret*.env
+*secret*.txt
+*secret*.pem
+*secret*.key
+*secrets*.json
+*secrets*.yaml
+*secrets*.yml
+*secrets*.env
+*secrets*.txt
+*senha*.json
+*senha*.env
+*senha*.txt
+*senha*.csv
+*senhas*.json
+*senhas*.env
+*senhas*.txt
+*senhas*.csv
+*password*.json
+*password*.env
+*password*.txt
+*password*.csv
+*passwords*.json
+*passwords*.env
+*passwords*.txt
+*passwords*.csv
+*chave*
+*chaves*
+
+# --------------------------------------------------------------------
+# Arquivos de chave, certificado e token
+
+*.key
+*.pem
+*.pfx
+*.p12
+*.token
+*token*.json
+service-account*.json
+*serviceaccount*.json
+
+# --------------------------------------------------------------------
+# Sessão do WhatsApp e dados do Evolution GO
+# (a sessão pareada equivale a acesso total ao número — nunca versionar)
+
+evolution-data/
+evolution-go/data/
+*.session
+*.session-journal
+
+# --------------------------------------------------------------------
+# Sandbox e temporários
+
+sandbox/
+tmp/
+*.tmp
+.cache/
+
+# =======================================================================
+# Screenshots de apoio (painéis, provas de tela)
+# Vivem APENAS no repositório físico local — nunca no remoto.
+# Podem expor caminhos, usuários, senhas e dado clínico visível na tela.
+# =======================================================================
+
+screenshots/
