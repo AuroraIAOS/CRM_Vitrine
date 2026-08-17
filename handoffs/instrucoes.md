@@ -98,6 +98,18 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Evidência:** `docs/02_MODELO_DE_DADOS.md` §3.3 corrigido nesta subetapa.
 - **Fonte:** Subetapa 01.0, sessão de 2026-08-15.
 
+### Divergência entre `db/migrations/README.md` e a Qualidade da Subetapa 01.3 sobre a migration 075 do Maximus, resolvida por escopo
+- **Gatilho:** Subetapa 01.3 — `db/migrations/README.md` (escrito na Subetapa 01.0) instruía portar `075_professionals_require_employee.sql` (profissional ativo exige funcionário) "no DDL inicial" de `aba_scheduling`, mas o critério de Qualidade da própria Subetapa 01.3 em `docs/00_PLANO_E_CRITERIOS.md` só relaciona `067/068/071/078/079` — 075 não está na lista. Investigação mostrou por quê: 075 depende de `074_employees_born_from_invitation.sql` (fluxo de convite→funcionário que vira login) e de uma RPC de governança (`scheduling.set_professional`) que checa papel `admin`+ no corpo — nenhum dos dois existe no Vitrine ainda.
+- **Ação:** tratado como decisão de escopo, não como erro a corrigir silenciosamente (CLAUDE.md §15 — não expandir escopo sem aprovação). Portado só o desenho de dado (`aba_scheduling.profissionais.funcionario_id UUID REFERENCES aba_people.funcionarios(id) ON DELETE SET NULL`, com índice único parcial "um funcionário, um profissional"), sem o `CHECK` de governança nem a RPC. `db/migrations/README.md` corrigido no mesmo commit desta migration para refletir a decisão revista, em vez de deixar o mapa desatualizado.
+- **Evidência:** `009_aba_scheduling.sql`, cabeçalho "DECISÃO DE ESCOPO"; `db/migrations/README.md`, linha de `aba_scheduling`.
+- **Fonte:** Subetapa 01.3, sessão de 2026-08-16.
+
+### `aba_finance.envios_fatura.provedor` restrito a `'meta'` — Evolution GO é fora do MVP mesmo como valor de enum
+- **Gatilho:** o original do Maximus (`046_finance_schema.sql`) aceita `provider IN ('meta','evolution')` em `invoice_dispatches`. Evolution GO está explicitamente fora do MVP (CLAUDE.md §15), e incluir o valor no `CHECK` — mesmo sem nenhuma lógica de envio implementada — seria abrir uma porta de escopo sem decisão de Max.
+- **Ação:** `CHECK (provedor IN ('meta'))`, só o canal vivo no v01. Ampliar depois é `ALTER TABLE ... DROP/ADD CONSTRAINT`, mudança trivial que não exige reabrir a migration.
+- **Evidência:** `010_aba_finance.sql`, tabela `envios_fatura`.
+- **Fonte:** Subetapa 01.3, sessão de 2026-08-16.
+
 ### Migrations do CRM_Maximus vão de 001 a 079, não 001 a 077
 - **Gatilho:** `db/migrations/README.md` original citava "001 a 077" como a cadeia de origem.
 - **Ação:** contagem real confirmada por `ls`: 79 arquivos, numeração `001`–`079` com `072` e `073` inexistentes (não há gap de conteúdo, só de número). Mapa de origem por schema corrigido para incluir `044_catalog_schema.sql`, `067`–`071`, `074`–`079` e o bloco de hardening `051`–`065`, ausentes do mapa original.
@@ -121,6 +133,18 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Ação:** o projeto Supabase tem concessão de fábrica de `EXECUTE` a `anon`/`authenticated`/`service_role` em função nova, nominal por papel — revogar de `PUBLIC` não desfaz um `GRANT` já nominalmente concedido a `anon`. É preciso `REVOKE ALL ... FROM anon` explícito, além de `FROM PUBLIC`. Corrigido com uma varredura por catálogo (`pg_proc`/`pg_namespace`, migration `005_harden_function_privileges.sql`) em vez de lista manual função a função — assim uma função nova que apareça nos schemas `public`/`access`/`licensing`/`aba_*` e não entrar na lista de "chamável" fica fechada por padrão. `rls_auto_enable()` (função de plataforma do próprio Supabase, também dona `postgres`) foi excluída nominalmente da varredura — não é nossa, não se mexe nela.
 - **Evidência:** advisor de segurança antes/depois da migration 005 — os 4 achados de `anon` desapareceram; os avisos restantes (`authenticated` podendo executar `is_account_member`/`touch_presence`) são intencionais, não gap.
 - **Fonte:** Subetapa 01.2, sessão de 2026-08-15. Achado idêntico, já documentado no CRM_Maximus (migrations `054`/`061`, achado G04 da auditoria adversarial de lá) — aqui medido e corrigido ao vivo no banco do Vitrine, não só herdado por leitura.
+
+### `ALTER DEFAULT PRIVILEGES` dentro da própria migration que cria o schema — pendência da 01.2 fechada na 01.3
+- **Gatilho:** Subetapa 01.2 tinha deixado registrado como pendência ("repetir o padrão `ALTER DEFAULT PRIVILEGES` desta migration dentro da própria migration que cria o schema — o default estreito não se propaga sozinho para um schema que ainda não existia quando `006` rodou").
+- **Ação:** `008_aba_catalog.sql`, `009_aba_scheduling.sql` e `010_aba_finance.sql` já nascem com `GRANT USAGE ON SCHEMA` + `GRANT` estreito em toda tabela (nunca `TRUNCATE`) + `ALTER DEFAULT PRIVILEGES` embutidos na própria migration de criação, em vez de uma migration de correção separada como a `006` foi para o núcleo. A exposição ao PostgREST (`ALTER ROLE authenticator SET pgrst.db_schemas`) continua em migration própria (`012_expose_new_module_schemas.sql`), porque é uma operação de substituição de lista inteira que precisa repetir todo schema já exposto — não faz sentido duplicá-la em cada migration de schema.
+- **Evidência:** `mcp__claude_ai_Supabase__get_advisors` (security) rodado após aplicar 007–012 não apontou nenhum achado novo nos três schemas — zero achado de `anon`/`authenticated` executando função interna, mesmo padrão limpo que a varredura por catálogo (`005`) corrigiu retroativamente para `aba_people`.
+- **Fonte:** Subetapa 01.3, sessão de 2026-08-16.
+
+### Trigger cruzando schema mora no schema que depende, nunca no que é dependido
+- **Gatilho:** `aba_finance.ao_concluir_agendamento()` precisa disparar quando `aba_scheduling.agendamentos.status` muda para `concluido` (efeito financeiro: consumo de saldo de plano + comissão), mas `aba_scheduling` precisa continuar exportável sozinho para um cliente sem financeiro.
+- **Ação:** a função e o `CREATE TRIGGER` moram inteiramente em `010_aba_finance.sql`, mesmo o trigger sendo fisicamente instalado `ON aba_scheduling.agendamentos` — Postgres permite `CREATE TRIGGER` em tabela de outro schema desde que o executor tenha privilégio, e isso mantém a direção de dependência (`aba_finance` conhece `aba_scheduling`, nunca o contrário) também no nível de trigger, não só de FK. Mesmo padrão já usado pelo Maximus original (`046_finance_schema.sql`, trigger `finance_on_appointment_completed` sobre `scheduling.appointments`).
+- **Evidência:** `03_aba_scheduling.spec.ts` e `04_aba_finance.spec.ts` passam sem `aba_finance` precisar existir para os testes de `aba_scheduling` isolados (o trigger só dispara quando `plano_cliente_id` está preenchido, o que nenhum teste da 01.3 exercitou ainda — fica para quando a tela de conclusão de atendimento entrar na Etapa 02).
+- **Fonte:** Subetapa 01.3, sessão de 2026-08-16.
 
 ### `auth.users` valida conectividade antes de o schema núcleo existir
 - **Gatilho:** Subetapa 01.1 — a evidência original pedia "query de teste retornando linha do `public.accounts`", mas `public.accounts` só é criado na Subetapa 01.2. `list_tables` confirmou `public` vazio no projeto Supabase nesta subetapa.
