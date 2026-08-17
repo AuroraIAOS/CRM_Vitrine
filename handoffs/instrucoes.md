@@ -110,6 +110,12 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Evidência:** `010_aba_finance.sql`, tabela `envios_fatura`.
 - **Fonte:** Subetapa 01.3, sessão de 2026-08-16.
 
+### Pendência da 01.3 fechada: FK `profissionais.funcionario_id` foi exatamente o que a regra 076 precisava
+- **Gatilho:** Subetapa 01.3 registrou como pendência (§5, "Divergência entre `db/migrations/README.md` e a Qualidade da 01.3") que o CHECK "profissional ativo exige funcionário" do Maximus (migration 075) não seria portado, mas que o desenho de FK (`aba_scheduling.profissionais.funcionario_id → aba_people.funcionarios(id)`) sim, "para quando a regra de governança entrar".
+- **Ação:** a regra de governança que efetivamente usa essa FK não é a 075 (que amarra a criação/desativação do profissional a um fluxo de convite inexistente) — é a 076 (`health.can_access` exige o funcionário ativo), que é exigida pela própria Qualidade da Subetapa 01.4. `aba_health.pode_acessar()` já nasce (013_aba_health.sql, passo 4) fazendo `EXISTS (SELECT 1 FROM aba_people.funcionarios f WHERE f.id = p.funcionario_id AND f.ativo)` — nenhuma coluna nova precisou ser criada, a decisão de 01.3 pagou o dividendo esperado sem gerar dívida técnica.
+- **Evidência:** `013_aba_health.sql`, função `pode_acessar()`; teste `05_aba_health.spec.ts` "desativar o funcionário por trás do profissional revoga o acesso clínico (076)".
+- **Fonte:** Subetapa 01.4, sessão de 2026-08-16.
+
 ### Migrations do CRM_Maximus vão de 001 a 079, não 001 a 077
 - **Gatilho:** `db/migrations/README.md` original citava "001 a 077" como a cadeia de origem.
 - **Ação:** contagem real confirmada por `ls`: 79 arquivos, numeração `001`–`079` com `072` e `073` inexistentes (não há gap de conteúdo, só de número). Mapa de origem por schema corrigido para incluir `044_catalog_schema.sql`, `067`–`071`, `074`–`079` e o bloco de hardening `051`–`065`, ausentes do mapa original.
@@ -133,6 +139,12 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Ação:** o projeto Supabase tem concessão de fábrica de `EXECUTE` a `anon`/`authenticated`/`service_role` em função nova, nominal por papel — revogar de `PUBLIC` não desfaz um `GRANT` já nominalmente concedido a `anon`. É preciso `REVOKE ALL ... FROM anon` explícito, além de `FROM PUBLIC`. Corrigido com uma varredura por catálogo (`pg_proc`/`pg_namespace`, migration `005_harden_function_privileges.sql`) em vez de lista manual função a função — assim uma função nova que apareça nos schemas `public`/`access`/`licensing`/`aba_*` e não entrar na lista de "chamável" fica fechada por padrão. `rls_auto_enable()` (função de plataforma do próprio Supabase, também dona `postgres`) foi excluída nominalmente da varredura — não é nossa, não se mexe nela.
 - **Evidência:** advisor de segurança antes/depois da migration 005 — os 4 achados de `anon` desapareceram; os avisos restantes (`authenticated` podendo executar `is_account_member`/`touch_presence`) são intencionais, não gap.
 - **Fonte:** Subetapa 01.2, sessão de 2026-08-15. Achado idêntico, já documentado no CRM_Maximus (migrations `054`/`061`, achado G04 da auditoria adversarial de lá) — aqui medido e corrigido ao vivo no banco do Vitrine, não só herdado por leitura.
+
+### `GRANT` amplo de tabela precisa vir ANTES do `REVOKE`/`GRANT` por coluna, na mesma migration
+- **Gatilho:** Subetapa 01.4 — `013_aba_health.sql` narrowing por coluna (Maximus 053: SELECT revogado da tabela toda, reconcedido só nas colunas de identificação) escrito, na primeira versão do arquivo, DEPOIS do bloco de `GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES ... TO authenticated` que o próprio arquivo também faz (padrão herdado de 008/009/010). Erro de sequência: se o `GRANT` amplo roda DEPOIS do `REVOKE`+narrowing, ele reconcede SELECT de tabela inteira por cima do narrowing, anulando-o silenciosamente — exatamente o comportamento que a própria 053 documenta como achado ("`REVOKE SELECT (coluna)` aplicado enquanto o `GRANT` de tabela existe é inócuo").
+- **Ação:** pego em revisão antes de aplicar no Supabase (nenhuma execução com o bug chegou a rodar) — bloco de `GRANT USAGE`/`GRANT` amplo/`ALTER DEFAULT PRIVILEGES` movido para ANTES do `DO $$` de narrowing por coluna, dentro do mesmo arquivo. Regra geral para qualquer migration futura que combine os dois padrões (GRANT amplo de schema + narrowing por coluna de alguma tabela sensível): a ordem de execução dentro do arquivo importa tanto quanto o SQL em si.
+- **Evidência:** `013_aba_health.sql`, comentário "ORDEM IMPORTA" antes do bloco de `GRANT` amplo.
+- **Fonte:** Subetapa 01.4, sessão de 2026-08-16.
 
 ### `ALTER DEFAULT PRIVILEGES` dentro da própria migration que cria o schema — pendência da 01.2 fechada na 01.3
 - **Gatilho:** Subetapa 01.2 tinha deixado registrado como pendência ("repetir o padrão `ALTER DEFAULT PRIVILEGES` desta migration dentro da própria migration que cria o schema — o default estreito não se propaga sozinho para um schema que ainda não existia quando `006` rodou").
