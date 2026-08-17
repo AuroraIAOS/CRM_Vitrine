@@ -2,6 +2,13 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+0.1] - 2026-08-16 (Subetapa 01.5)
+- `aba_sales` (funis/etapas/oportunidades), `aba_automations` (automações + fluxos conversacionais de WhatsApp) e `aba_ai` (IA bring-your-own-key + base de conhecimento) aplicados por completo — três schemas novos, sem existir como módulo próprio no CRM Maximus (tabelas soltas em `public`, herdadas do fork antigo, nunca modularizadas nem com RBAC por conta).
+- `aba_sales.oportunidades` referencia `pessoa_id`, nunca `contact_id` — uma oportunidade pode estar ligada a um lead ainda não convertido ou a um cliente já ativo, sem distinção artificial.
+- Dois hardenings de segurança aplicados na própria tradução (não copiados do original, que tinha os dois problemas): log de automação deixa de aceitar escrita/apagamento pelo usuário final; busca de conhecimento de IA nasce `SECURITY INVOKER`, prevenindo de origem um vazamento de dado entre contas que o CRM Maximus só descobriu depois de aplicado em produção.
+- IA sem `pgvector` nesta versão (decisão de escopo já registrada — busca semântica é `+1.0`); busca textual funciona sem extensão nenhuma.
+- Suíte de RLS ampliada — 57/57 testes verdes no projeto, incluindo a prova de isolamento entre contas na busca de conhecimento de IA.
+
 ## [+0.1] - 2026-08-16 (Subetapa 01.4)
 - `aba_health` aplicado por completo no Supabase — a peça de maior risco jurídico do produto (dado clínico/LGPD). `aba_health.pode_acessar()` embute as três camadas de autorização (papel, permissão por módulo, atributo profissional + concessão nominal) e já nasce com a regra "profissional exige funcionário ativo" do CRM Maximus, sem coluna nova, aproveitando a FK criada na Subetapa 01.3.
 - Leitura de conteúdo clínico só existe através de funções que gravam log na mesma transação — não existe caminho de select direto que devolva prontuário/evolução/anamnese/consentimento sem deixar rastro em `log_acesso`. Escrita clínica (criação e atualização) também gera log automaticamente, por trigger.
