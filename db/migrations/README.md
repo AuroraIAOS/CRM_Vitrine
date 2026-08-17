@@ -31,3 +31,15 @@ Repositório `AuroraIAOS/CRM_Maximus`, `supabase/migrations/001` a `079` (79 arq
 ## Convenção de numeração das migrations novas
 
 Seguir sequência própria a partir de `001_`, independente da numeração do Maximus (é um projeto novo, não um fork contínuo). Ordem de aplicação: núcleo (`public`/`access`/`licensing`) → `aba_people` → `aba_catalog`/`aba_scheduling`/`aba_finance` → `aba_health` → `aba_sales`/`aba_automations`/`aba_ai` → `aba_messaging` → `analytics`.
+
+## `022_hardening_portao_adversarial.sql` — correção pós-auditoria (Subetapa 01.8)
+
+A estratégia de "dobrar o hardening desde a primeira migration" (linha 25 acima) evitou repetir os erros **já conhecidos** do Maximus, mas não podia cobrir os que ninguém tinha encontrado ainda. O portão de segurança adversarial da Subetapa 01.8 atacou a fundação de propósito e achou **6 falhas reais**, todas fechadas nesta migration única (mais a v3 da Edge Function `whatsapp-webhook`, para o achado A06):
+
+| Achado | O que estava aberto | Correção |
+|---|---|---|
+| A01 (crítico) | `profiles_insert` sem guarda de `account_id`/`account_role`, e trava de coluna só em `UPDATE` → tomada de conta completa | policy de `INSERT` removida (nega por ausência) + trigger passa a cobrir `INSERT OR UPDATE` |
+| A02 | `accounts.owner_user_id` reescrito por `admin` | `enforce_account_privilege_columns()` |
+| A03/A04/A05/A07 | segredo de webhook (texto puro), hash de api_key, hash de token de convite e chave de IA legíveis por `viewer` | narrowing por coluna, no mesmo padrão de `020_aba_messaging.sql` |
+
+**Esta migration é a última palavra sobre `GRANT` nessas quatro tabelas.** Qualquer `GRANT SELECT` de tabela inteira aplicado depois dela reconcede a coluna de credencial por cima e anula o narrowing em silêncio — a mesma armadilha de ordem já registrada em `handoffs/instrucoes.md` §5 (achado da Subetapa 01.4). Detalhe completo e evidência de cada achado em `docs/RELATORIO_01.8_PORTAO_ADVERSARIAL.md`.

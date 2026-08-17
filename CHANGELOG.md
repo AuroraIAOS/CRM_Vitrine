@@ -2,6 +2,15 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+0.1] - 2026-08-17 (Subetapa 01.8)
+- **Portão de segurança adversarial executado** sobre toda a fundação (Subetapas 01.2–01.6), em bench isolado: 35 ataques deliberados cobrindo os 6 vetores obrigatórios, mais LGPD/prontuário e o webhook público. **6 falhas reais encontradas e corrigidas**, numa base que já tinha 65 testes de RLS verdes e varredura de segredos zerada.
+- **Corrigida uma falha crítica de tomada de conta:** era possível a um usuário autenticado sem perfil se inserir em conta alheia como proprietário e passar a enxergar os dados dela. A porta de entrada ficava aberta porque a trava de escalação de privilégio cobria alteração de perfil, mas não criação.
+- **Corrigido o caminho pelo qual um administrador podia se apossar da titularidade da conta** reescrevendo o dono direto no registro, sem passar por transferência de posse.
+- **Credenciais deixam de ser legíveis pela API:** o segredo de assinatura de webhook (que estava em texto puro), o hash de chave de API, o hash de token de convite e a chave de IA eram legíveis pelo papel mais fraco do produto — o de somente leitura. As oito colunas de credencial do banco agora ficam invisíveis para qualquer usuário, e acessíveis só ao servidor que legitimamente as opera.
+- **Corrigido vazamento entre contas no webhook do WhatsApp:** uma atualização de status vinda da Meta podia alterar a mensagem de outro cliente do mesmo CRM. O isolamento entre contas foi restabelecido e provado contra o endpoint real, com assinatura verdadeira.
+- Suíte de testes ampliada — **100/100 verdes** (os 65 anteriores continuam passando; 35 ataques novos viram testes de regressão permanentes).
+- Parecer da auditoria e o detalhe achado a achado em `docs/RELATORIO_01.8_PORTAO_ADVERSARIAL.md`.
+
 ## [+0.1] - 2026-08-17 (Subetapa 01.7)
 - Varredura de segredos executada sobre todo o histórico do repositório (`gitleaks detect`, 8 commits, `8bad058`…`7abcb92`): **saída zero** — `no leaks found`, nenhum achado real ou falso positivo, nenhuma supressão por fingerprint necessária.
 - Confirmado por `git log`/`git ls-files` que `.env` nunca foi rastreado pelo git em nenhum commit do histórico.

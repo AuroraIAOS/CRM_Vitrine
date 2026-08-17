@@ -42,6 +42,9 @@
 //   - phone_number_id do payload resolve a conta via
 //     configuracao_whatsapp — evento sem número cadastrado é
 //     descartado (200, sem processar) em vez de adivinhar a conta.
+//   - Atualização de status é escopada por account_id (achado A06 do
+//     portão adversarial da Subetapa 01.8) — ver comentário na
+//     função processarAtualizacaoStatus abaixo.
 //
 // Idempotente por natureza (é um handler HTTP, não uma migration).
 // ============================================================
@@ -227,7 +230,18 @@ async function processarMensagemRecebida(
   }
 }
 
-async function processarAtualizacaoStatus(valor: Record<string, unknown>): Promise<void> {
+// ISOLAMENTO ENTRE CONTAS (achado A06 do portão adversarial da
+// Subetapa 01.8): esta função roda com service_role, que IGNORA RLS —
+// a fronteira de conta precisa ser reafirmada no filtro, à mão. Sem o
+// `.eq("account_id", accountId)`, um evento de status legitimamente
+// destinado a uma conta alterava a mensagem de QUALQUER outra que
+// tivesse o mesmo id_mensagem_externa (provado em
+// crm/tests/rls/12_adversarial_webhook.spec.ts). Mesmo raciocínio que
+// as funções SECURITY DEFINER de aba_health já aplicam no banco.
+async function processarAtualizacaoStatus(
+  accountId: string,
+  valor: Record<string, unknown>,
+): Promise<void> {
   const statusesMeta = (valor.statuses as Array<Record<string, unknown>> | undefined) ?? [];
   for (const s of statusesMeta) {
     const novoStatus = statusMensagemDe(String(s.status ?? ""));
@@ -238,6 +252,7 @@ async function processarAtualizacaoStatus(valor: Record<string, unknown>): Promi
       .schema("aba_messaging")
       .from("mensagens")
       .update({ status: novoStatus })
+      .eq("account_id", accountId)
       .eq("id_mensagem_externa", idExterno);
   }
 }
@@ -343,7 +358,7 @@ Deno.serve(async (req: Request) => {
         await processarMensagemRecebida(accountId, valor);
       }
       if (valor.statuses) {
-        await processarAtualizacaoStatus(valor);
+        await processarAtualizacaoStatus(accountId, valor);
       }
     }
   }
