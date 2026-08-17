@@ -111,6 +111,7 @@ Evidência: saída do `gitleaks detect --report-format json` anexada; se houver 
 Esforço máximo do /goal: 2 tentativas
 Escalonamento de LLM: Sonnet na primeira; Opus na segunda.
 Se esgotar: parar e emitir relatório curto (problema + causas + alternativas) — não seguir para a 01.8 com a varredura vermelha.
+Status: ✅ CONCLUÍDA — `gitleaks` (8.30.1) não estava disponível no ambiente Windows; instalado via `winget install --id Gitleaks.Gitleaks -e` (pacote oficial do projeto upstream, ver `handoffs/instrucoes.md` §5). `gitleaks detect --source . --report-format json -v --redact` rodado sobre os 8 commits do histórico completo (`8bad058`…`7abcb92`): **`no leaks found`**, relatório JSON = `[]`. Nenhuma supressão por fingerprint necessária — nenhum `.gitleaksignore` criado, pois não houve achado (nem verdadeiro nem falso positivo). `git log --all --full-history -- .env` e `git ls-files | grep .env` confirmam que `.env` nunca foi rastreado pelo git em nenhum commit. Árvore de trabalho limpa (`git status --short` vazio) — nada pendente de commit que pudesse ampliar o histórico sem passar pela varredura.
 
 ### Subetapa 01.8 — Portão de segurança adversarial [Manual] [LLM: Opus]
 Objetivo: executar o "Portão de segurança adversarial obrigatório" descrito na seção "Pendências vigiadas" abaixo, cobrindo todo o escopo aplicado nas subetapas 01.2–01.6, antes do primeiro deploy real (Etapa 02).

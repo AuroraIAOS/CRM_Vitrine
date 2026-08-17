@@ -2,6 +2,11 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+0.1] - 2026-08-17 (Subetapa 01.7)
+- Varredura de segredos executada sobre todo o histórico do repositório (`gitleaks detect`, 8 commits, `8bad058`…`7abcb92`): **saída zero** — `no leaks found`, nenhum achado real ou falso positivo, nenhuma supressão por fingerprint necessária.
+- Confirmado por `git log`/`git ls-files` que `.env` nunca foi rastreado pelo git em nenhum commit do histórico.
+- Item 11 da checklist de conformidade (`docs/00_PLANO_E_CRITERIOS.md`) fechado com evidência executável.
+
 ## [+1.0] - 2026-08-17 (Subetapa 01.6)
 - `aba_messaging` aplicado por completo — contatos de canal, conversas, mensagens, reações, respostas rápidas, configuração do WhatsApp oficial, modelos de mensagem e transmissões, absorvendo o que no CRM Maximus ainda vivia solto em `public` desde o fork original.
 - Webhook da Meta Cloud API no ar (`supabase/functions/whatsapp-webhook`): recusa toda requisição sem assinatura HMAC-SHA256 válida (`X-Hub-Signature-256`), aceita e persiste mensagem de teste corretamente, e trata reenvio do mesmo evento como idempotente — provado por 15/15 asserções de um teste ponta a ponta contra a função real, implantada em produção.

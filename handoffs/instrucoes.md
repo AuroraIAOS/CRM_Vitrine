@@ -123,6 +123,12 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Evidência:** consulta via `mcp__claude_ai_Supabase__query_logs` na Subetapa 01.6, 2026-08-17.
 - **Fonte:** Subetapa 01.6, sessão de 2026-08-16/17.
 
+### `gitleaks` não vem pré-instalado no ambiente Windows do CODE — `winget install --id Gitleaks.Gitleaks -e` resolve, mas o binário some do PATH até reiniciar o shell
+- **Gatilho:** Subetapa 01.7 — `gitleaks detect` exigido pelo plano, mas `gitleaks version` devolveu "command not found"; `scoop`/`choco`/`go` também ausentes no ambiente.
+- **Ação:** `winget search gitleaks` confirma o pacote oficial `Gitleaks.Gitleaks` (mantido pelo próprio projeto upstream, não um fork de terceiro). `winget install --id Gitleaks.Gitleaks -e --accept-source-agreements --accept-package-agreements` instala, mas avisa "Path environment variable modified; restart your shell" — a sessão de shell corrente do CODE não reinicia sozinha. Caminho de contorno sem esperar restart: `Get-ChildItem "$env:LOCALAPPDATA\Microsoft\WinGet\Packages" -Filter "Gitleaks*"` acha a pasta instalada e o binário é chamado pelo caminho completo (`...\Gitleaks.Gitleaks_Microsoft.Winget.Source_8wekyb3d8bbwe\gitleaks.exe`) direto, sem precisar do PATH atualizado.
+- **Evidência:** Subetapa 01.7 — `gitleaks version` → `8.30.1` chamando pelo caminho completo, sem reiniciar a sessão.
+- **Fonte:** Subetapa 01.7, sessão de 2026-08-17. **Relevante para a Subetapa 02.5** (repete a mesma varredura): se a sessão for nova/limpa, repetir esse mesmo caminho de instalação — ou, se o PATH já foi persistido pelo instalador do Windows entre sessões, `gitleaks` direto já deve funcionar sem o `Get-ChildItem`.
+
 ### Migrations do CRM_Maximus vão de 001 a 079, não 001 a 077
 - **Gatilho:** `db/migrations/README.md` original citava "001 a 077" como a cadeia de origem.
 - **Ação:** contagem real confirmada por `ls`: 79 arquivos, numeração `001`–`079` com `072` e `073` inexistentes (não há gap de conteúdo, só de número). Mapa de origem por schema corrigido para incluir `044_catalog_schema.sql`, `067`–`071`, `074`–`079` e o bloco de hardening `051`–`065`, ausentes do mapa original.
