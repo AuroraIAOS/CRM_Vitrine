@@ -138,6 +138,13 @@ Evidência: arquivo publicado + commit.
 Esforço máximo do /goal: 2 tentativas
 Escalonamento de LLM: Sonnet nas duas.
 Se esgotar: parar e emitir relatório curto (problema + causas + alternativas).
+Status: ✅ CONCLUÍDA — `handoffs/HANDOFF_BUILD.md` preenchido por inteiro (zero placeholder `<...>`), rastreando cada afirmação de "100% verde" à sua evidência: 22 migrations aplicadas (`db/migrations/001`–`022`, confirmadas via MCP `list_migrations` contra o projeto real), 100/100 testes de RLS verdes, webhook v3 no ar, bucket `anexos-clinicos` privado confirmado via `storage.buckets`, varredura de segredos zerada, portão adversarial com parecer favorável e merge executado. Seção "O que a Etapa 02 deve construir" com as 8 subetapas (02.0–02.7) resumidas a partir deste documento; seção de armadilhas puxando as entradas mais relevantes para quem constrói UI a partir de agora, incluindo as duas ressalvas herdadas da 01.8 (`select('*')` em tabela com narrowing, XSS armazenado como item obrigatório da 02.6).
+
+---
+
+## PORTÃO DE SAÍDA DA ETAPA 01 — ✅ ABERTO (2026-08-17)
+
+Todas as condições do portão de saída declarado acima estão satisfeitas: todos os schemas do MVP aplicados no Supabase do projeto (núcleo + 9 schemas `aba_*`), RLS testada 100% verde em cada um (100/100 testes), varredura de segredos zerada (`gitleaks` `no leaks found`), portão de segurança adversarial executado com parecer registrado e merge ordenado por Max (`docs/RELATORIO_01.8_PORTAO_ADVERSARIAL.md`), e `HANDOFF_BUILD.md` preenchido sem placeholder. `main` = `c5f8e4f`, alinhada ao Supabase. **A Etapa 02 pode abrir.**
 
 ---
 

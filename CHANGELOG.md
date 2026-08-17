@@ -2,6 +2,10 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+0.1] - 2026-08-17 (Subetapa 01.9)
+- `handoffs/HANDOFF_BUILD.md` preenchido por inteiro — estado real da fundação (22 migrations, 100/100 testes de RLS, webhook v3, bucket clínico, varredura de segredos zerada, portão adversarial com parecer favorável), artefatos e onde encontrá-los, resumo das 8 subetapas da Etapa 02, armadilhas conhecidas mais relevantes para quem constrói UI a partir de agora, e o primeiro passo concreto (Subetapa 02.0).
+- **Portão de saída da Etapa 01 declarado aberto** em `docs/00_PLANO_E_CRITERIOS.md`: todos os schemas do MVP aplicados, RLS 100% verde, segredos zerados, portão adversarial executado e merge realizado. A Etapa 02 pode abrir.
+
 ## [+0.1] - 2026-08-17 (Subetapa 01.8)
 - **Portão de segurança adversarial executado** sobre toda a fundação (Subetapas 01.2–01.6), em bench isolado: 35 ataques deliberados cobrindo os 6 vetores obrigatórios, mais LGPD/prontuário e o webhook público. **6 falhas reais encontradas e corrigidas**, numa base que já tinha 65 testes de RLS verdes e varredura de segredos zerada.
 - **Corrigida uma falha crítica de tomada de conta:** era possível a um usuário autenticado sem perfil se inserir em conta alheia como proprietário e passar a enxergar os dados dela. A porta de entrada ficava aberta porque a trava de escalação de privilégio cobria alteração de perfil, mas não criação.
