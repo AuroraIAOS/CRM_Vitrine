@@ -197,13 +197,13 @@ A06 EXPLORÁVEL — evento destinado à conta 8d70c0a0-…
 
 ---
 
-## 4. Divergência declarada entre banco e `main`
+## 4. Divergência entre banco e `main` — aberta durante a auditoria, **resolvida no fechamento**
 
-As correções foram aplicadas **no banco real durante o bench** (decisão de Max na abertura da subetapa), para que cada uma fosse provada ao vivo em vez de teórica. Consequência a registrar com todas as letras:
+As correções foram aplicadas **no banco real durante o bench** (decisão de Max na abertura da subetapa), para que cada uma fosse provada ao vivo em vez de teórica. Isso abriu, durante a subetapa, uma divergência declarada:
 
-> **O Supabase está hoje à frente do `main`.** O banco tem a migration `022` e a `whatsapp-webhook` v3; o `main` não tem os arquivos correspondentes — eles vivem no bench. O merge do bench alinha os dois. **Enquanto o merge não acontecer, `main` não descreve o estado real do banco.**
+> O Supabase passou a ter a migration `022` e a `whatsapp-webhook` v3 antes de o `main` ter os arquivos correspondentes — eles viviam só no bench.
 
-Isso é um argumento a favor de resolver o merge cedo, não um risco de segurança: o banco está na configuração **mais** segura das duas.
+**Situação no fechamento: resolvida.** Max ordenou o merge em 2026-08-17, executado logo em seguida (ver §6). O `main` passou a conter `022_hardening_portao_adversarial.sql`, a v3 do webhook e as três suítes adversariais — **`main` e Supabase alinhados**, sem divergência pendente.
 
 ---
 
@@ -227,10 +227,12 @@ Isso é um argumento a favor de resolver o merge cedo, não um risco de seguran�
 
 ---
 
-## 6. Regra §13 — parada obrigatória
+## 6. Regra §13 — parada obrigatória, e o desfecho
 
-**O merge não foi executado, e não será por iniciativa do CODE.**
+**Durante a auditoria, o CODE não executou merge algum.** `CLAUDE.md` §13 e o passo 7 da pendência vigiada são explícitos: mesmo com todos os testes 100% verdes e parecer final favorável — que é exatamente o caso aqui — ordenar o merge é atribuição exclusiva de Max. O relatório e o parecer da §5 foram entregues com `main` intocada (`d293951`, local e remota) e o CODE parou nesse ponto.
 
-`CLAUDE.md` §13 e o passo 7 da pendência vigiada são explícitos: mesmo com todos os testes 100% verdes e parecer final favorável — que é exatamente o caso aqui — ordenar o merge é atribuição exclusiva de Max. Este relatório e o parecer acima são a entrega; o CODE para neste ponto.
+**Desfecho registrado:** em 2026-08-17, de posse do relatório e do parecer, **Max ordenou explicitamente o merge**, pedindo que o `main` ficasse alinhado ao estado mais evoluído do Supabase. O merge foi então executado pelo CODE **por ordem de Max, nunca por iniciativa própria** — que é exatamente o que a regra §13 prevê.
 
-O bench está em `bench/01.8-seguranca-adversarial`, com o trabalho commitado e nada pendente na árvore.
+A distinção que a §13 protege ficou preservada na íntegra: o CODE auditou, corrigiu, relatou e parou; a decisão de fundir foi tomada por Max, com o parecer em mãos.
+
+O bench `bench/01.8-seguranca-adversarial` foi mantido no remoto após o merge, como registro auditável do trabalho — nele, cada ataque existe no estado em que ainda passava.
