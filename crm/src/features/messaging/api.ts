@@ -71,6 +71,61 @@ export type Conversa = {
   ultimaMensagemEm: string | null;
 };
 
+/**
+ * Abre uma conversa a partir de um telefone digitado, sem depender de o
+ * cliente ter escrito primeiro. Sem isso, a caixa de entrada só mostra
+ * conversas nascidas do webhook, e não há por onde exercitar o envio
+ * (gap achado no diagnóstico da 02.5).
+ *
+ * `wa_id` da Meta é só dígitos (código do país + número, sem "+" nem
+ * separador) — normaliza aqui para bater com o formato que o webhook
+ * grava, senão a mesma pessoa vira dois contatos.
+ */
+export function useIniciarConversa() {
+  const { profile } = useAuth();
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: { telefone: string; nome?: string }): Promise<string> => {
+      const accountId = profile!.accountId;
+      const telefone = input.telefone.replace(/\D/g, "");
+      if (telefone.length < 10) throw new Error("Telefone incompleto — use código do país + DDD + número.");
+
+      const { data: contato, error: erroContato } = await db()
+        .from("contatos_canal")
+        .upsert(
+          { account_id: accountId, telefone, nome: input.nome?.trim() || null },
+          { onConflict: "account_id,telefone", ignoreDuplicates: false },
+        )
+        .select("id")
+        .single();
+      if (erroContato) throw erroContato;
+
+      // Reaproveita conversa não-fechada do mesmo contato, mesmo critério
+      // que o webhook usa — evita duas conversas paralelas para a mesma pessoa.
+      const { data: existente } = await db()
+        .from("conversas")
+        .select("id")
+        .eq("account_id", accountId)
+        .eq("contato_id", contato.id)
+        .neq("status", "fechada")
+        .order("criado_em", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (existente) return existente.id as string;
+
+      const { data: nova, error: erroConversa } = await db()
+        .from("conversas")
+        .insert({ account_id: accountId, contato_id: contato.id, status: "aberta" })
+        .select("id")
+        .single();
+      if (erroConversa) throw erroConversa;
+      return nova.id as string;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["conversas"] }),
+  });
+}
+
 export function useConversas() {
   const { profile } = useAuth();
   const accountId = profile?.accountId;

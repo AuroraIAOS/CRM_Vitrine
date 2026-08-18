@@ -8,6 +8,7 @@ import {
   useConfiguracaoWhatsapp,
   useConectarWhatsapp,
   useConversas,
+  useIniciarConversa,
   useMensagens,
   useEnviarMensagem,
   type Conversa,
@@ -103,13 +104,63 @@ function ListaConversas({
   selecionada: string | null;
   onSelecionar: (id: string) => void;
 }) {
+  const iniciar = useIniciarConversa();
+  const [abrindo, setAbrindo] = useState(false);
+  const [telefone, setTelefone] = useState("");
+  const [nome, setNome] = useState("");
+
   return (
     <Card className="flex flex-col overflow-hidden">
-      <div className="border-b border-hairline px-3 py-2.5">
+      <div className="flex items-center justify-between border-b border-hairline px-3 py-2.5">
         <span className="rounded-[5px] bg-accent px-2.5 py-1 text-[10.5px] font-semibold text-accent-foreground">
           Conversas · {conversas.length}
         </span>
+        <button
+          type="button"
+          onClick={() => setAbrindo((v) => !v)}
+          className="text-[10.5px] font-medium text-primary hover:underline"
+        >
+          {abrindo ? "Cancelar" : "+ Nova"}
+        </button>
       </div>
+
+      {abrindo && (
+        <form
+          className="flex flex-col gap-1.5 border-b border-hairline bg-content p-2.5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            iniciar.mutate(
+              { telefone, nome },
+              {
+                onSuccess: (id) => {
+                  setTelefone("");
+                  setNome("");
+                  setAbrindo(false);
+                  onSelecionar(id);
+                },
+              },
+            );
+          }}
+        >
+          <input
+            required
+            className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[11.5px]"
+            placeholder="Telefone com país e DDD (ex.: 5535999990000)"
+            value={telefone}
+            onChange={(e) => setTelefone(e.target.value)}
+          />
+          <input
+            className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[11.5px]"
+            placeholder="Nome (opcional)"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+          />
+          <Button type="submit" size="sm" disabled={iniciar.isPending}>
+            {iniciar.isPending ? "Abrindo..." : "Abrir conversa"}
+          </Button>
+          {iniciar.isError && <span className="text-[10.5px] text-destructive">{(iniciar.error as Error).message}</span>}
+        </form>
+      )}
       <div className="flex-1 overflow-y-auto">
         {conversas.length === 0 && (
           <div className="p-4 text-center text-[11px] text-muted-foreground">
@@ -146,6 +197,12 @@ function PainelConversa({ conversa }: { conversa: Conversa }) {
   const enviar = useEnviarMensagem();
   const [texto, setTexto] = useState("");
 
+  // Sinalização, NÃO bloqueio: quem decide se a janela de 24h está aberta
+  // é a Meta, a partir do histórico dela — o nosso cache local pode estar
+  // incompleto (é exatamente o caso quando o webhook não entrega, ver
+  // handoffs/instrucoes.md §5). Travar o compositor por este cálculo
+  // impediria um envio que a Meta aceitaria. Se ela recusar, o erro dela
+  // aparece no lugar, que é a informação verdadeira.
   const ultimaDoCliente = [...(mensagens ?? [])].reverse().find((m) => m.tipoRemetente === "cliente");
   const janelaAberta = ultimaDoCliente ? Date.now() - new Date(ultimaDoCliente.criadoEm).getTime() < JANELA_24H_MS : false;
 
@@ -187,12 +244,12 @@ function PainelConversa({ conversa }: { conversa: Conversa }) {
       >
         <input
           className="flex-1 rounded-[6px] border border-input bg-background px-3 py-2 text-[11.5px]"
-          placeholder={janelaAberta ? "Escrever mensagem..." : "Janela de 24h fechada — só template (fora do escopo do v01)"}
+          placeholder="Escrever mensagem..."
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
-          disabled={!janelaAberta || enviar.isPending}
+          disabled={enviar.isPending}
         />
-        <Button type="submit" disabled={!janelaAberta || !texto.trim() || enviar.isPending}>
+        <Button type="submit" disabled={!texto.trim() || enviar.isPending}>
           {enviar.isPending ? "Enviando..." : "Enviar"}
         </Button>
       </form>
@@ -233,7 +290,11 @@ export function MessagingPage() {
   const conversaAtiva = lista.find((c) => c.id === conversaSelecionada) ?? null;
 
   return (
-    <div className="flex h-full flex-col gap-2">
+    // Altura fixa calculada em vez de `h-full`: o `main` do AppShell é
+    // `flex-1 overflow-auto` com padding, e `h-full` dentro dele não resolve
+    // — o painel estourava a viewport e a página não rolava (defeito real
+    // medido na 02.5). 56px de header + faixa de breadcrumb + p-4.
+    <div className="flex h-[calc(100vh-8.5rem)] flex-col gap-2">
       <button
         type="button"
         onClick={() => setForcarFormulario(true)}
@@ -241,7 +302,7 @@ export function MessagingPage() {
       >
         Reconectar / trocar credenciais do WhatsApp
       </button>
-      <div className="grid flex-1 grid-cols-[280px_1fr_250px] gap-3">
+      <div className="grid min-h-0 flex-1 grid-cols-[minmax(240px,280px)_1fr_minmax(200px,250px)] gap-3">
         {carregandoConversas ? (
           <div className="col-span-3 p-6 text-[12px] text-muted-foreground">Carregando…</div>
         ) : (
