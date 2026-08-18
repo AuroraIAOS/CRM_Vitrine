@@ -2,6 +2,12 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-08-18 (Subetapa 02.3)
+- **Módulo Pessoas (`aba_people`) ganha UI completa:** lista unificada (`/pessoas`) com abas Todas/Leads/Clientes/Equipe/Fornecedores por contagem real, tabela paginada com seleção múltipla e exclusão em lote (`@tanstack/react-table`), e ficha da pessoa (`/pessoas/:id`) com edição de dados, tags, notas internas, linha do tempo e campos personalizados.
+- **Conversão de lead em cliente pela UI**, sempre via `aba_people.converter_lead()` (nunca `INSERT` direto) — tags, notas e campos personalizados sobrevivem à conversão, e a pessoa passa a exibir os dois papéis (Lead histórico + Cliente) ao mesmo tempo.
+- **Dois bugs de apresentação corrigidos nesta sessão** (nenhum de RLS/banco): pessoa sem nenhum papel deixou de ser rotulada como "Lead" por engano; breadcrumb do shell deixou de cair em "core > dashboard" em sub-rotas de módulo (`/pessoas/:id` e qualquer futura).
+- Nenhuma migration nova — `aba_people` já estava 100% aplicado desde a Subetapa 01.2; suíte de RLS revalidada sem regressão (110/110).
+
 ## [+1.0] - 2026-08-18 (Subetapa 02.2)
 - **Fluxo de equipe de ponta a ponta:** owner/admin convida por e-mail (RPC `criar_convite`, token de 256 bits gerado e hasheado no banco), o convidado aceita (`resgatar_convite`) e é movido para a conta com o papel do convite, um `aba_people.funcionarios` nasce automaticamente e ativo (trigger `nascer_funcionario_do_perfil`), e o owner/admin liga ou desliga o atributo profissional (`aba_scheduling.definir_profissional`) por um interruptor — regra nova: só quem tem papel `agent` pode virar profissional.
 - **Gestão de membro:** `set_member_role` (mudar papel), `remove_account_member` (remover, com conta pessoal nova) e `transfer_account_ownership` (transferir titularidade — fecha a promessa da correção de segurança A02 da Subetapa 01.8) portados do CRM Maximus.

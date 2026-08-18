@@ -47,7 +47,11 @@ export function AppShell() {
   const moduleItems = buildModuleNav(modules ?? []);
   const settingsItem = findSettingsNavItem(modules ?? []);
 
-  const currentModule = moduleItems.find((item) => item.path === location.pathname);
+  // startsWith, não só igualdade exata — cobre sub-rotas como /pessoas/:id
+  // (Subetapa 02.3), que precisam continuar sob o breadcrumb do módulo pai.
+  const currentModule = moduleItems.find(
+    (item) => location.pathname === item.path || location.pathname.startsWith(`${item.path}/`),
+  );
   const breadcrumb = currentModule
     ? `aba_${currentModule.moduleKey} > ${currentModule.label}`
     : settingsItem && location.pathname === settingsItem.path
