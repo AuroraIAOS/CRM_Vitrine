@@ -7,6 +7,7 @@ import { AceitarConvitePage } from "@/features/convite/AceitarConvitePage";
 import { EquipePage } from "@/features/settings/EquipePage";
 import { PessoasListPage } from "@/features/people/PessoasListPage";
 import { PessoaFichaPage } from "@/features/people/PessoaFichaPage";
+import { SalesKanbanPage } from "@/features/sales/SalesKanbanPage";
 import { Placeholder } from "@/components/shared/Placeholder";
 
 // Rotas 1:1 com nav.ts (MODULE_ROUTE) + /suporte, que não é módulo de
@@ -16,7 +17,8 @@ import { Placeholder } from "@/components/shared/Placeholder";
 // mesmo que access.can() esconda o item de quem não tem permissão.
 // /configuracoes já entrega a aba Equipe (Subetapa 02.2) — as demais 8
 // seções de Configurações (1m) entram na Subetapa 02.12. /pessoas e
-// /pessoas/:id (telas 1c/1d) já entregues pela Subetapa 02.3.
+// /pessoas/:id (telas 1c/1d) já entregues pela Subetapa 02.3. /vendas
+// (tela 1f, kanban) já entregue pela Subetapa 02.4.
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
   { path: "/convite", element: <AceitarConvitePage /> },
@@ -30,7 +32,7 @@ export const router = createBrowserRouter([
           { path: "pessoas", element: <PessoasListPage /> },
           { path: "pessoas/:id", element: <PessoaFichaPage /> },
           { path: "agenda", element: <Placeholder titulo="Agenda" /> },
-          { path: "vendas", element: <Placeholder titulo="Vendas" /> },
+          { path: "vendas", element: <SalesKanbanPage /> },
           { path: "financeiro", element: <Placeholder titulo="Financeiro" /> },
           { path: "prontuario", element: <Placeholder titulo="Prontuário" /> },
           { path: "catalogo", element: <Placeholder titulo="Catálogo" /> },

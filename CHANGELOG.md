@@ -2,6 +2,11 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-08-18 (Subetapa 02.4)
+- **Módulo Vendas (`aba_sales`) ganha kanban de pipeline** (`/vendas`): funil "Comercial padrão" provisionado sob demanda com as 5 etapas do design (Novo contato → Avaliação agendada → Proposta enviada → Negociação → Fechado), oportunidades arrastáveis entre etapas via `@dnd-kit`, sempre ligadas a `pessoa_id` (nunca a um contato de canal).
+- **Ciclo de status `ativa → ganha | perdida` é terminal**: uma vez fechado (ganho ou perdido), o negócio sai da lista de "em aberto" e deixa de ser arrastável ou reabrível pela UI.
+- Nenhuma migration nova — `aba_sales` já estava 100% aplicado desde a Subetapa 01.5; suíte de RLS revalidada sem regressão (110/110).
+
 ## [+1.0] - 2026-08-18 (Subetapa 02.3)
 - **Módulo Pessoas (`aba_people`) ganha UI completa:** lista unificada (`/pessoas`) com abas Todas/Leads/Clientes/Equipe/Fornecedores por contagem real, tabela paginada com seleção múltipla e exclusão em lote (`@tanstack/react-table`), e ficha da pessoa (`/pessoas/:id`) com edição de dados, tags, notas internas, linha do tempo e campos personalizados.
 - **Conversão de lead em cliente pela UI**, sempre via `aba_people.converter_lead()` (nunca `INSERT` direto) — tags, notas e campos personalizados sobrevivem à conversão, e a pessoa passa a exibir os dois papéis (Lead histórico + Cliente) ao mesmo tempo.
