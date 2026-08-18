@@ -2,6 +2,13 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+0.1] - 2026-08-18 (Subetapa 02.0)
+- **Plano da Etapa 02 reescrito de 8 para 17 subetapas** (02.0–02.16), à luz do design ratificado e de duas decisões de Max: o fluxo de convite/funcionário vira subetapa própria (02.2, antes da de Pessoas) e os módulos restantes ganham CRUD completo antes do deploy — a Etapa 02 passa a cobrir as 16 telas do design, e não só três módulos.
+- **Divergência zero entre documentação e banco confirmada objeto a objeto** — 22 migrations, 12 schemas, contagem de tabela por schema e inventário de função conferidos contra o projeto Supabase real; nenhuma subetapa 02.x referencia nome que não exista.
+- **Nove gaps de trabalho sem dono identificados e distribuídos:** identidade visual ainda em placeholder do shadcn, app sem resolução de perfil/papel, RPCs de convite inexistentes, `access.modules.position` desalinhado da navegação ratificada, `pg_cron` declarado mas não instalado, dependências de UI do design ausentes, dois itens de sidebar sem modelo de dados, e o CRM-Sindcom rebaixado de fonte de UI/UX para referência apenas de build e deploy.
+- Duas pendências vigiadas novas abertas (`pg_cron` sem instalação; itens de navegação sem modelo de dados) e duas entradas novas em `handoffs/instrucoes.md` §5.
+- Nenhuma migration nova, nenhuma linha de código — só plano, documentação e decisão registrada.
+
 ## [+0.1] - 2026-08-18 (Etapa de Transição 1 → 2)
 - **Design do MVP ratificado.** Max concluiu o estágio de design no Claude Design; o pacote de 16 wireframes foi lido e interpretado por completo, e as decisões de arquitetura/UI que ele obriga ficam registradas em `docs/01_ARQUITETURA.md` §7 e `docs/04_DESIGN_E_MARCA.md` §5 (paleta, tipografia, biblioteca de ícones, padrões de componente, navegação/ordem de módulo).
 - **Login multi-conta adiado para `+1.0`** (decisão de Max) — o schema atual (1 usuário = 1 conta) não suporta o seletor de conta que o wireframe mostra; a Etapa 02 constrói login single-account.

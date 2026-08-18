@@ -163,7 +163,7 @@ Todas as condições do portão de saída declarado acima estão satisfeitas: to
 
 **Qualidade:** nenhuma decisão registrada como definitiva sem antes confirmar com Max os dois pontos que contradiziam o schema já aplicado (login multi-conta vs. `profiles.user_id UNIQUE`; papéis `PERFIS` do wireframe vs. `account_role_enum`) — ambos resolvidos por decisão explícita dele antes da escrita nos docs.
 
-**Pendência que nasce daqui para a Etapa 02:** construir as RPCs de convite (`peek`/`resgatar`), o trigger de nascimento automático de funcionário e a RPC de liga/desliga do atributo profissional (com a regra nova "só `agent`") — ver `docs/01_ARQUITETURA.md` §7.4. Onde exatamente isso entra no roteiro de subetapas (dentro da 02.1 ou como subetapa própria) é decisão da **Subetapa 02.0**, não desta rodada.
+**Pendência que nasce daqui para a Etapa 02:** construir as RPCs de convite (`peek`/`resgatar`), o trigger de nascimento automático de funcionário e a RPC de liga/desliga do atributo profissional (com a regra nova "só `agent`") — ver `docs/01_ARQUITETURA.md` §7.4. Onde exatamente isso entra no roteiro de subetapas (dentro da 02.1 ou como subetapa própria) é decisão da **Subetapa 02.0**, não desta rodada. **✅ Resolvido na Subetapa 02.0 (2026-08-18), por decisão de Max: vira a Subetapa 02.2, própria e anterior à de Pessoas**, acrescida de `transfer_account_ownership` (prometida pela correção A02 da 01.8) e da RPC `criar_convite()`, peça sem equivalente no Maximus — lá a criação do convite era feita por route handler Next.js, que não existe numa SPA estática.
 
 **Evidência:** os 5 arquivos listados acima, publicados e commitados nesta mesma sessão.
 
@@ -173,55 +173,141 @@ Todas as condições do portão de saída declarado acima estão satisfeitas: to
 Objetivo geral: construir a UI, semear dados de demonstração, testar e refazer até o MVP 100% verde e no ar. Gerar HANDOFF_UPGRADE ao final.
 Modo predominante: [Manual Mode] + [Goal] (um /goal por subetapa)
 Portão de entrada: `HANDOFF_BUILD.md` preenchido sem placeholder, Etapa 01 com portão de saída verde (schemas aplicados, RLS 100% verde, varredura de segredos zerada, portão adversarial com parecer registrado).
-Portão de saída: fluxo ponta a ponta das subetapas 02.1–02.3 testado manualmente e funcionando; seed de demonstração populado; subdomínio no ar (02.4); varredura de segredos zerada de novo (o deploy pode ter introduzido `.env` de produção); portão de segurança adversarial reexecutado cobrindo a superfície nova da Etapa 02 (UI + deploy); `HANDOFF_UPGRADE.md` preenchido. Enquanto vermelho, a Etapa 03 não abre nenhuma subetapa além da 03.0.
+Portão de saída: fluxo ponta a ponta das subetapas 02.1–02.12 testado manualmente e funcionando (as 16 telas do design ratificado, sobre os 9 módulos do v01); seed de demonstração populado; subdomínio no ar (02.13); varredura de segredos zerada de novo (o deploy pode ter introduzido `.env` de produção); portão de segurança adversarial reexecutado cobrindo a superfície nova da Etapa 02 (UI + convite + `pg_cron` + deploy); `HANDOFF_UPGRADE.md` preenchido. Enquanto vermelho, a Etapa 03 não abre nenhuma subetapa além da 03.0.
 Observações: coletar evidências; commit com prefixo padronizado + push ao fim de cada subetapa. Subetapas complexas podem rodar em sessões separadas (segurança + economia de tokens).
 
-### Subetapa 02.0 — Leitura de Referências e Revisão do Plano da Etapa 02 [Plan] [LLM: Opus]
-Objetivo: aplicar a convenção `0X.0` (ver seção acima) ao início da Etapa 02 — reler `HANDOFF_BUILD.md` e as decisões da Etapa 01 contra o estado real do repositório e do banco; reconsultar CRM-Sindcom quanto a padrões de UI/UX (componentes shadcn, formulários, tabelas) ainda não usados; revisar este documento à luz do que a Etapa 01 efetivamente entregou (schemas, nomes, funções) em vez do que fora planejado.
-Conclusão: divergências entre o planejado na Etapa 01 e o aplicado de fato resolvidas ou explicitamente registradas; subetapas 02.1–02.4 confirmadas ou ajustadas; plano de ação da Etapa 02 apresentado a Max.
+### Subetapa 02.0 — Leitura de Referências, Inclusão de Design e Revisão do Plano da Etapa 02 [Plan] [LLM: Opus]
+Objetivo: aplicar a convenção `0X.0` (ver seção acima) ao início da Etapa 02 — reler `HANDOFF_BUILD.md` e as decisões da Etapa 01 contra o estado real do repositório e do banco; eliminar ideias divergentes vindas do CRM-Sindcom quanto a padrões de UI/UX frente ao novo design elaborado na etapa de Trasição 1 > 2; revisar este documento à luz do que a Etapa 01 efetivamente entregou (schemas, nomes, funções) em vez do que fora planejado. Conferir o fluxo de convite/funcionário e provisionar a construção das RPCs que fazem o convite funcionar de ponta a ponta (aceitar convite, nascer funcionário automaticamente, ligar/desligar o atributo profissional). 
+Conclusão: divergências entre o planejado na Etapa 01 e o aplicado de fato resolvidas ou explicitamente registradas; subetapas 02.1–02.4 confirmadas ou ajustadas; design elaborado na Etapa de Transição 1 > 2 integrado ao novo plano para a Etapa 2; plano de ação da Etapa 02 apresentado a Max.
 Qualidade: nenhuma subetapa 02.x referencia tabela/coluna/função com nome divergente do que foi realmente aplicado no Supabase.
 Evidência: relatório curto de divergências (ou "nenhuma") + este documento atualizado, se necessário.
 Esforço máximo do /goal: 2 tentativas
 Escalonamento de LLM: Sonnet na primeira; Opus na segunda.
 Se esgotar: parar e emitir relatório curto (problema + causas + alternativas).
+Status: ✅ CONCLUÍDA — executada em 2026-08-18 (Opus, `[Plan]`, uma tentativa). **Nenhuma divergência de nomenclatura entre o planejado e o aplicado:** `list_migrations` devolveu exatamente as 22 migrations de `db/migrations/001`–`022`; a varredura de `information_schema.tables` nos 12 schemas bate 1:1 com `docs/02_MODELO_DE_DADOS.md` §3–§8 (`public` 7 tabelas, `access` 2, `licensing` 2, `aba_people` 10, `aba_catalog` 5, `aba_scheduling` 8, `aba_finance` 11, `aba_health` 7, `aba_sales` 3, `aba_automations` 8, `aba_ai` 4, `aba_messaging` 11); a varredura de `pg_proc` confirmou o inventário de funções documentado. O critério de Qualidade ("nenhuma subetapa 02.x referencia nome divergente") está satisfeito. **Nove gaps reais encontrados — nenhum é erro do que foi feito, todos são trabalho que nenhuma subetapa possuía:** (G1) `crm/src/index.css` ainda com a paleta neutra padrão do shadcn, marcada no próprio arquivo como "placeholder até `docs/04` fechar cor" — `docs/04` §5 fechou; (G2) `crm/src/lib/auth.tsx` e `app/RoleGate.tsx` ainda dizem "entra quando `access`/`public.profiles` existirem (Subetapa 01.2 em diante)", e `access.readable_modules()` nunca é chamada; (G3) nenhuma RPC do fluxo de convite existe em `pg_proc` — 834 linhas a portar do Maximus (018/019/074/075); (G3b) a criação de convite do Maximus vivia em route handler Next.js e não tem para onde ir numa SPA estática — resolvido como RPC com `pgcrypto`, ver `handoffs/instrucoes.md` §5; (G4) `access.modules.position` desalinhado da ordem ratificada (banco: `catalog`3/`messaging`6/`sales`7; wireframe: `sales`3/`catalog`6/`messaging`7); (G5) a antiga 02.4 exigia print de "todos os módulos" com só 3 construídos; (G6) `Propostas` e `Espera e encaixes` aparecem na sidebar do wireframe sem modelo de dados; (G7) `pg_cron` não instalado (`installed_version = null`) apesar de `docs/01` §2 declará-lo o agendador; (G8) `@tanstack/react-table`, biblioteca de drag-and-drop e `date-fns` ausentes de `crm/package.json`. **Duas decisões de Max nesta sessão:** (1) o bloco de convite/funcionário/atributo profissional vira **subetapa própria, antes de Pessoas** — é a resposta à pergunta que a Etapa de Transição 1→2 deixou explicitamente para a 02.0; (2) os módulos restantes ganham **CRUD completo antes do deploy**, cobrindo as 16 telas do design. A ressalva de que a decisão (2) contraria o princípio-guia ("MVP em uma semana") foi apresentada a Max antes da escolha e ele a manteve. Etapa 02 reescrita de 8 para 17 subetapas (02.0–02.16), com a varredura de segredos e o portão adversarial preservados como os dois últimos passos antes do HANDOFF.
 
-### Subetapa 02.1 — CRUD de Pessoas (`aba_people`) [Goal] [Manual] [LLM: Sonnet]
-Objetivo: tela de listagem/criação/edição de lead → conversão para cliente, com tags/notas/campos customizados visíveis e persistentes através da conversão.
+> **Nota de referência (registrada na Subetapa 02.0):** o **CRM-Sindcom deixa de ser fonte de UI/UX** nesta Etapa. O design ratificado na Etapa de Transição 1→2 (`docs/04_DESIGN_E_MARCA.md` §5, 16 telas) é a única fonte de paleta, tipografia e padrão de componente. O Sindcom permanece referência legítima para **configuração de build (Vite/Vitest/PWA) e para o runbook de deploy FTP** (`docs/deploy.md` de lá, a reconsultar na Subetapa 02.13) — nada além disso.
+>
+> **Qualidade fixa de toda subetapa de tela (02.1–02.12), não repetida item a item:** (a) `.select()` sempre com colunas explícitas nas seis tabelas com narrowing de coluna — `select('*')` devolve `42501 permission denied for table`, que parece falha de RLS e desvia a investigação (`handoffs/instrucoes.md` §6); (b) todo conteúdo vindo do banco renderizado escapado — XSS armazenado é fronteira aberta por design e item obrigatório do portão adversarial da 02.15; (c) componentes conforme `docs/04_DESIGN_E_MARCA.md` §5.5; (d) nenhuma checagem de permissão duplicada no client — a régua continua sendo `access.can()`/RLS, o front só monta o que `access.readable_modules()` devolve.
+
+### Subetapa 02.1 — Fundação visual e de sessão do app [Goal] [Manual] [LLM: Sonnet]
+Objetivo: dar ao app a identidade visual e a sessão que a Etapa 01 deixou em placeholder declarado. Aplicar os tokens de `docs/04_DESIGN_E_MARCA.md` §5.2/§5.3 em `crm/src/index.css` como CSS variables (nunca hex solto em componente — `docs/04` §4); carregar `IBM Plex Sans`/`IBM Plex Mono`; reconstruir `crm/src/app/AppShell.tsx` no shell do wireframe (sidebar 236px + header 56px + faixa de breadcrumb mono + área de conteúdo `#f4f6f7`); fazer o `AuthProvider` (`crm/src/lib/auth.tsx`) resolver `public.profiles` (`account_id`, `account_role`, `full_name`) e o `RoleGate` usar `access.readable_modules()`; montar `crm/src/app/nav.ts` a partir dessa RPC; aplicar migration de `UPDATE access.modules SET position` para a ordem ratificada do wireframe; instalar as dependências de UI que o design exige (`@tanstack/react-table`, biblioteca de drag-and-drop, `date-fns`).
+Conclusão: login leva a um shell com a paleta/tipografia ratificadas, sidebar montada dinamicamente na ordem `people→scheduling→sales→finance→health→catalog→messaging→automations→ai` + `Configurações/Suporte/Sair` fixos, nome do usuário real no header; trocar o `account_role` do usuário de teste no banco muda o conjunto de itens visíveis sem nenhum `if` de papel escrito no front.
+Qualidade: `crm/src/app/nav.ts` **não contém lista de módulos hardcoded**; nenhum hex da paleta aparece fora de `index.css`; a migration de `position` é `UPDATE` puro, sem DDL. Os itens de navegação do wireframe sem modelo de dados (`Propostas` em `aba_sales`, `Espera e encaixes` em `aba_scheduling`) ficam **fora** da navegação do v01 — já constam do backlog de versionamento, não se inventa tabela para eles.
+Evidência: print do shell autenticado ao lado da tela `1b` do wireframe + print do mesmo shell com um `viewer`, mostrando o conjunto reduzido de itens + `SELECT key, position FROM access.modules ORDER BY position` depois da migration.
+Esforço máximo do /goal: 4 tentativas
+Escalonamento de LLM: Sonnet nas 3 primeiras; Opus na última.
+Se esgotar: parar e emitir relatório curto (problema + causas + alternativas).
+
+### Subetapa 02.2 — Equipe: convite → funcionário → atributo profissional [Goal] [Manual] [LLM: Sonnet]
+Objetivo: construir o fluxo de equipe de 5 passos verificado contra o CRM Maximus na Etapa de Transição 1→2 (`docs/01_ARQUITETURA.md` §7.4) e deferido desde as Subetapas 01.2/01.3. Portar do Maximus: `018_account_member_rpcs.sql` (`set_member_role`, `remove_account_member`, `transfer_account_ownership` — esta última prometida explicitamente pela correção A02 da Subetapa 01.8), `019_invitation_rpcs.sql` (`peek_invitation`/`redeem_invitation` → `peek_convite`/`resgatar_convite`, incluindo a limpeza da conta pessoal órfã, já que o `handle_new_user` do Vitrine também cria conta própria no cadastro), `074_employees_born_from_invitation.sql` (trigger de nascimento automático de `aba_people.funcionarios`) e `075_professionals_require_employee.sql` (`aba_scheduling.definir_profissional` + `CHECK profissionais_ativo_exige_funcionario`). Construir a aba **Equipe** da tela de Configurações (`1m`). Traduzir os nomes conforme `CLAUDE.md` §2/§14 — portar a lógica, nunca reescrever a permissão do zero.
+Conclusão: owner cria convite pela UI e recebe o link uma única vez; um segundo usuário aceita o convite, é movido para a conta do owner com o papel certo, nasce automaticamente como `aba_people.funcionarios` ativo, e o owner liga/desliga o atributo profissional dele por um interruptor.
+Qualidade: **peça sem equivalente no Maximus** — lá a criação do convite era feita por route handler Next.js (o servidor gerava e hasheava o token); aqui não há servidor, então vira RPC `criar_convite()` `SECURITY DEFINER` que gera o token com `pgcrypto` (schema `extensions`, já instalado) e devolve o texto em claro uma única vez, nunca legível depois. **Regra nova de Max (não existe no Maximus):** o atributo profissional só pode ser concedido a funcionário com `account_role = 'agent'` — `admin` nunca vira profissional ativo (`docs/01_ARQUITETURA.md` §7.3). Suíte de RLS própria em `crm/tests/rls/` provando os 5 passos, a regra nova, e que nenhum caminho novo permite a um `admin` se apossar da conta (regressão do achado A02 da 01.8). Toda função nova nasce com `REVOKE EXECUTE FROM PUBLIC` **e** `FROM anon`.
+Evidência: print do fluxo ponta a ponta (convite criado → aceito por segundo usuário → funcionário aparece → atributo profissional ligado) + suíte de RLS 100% verde, incluindo os testes novos.
+Esforço máximo do /goal: 5 tentativas (porte de 4 migrations + peça inédita)
+Escalonamento de LLM: Sonnet nas 3 primeiras; Opus nas 2 últimas.
+Se esgotar: parar e emitir relatório curto (problema + causas + alternativas).
+
+### Subetapa 02.3 — CRUD de Pessoas (`aba_people`) [Goal] [Manual] [LLM: Sonnet]
+Objetivo: telas `1c` (lista unificada com tabs e contagem) e `1d` (ficha da pessoa) — listagem/criação/edição de lead → conversão para cliente via `aba_people.converter_lead()`, com tags/notas/campos customizados visíveis e persistentes através da conversão.
 Conclusão: fluxo completo testado manualmente: criar lead → adicionar tag/nota → converter → tag/nota continuam visíveis no cliente.
-Qualidade: UI reaproveita componentes shadcn já usados no Sindcom.
+Qualidade: UI segue os padrões de componente de `docs/04_DESIGN_E_MARCA.md` §5.5 (tabela paginada com seleção múltipla via TanStack Table, header mono uppercase, badge pill nas 4 famílias semânticas) — **não** os do CRM-Sindcom. A conversão passa pela RPC, nunca por `INSERT` direto em `clientes`.
 Evidência: print do fluxo completo (lead com tag → cliente convertido com a mesma tag).
 Esforço máximo do /goal: 4 tentativas
 Escalonamento de LLM: Sonnet nas 3 primeiras; Opus na última.
 Se esgotar: parar e emitir relatório curto (problema + causas + alternativas).
 
-### Subetapa 02.2 — CRUD de Vendas (`aba_sales`) [Goal] [Manual] [LLM: Sonnet]
-Objetivo: kanban de funil (etapas) com oportunidades arrastáveis, ligadas a pessoa.
-Conclusão: criar/mover/fechar oportunidade funcionando; valor e etapa refletidos corretamente no banco.
-Qualidade: nenhuma oportunidade sem `pessoa_id`.
+### Subetapa 02.4 — CRUD de Vendas (`aba_sales`) [Goal] [Manual] [LLM: Sonnet]
+Objetivo: tela `1f` — kanban de funil (`aba_sales.funis`/`etapas_funil`) com oportunidades arrastáveis, sempre ligadas a `pessoa_id`.
+Conclusão: criar/mover/fechar oportunidade funcionando; `valor` e `etapa_id` refletidos corretamente no banco.
+Qualidade: nenhuma oportunidade sem `pessoa_id`; `status` respeitando o ciclo `ativa → ganha | perdida` (`docs/02` §9).
 Evidência: print do kanban com oportunidade movida entre etapas + query confirmando o estado.
 Esforço máximo do /goal: 4 tentativas
 Escalonamento de LLM: Sonnet nas 3 primeiras; Opus na última.
 Se esgotar: parar e emitir relatório curto.
 
-### Subetapa 02.3 — Mensageria (Meta Cloud API) [Goal] [Manual] [LLM: Sonnet]
-Objetivo: tela de conversa recebendo/enviando mensagem via Meta Cloud API real (conta de teste).
+### Subetapa 02.5 — Mensageria (Meta Cloud API) [Goal] [Manual] [LLM: Sonnet]
+Objetivo: tela `1j` — conversa em 3 painéis recebendo/enviando mensagem via Meta Cloud API real (conta de teste), sobre o webhook já no ar desde a Subetapa 01.6 (v3).
 Conclusão: mensagem enviada do CRM chega no WhatsApp de teste; mensagem recebida aparece na conversa em tempo real.
-Qualidade: nenhuma credencial de canal exposta no client.
+Qualidade: nenhuma credencial de canal exposta no client (`aba_messaging.configuracao_whatsapp`/`provedores_canal` têm narrowing de coluna — o envio sai por Edge Function, não pelo browser); qualquer função de servidor nova reafirma `account_id` no filtro à mão (achado A06 da 01.8). **Nunca inventar número de telefone para teste de envio** (`handoffs/instrucoes.md` §6). Search-first na versão vigente da Graph API antes de escrever o envio.
 Evidência: print da conversa nos dois sentidos.
 Esforço máximo do /goal: 5 tentativas (integração externa tende a exigir mais ajuste)
 Escalonamento de LLM: Sonnet nas 3 primeiras; Opus nas 2 últimas.
 Se esgotar: parar e emitir relatório curto.
 
-### Subetapa 02.4 — Seed de demonstração + deploy [Goal] [Manual] [LLM: Sonnet]
-Objetivo: popular `seed/` com dados fictícios cobrindo todos os módulos v01; build + deploy FTP em subdomínio de demonstração.
-Conclusão: subdomínio no ar, navegável, com dados de demonstração em todos os módulos.
-Qualidade: nenhum dado real de cliente no seed.
+### Subetapa 02.6 — Agenda (`aba_scheduling`) + perfis de UI reduzida [Goal] [Manual] [LLM: Sonnet]
+Objetivo: telas `1e` (grid semana × hora, bloco por profissional), `1n` ("Meu dia", perfil profissional) e `1o` ("Balcão", perfil recepção). CRUD de agendamento sobre `aba_scheduling.agendamentos`/`agendamento_servicos`, respeitando a restrição de exclusão por intervalo e a verificação de expediente já no banco.
+Conclusão: criar/editar/cancelar agendamento funcionando; sobreposição de horário recusada pelo banco e tratada na UI com mensagem legível; `1n` e `1o` renderizando o subconjunto correto para cada perfil.
+Qualidade: `1n`/`1o` são **filtro de UI sobre o RBAC existente**, nunca papel novo — `agent` + atributo profissional / `admin` sem o atributo (`docs/01_ARQUITETURA.md` §7.3), montados por `access.readable_modules()`. Toda comparação de horário no fuso configurado da conta (`aba_scheduling.fuso_horario_conta()`) — agenda que ignora fuso quebra em silêncio. O erro `23P01` (sobreposição) e o `23514` (fora de expediente) precisam ser distinguidos na mensagem ao usuário.
+Evidência: print da agenda semanal + print de `1n` e `1o` com usuários reais dos dois perfis + print da recusa de sobreposição.
+Esforço máximo do /goal: 5 tentativas
+Escalonamento de LLM: Sonnet nas 3 primeiras; Opus nas 2 últimas.
+Se esgotar: parar e emitir relatório curto.
+
+### Subetapa 02.7 — Catálogo (`aba_catalog`) [Goal] [Manual] [LLM: Sonnet]
+Objetivo: tela `1i` — CRUD de categorias, serviços, variantes de serviço e planos/itens de plano, com tabs e contagem.
+Conclusão: criar serviço com variantes, definir a variante padrão via `aba_catalog.definir_variante_padrao()`, montar um plano com itens; tudo refletido no banco.
+Qualidade: a variante padrão é definida pela função, nunca por `UPDATE` direto (a função é que garante a unicidade).
+Evidência: print do catálogo populado + query mostrando serviço → variantes → variante padrão e plano → itens.
+Esforço máximo do /goal: 3 tentativas
+Escalonamento de LLM: Sonnet nas 2 primeiras; Opus na última.
+Se esgotar: parar e emitir relatório curto.
+
+### Subetapa 02.8 — Financeiro (`aba_finance`) [Goal] [Manual] [LLM: Sonnet]
+Objetivo: tela `1g` — KPIs, gráfico de linha de 2 séries e tabs Lançamentos/Comissões/Conciliação sobre `contratos`/`faturas`/`pagamentos`/`planos_cliente`/`lancamentos_comissao`.
+Conclusão: venda de plano pela UI via `aba_finance.vender_plano()`, fatura emitida, pagamento registrado dando baixa automática, saldo de plano e comissão refletidos; estorno de sessão via `estornar_sessao()` funcionando.
+Qualidade: todo movimento financeiro passa pelas seis operações já no banco (`vender_plano`, `estornar_sessao`, `atualizar_status_fatura`, `marcar_faturas_vencidas`, `expirar_planos`, `planos_vencendo_em`) — nenhuma escrita direta em `saldos_plano`/`extrato_plano`, que são mantidos por trigger. `regras_comissao` continua restrita a `admin+`. Gráficos por SVG inline, sem biblioteca de chart (`docs/04` §5.5).
+Evidência: print da tela populada + query da cadeia `contratos → clientes → pessoas` e do extrato de plano antes/depois de um estorno.
+Esforço máximo do /goal: 5 tentativas
+Escalonamento de LLM: Sonnet nas 3 primeiras; Opus nas 2 últimas.
+Se esgotar: parar e emitir relatório curto.
+
+### Subetapa 02.9 — Prontuário (`aba_health`) [Goal] [Manual] [LLM: Opus]
+Objetivo: telas `1h` (prontuário e anamnese, tabs Anamnese/Evoluções/Anexos/Consentimentos) e `1p` (biblioteca de mapas clínicos). É a subetapa de maior risco jurídico da Etapa — `aba_health` tem regime próprio de RLS, mais restritivo, sem exceção por nenhum motivo (`CLAUDE.md` §5).
+Conclusão: profissional com concessão lê e escreve prontuário pela UI; profissional sem concessão recebe negativa legível; toda leitura e toda escrita geram linha em `aba_health.log_acesso`.
+Qualidade: **nenhuma leitura clínica por `select` direto na tabela** — só através de `ler_prontuario()`, `ler_evolucoes()`, `ler_respostas_anamnese()` e `ler_consentimentos()`, que gravam o log na mesma transação; anexos servidos pelo bucket privado `anexos-clinicos` via URL assinada, nunca por link público; consentimento de imagem trava a **exibição** da foto para todos, inclusive para quem a enviou (decisão de Max mantida — ver Pendências vigiadas). Os 4 mapas clínicos (odontograma/corporal/facial/acupuntura) são **placeholder SVG no wireframe e não têm arte de produção em lugar nenhum do repo** (`docs/04` §5.5): esta subetapa entrega a estrutura de seleção e persistência de marcação; a arte definitiva é asset novo, a decidir com Max, e não bloqueia a conclusão.
+Evidência: print dos dois cenários (negado/permitido) + contagem de `log_acesso` antes/depois de uma leitura e de uma escrita pela UI.
+Esforço máximo do /goal: 5 tentativas
+Escalonamento de LLM: Opus do início ao fim — mesmo tratamento da Subetapa 01.4/01.8.
+Se esgotar: parar e emitir relatório curto.
+
+### Subetapa 02.10 — Automações (`aba_automations`) + `pg_cron` [Goal] [Manual] [LLM: Sonnet]
+Objetivo: tela `1k` — lista de fluxos + editor de passos conectados verticalmente (cor por tipo: Gatilho azul / Condição sage / Ação tan) e, pela primeira vez, o **motor** que executa: instalar `pg_cron` e agendar a drenagem de `aba_automations.automacao_execucoes_pendentes`, a `aba_finance.marcar_faturas_vencidas()`, a `aba_finance.expirar_planos()` e o disparo de `aba_scheduling.lembretes`.
+Conclusão: um fluxo criado pela UI dispara e deixa rastro em `fluxo_execucoes`/`fluxo_execucao_eventos`; um job de `pg_cron` roda no horário e é observável.
+Qualidade: **search-first obrigatório** (`CLAUDE.md` §11) — confirmar na documentação vigente da Supabase como `pg_cron` é habilitado no plano em uso e em que schema a extensão deve morar (nunca `public`) antes de escrever a migration. Todo job roda com privilégio que **ignora RLS**: cada um reafirma `account_id` no `WHERE` à mão — a RLS não participa desse caminho (achado A06 da 01.8). `automacao_logs` continua só com `SELECT` para o usuário final (hardening da 01.5) — o log de auditoria do motor não é editável por quem ele audita.
+Evidência: print do editor de fluxo + `SELECT * FROM cron.job` + linha de `fluxo_execucoes` gerada por execução real.
+Esforço máximo do /goal: 5 tentativas (extensão nova + agendamento)
+Escalonamento de LLM: Sonnet nas 3 primeiras; Opus nas 2 últimas.
+Se esgotar: parar e emitir relatório curto.
+
+### Subetapa 02.11 — IA (`aba_ai`) [Goal] [Manual] [LLM: Sonnet]
+Objetivo: tela `1l` — métricas de uso, card de comportamento do agente (modelo/horário/4 interruptores de permissão), base de conhecimento e transferências, sobre `aba_ai.ia_configuracoes`/`ia_documentos_conhecimento`/`ia_trechos_conhecimento`/`ia_log_uso`.
+Conclusão: conta cola a própria chave de IA pela UI, o agente responde uma mensagem de teste e o consumo aparece em `ia_log_uso`; busca na base de conhecimento devolve trecho relevante via `aba_ai.buscar_conhecimento_textual()`.
+Qualidade: **bring-your-own-key** — nenhuma chave global de LLM no `.env` do projeto; `ia_configuracoes.chave_api` gravada criptografada com `ENCRYPTION_KEY` (AES-256-GCM) por Edge Function, nunca em texto puro e nunca legível de volta pelo client (a coluna tem narrowing desde a migration 022). Busca semântica por `pgvector` continua **fora do escopo** (backlog `+1.0`) — só o caminho lexical.
+Evidência: print da tela + linha de `ia_log_uso` de uma chamada real + prova de que `select` da chave por `authenticated` devolve `42501`.
+Esforço máximo do /goal: 5 tentativas (integração externa)
+Escalonamento de LLM: Sonnet nas 3 primeiras; Opus nas 2 últimas.
+Se esgotar: parar e emitir relatório curto.
+
+### Subetapa 02.12 — Dashboard + Configurações [Goal] [Manual] [LLM: Sonnet]
+Objetivo: telas `1b` (dashboard geral: 4 KPI cards, barra semanal, donut de serviços, 3 painéis) e `1m` (configurações da conta: nav de 9 seções, grid de módulos ativos, seletor de 4 templates de layout). A aba **Equipe** de `1m` já veio da Subetapa 02.2 — aqui entram as demais seções.
+Conclusão: dashboard lendo números reais do banco (não mock) e configurações permitindo editar o que é legitimamente configuração de conta.
+Qualidade: KPI e gráfico saem de query real; o seletor de templates de layout materializa visualmente as 4 opções de `docs/04_DESIGN_E_MARCA.md` §2 — no v01 pode entregar **um único template ativo** com os demais desabilitados (múltiplos templates é item `+1.0` do backlog, não pré-requisito de lançamento, `docs/04` §4). `accounts.owner_user_id` não é editável por formulário nenhum — a transferência de titularidade só pela RPC da 02.2 (trava da correção A02 da 01.8).
+Evidência: print do dashboard com dados reais + print das configurações.
+Esforço máximo do /goal: 4 tentativas
+Escalonamento de LLM: Sonnet nas 3 primeiras; Opus na última.
+Se esgotar: parar e emitir relatório curto.
+
+### Subetapa 02.13 — Seed de demonstração + deploy [Goal] [Manual] [LLM: Sonnet]
+Objetivo: popular `seed/` com dados fictícios cobrindo os 9 módulos v01; build + deploy FTP em subdomínio de demonstração. Reconsultar o runbook de deploy FTP do CRM-Sindcom (`docs/deploy.md` de lá, com as armadilhas medidas em produção) — o repositório não está clonado localmente, precisa ser reobtido.
+Conclusão: subdomínio no ar, navegável, com dados de demonstração em todos os 9 módulos.
+Qualidade: nenhum dado real de cliente no seed; nenhum número de telefone real (nem inventado — o provedor completa dígitos ao rotear e pode atingir terceiro, incidente já registrado em projeto irmão); nenhuma credencial de FTP commitada.
 Evidência: URL do subdomínio + print de cada módulo populado.
 Esforço máximo do /goal: 3 tentativas
 Escalonamento de LLM: Sonnet nas 2 primeiras; Opus na última.
 Se esgotar: parar e emitir relatório curto.
 
-### Subetapa 02.5 — Varredura de segredos (pós-deploy) [Plan] [LLM: Sonnet]
+### Subetapa 02.14 — Varredura de segredos (pós-deploy) [Plan] [LLM: Sonnet]
 Objetivo: repetir a varredura da 01.7 — o deploy real pode ter introduzido `.env.deploy`/credencial de FTP/registro novo no histórico.
 Conclusão: saída zero, nas mesmas condições da 01.7.
 Qualidade: idêntica à 01.7.
@@ -230,24 +316,24 @@ Esforço máximo do /goal: 2 tentativas
 Escalonamento de LLM: Sonnet na primeira; Opus na segunda.
 Se esgotar: parar e emitir relatório curto.
 
-### Subetapa 02.6 — Portão de segurança adversarial (superfície da Etapa 02) [Manual] [LLM: Opus]
-Objetivo: reexecutar o portão de segurança adversarial (mesmos 7 passos da 01.8), desta vez cobrindo a superfície nova — UI real, fluxo de autenticação de usuário final, deploy FTP, subdomínio público.
+### Subetapa 02.15 — Portão de segurança adversarial (superfície da Etapa 02) [Manual] [LLM: Opus]
+Objetivo: reexecutar o portão de segurança adversarial (mesmos 7 passos da 01.8), desta vez cobrindo a superfície nova — as 16 telas reais, o fluxo de convite/aceite de usuário final, os jobs de `pg_cron`, o deploy FTP e o subdomínio público.
 Conclusão: mesmos critérios da 01.8, aplicados à superfície da Etapa 02.
-Qualidade: idêntica à 01.8.
+Qualidade: idêntica à 01.8. **Itens obrigatórios herdados:** XSS armazenado testado contra a UI real (o banco guarda o payload literal por design — a defesa é da camada de renderização); fluxo de convite atacado (token adivinhado, convite reusado, escalada de papel no aceite); todo job de `pg_cron` conferido quanto ao `account_id` no `WHERE`.
 Evidência: relatório + parecer. Merge para `main`/produção segue exclusivo de Max.
 Esforço máximo: sem teto — auditoria.
 Escalonamento de LLM: Opus do início ao fim.
 
-### Subetapa 02.7 — Geração do HANDOFF_UPGRADE [Plan] [LLM: Sonnet]
+### Subetapa 02.16 — Geração do HANDOFF_UPGRADE [Plan] [LLM: Sonnet]
 Objetivo: preencher `handoffs/HANDOFF_UPGRADE.md` com o estado real do MVP no ar.
 Conclusão: arquivo sem placeholder `<...>` restante; `CHANGELOG.md` com a entrada `+1.0` do lançamento.
-Qualidade: toda afirmação rastreável a evidência das subetapas 02.0–02.6.
+Qualidade: toda afirmação rastreável a evidência das subetapas 02.0–02.15.
 Evidência: arquivo publicado + commit.
 Esforço máximo do /goal: 2 tentativas
 Escalonamento de LLM: Sonnet nas duas.
 Se esgotar: parar e emitir relatório curto.
 
-(… 02.n conforme necessário — automações e IA entram como subetapas adicionais se o cronograma de venda permitir; não bloqueiam o lançamento do v01 comercial. Novas subetapas de escopo entram entre a 02.4 e a 02.5, para que a varredura de segredos e o portão adversarial continuem sendo os últimos passos antes do HANDOFF_UPGRADE.)
+(… 02.n conforme necessário. Subetapa nova de escopo entra **entre a 02.12 e a 02.13**, para que o seed/deploy, a varredura de segredos e o portão adversarial continuem sendo os últimos passos antes do HANDOFF_UPGRADE.)
 
 ---
 
@@ -277,7 +363,7 @@ Objetivo / Conclusão / Qualidade / Evidência: a definir quando o primeiro clie
 
 ## Pendências vigiadas
 
-- [ ] **Portão de segurança adversarial obrigatório antes de qualquer mudança de etapa ou deploy real** — gatilho: qualquer subetapa que implante em produção (deploy real). Motivo: existem categorias de falha que passam despercebida em revisão de código normal e na checklist funcional de `docs/05_COMPLIANCE_E_ETICA.md` (que prova que o comportamento *pretendido* funciona, não que não existe um caminho *não pretendido*). Este portão é o complemento adversarial daquele checklist — ataca de propósito em vez de só confirmar o caminho feliz. Risco de não fazer: falha de RLS, vazamento de dado clínico/pessoal ou sequestro de credencial descoberto em produção, por terceiro, em vez de aqui. **Institucionalizado como Subetapa 01.8 (fim da Etapa 01) e Subetapa 02.6 (fim da Etapa 02) — esta entrada permanece como a definição normativa dos 7 passos, referenciada por ambas.**
+- [ ] **Portão de segurança adversarial obrigatório antes de qualquer mudança de etapa ou deploy real** — gatilho: qualquer subetapa que implante em produção (deploy real). Motivo: existem categorias de falha que passam despercebida em revisão de código normal e na checklist funcional de `docs/05_COMPLIANCE_E_ETICA.md` (que prova que o comportamento *pretendido* funciona, não que não existe um caminho *não pretendido*). Este portão é o complemento adversarial daquele checklist — ataca de propósito em vez de só confirmar o caminho feliz. Risco de não fazer: falha de RLS, vazamento de dado clínico/pessoal ou sequestro de credencial descoberto em produção, por terceiro, em vez de aqui. **Institucionalizado como Subetapa 01.8 (fim da Etapa 01) e Subetapa 02.15 (fim da Etapa 02) — esta entrada permanece como a definição normativa dos 7 passos, referenciada por ambas.**
   - **1. Bench isolado:** abrir branch ou worktree dedicado, nunca commitado direto em `main` — zona de teste segura, sem risco para o histórico principal do repositório.
   - **2. Ataque deliberado**, cobrindo no mínimo: CRUD fora do que a role permite; tentativa de acesso direto ao banco/Supabase fora da camada de RLS; injeção de conteúdo malicioso (SQL, XSS armazenado, payload hostil em coluna `jsonb`); tentativa de burlar ou reescrever política de RLS; alteração de parâmetro ou valor padrão protegido (teto de assentos em `licensing`, valores de `enum`/`CHECK`); tentativa de sequestro de credencial do Supabase, do GitHub/repositório ou do VPS/Oracle; exposição indevida de dado pessoal (LGPD, com atenção redobrada a `health`); qualquer outra fragilidade específica do Vitrine que o teste revelar.
   - **3. Registro em `handoffs/instrucoes.md`:** todo achado (explorável ou não) vira entrada nas seções 4 ("Padrões e boas práticas herdadas"), 5 ("Problemas e soluções deste projeto"), 6 ("Armadilhas conhecidas") ou 7 ("Candidatos a promoção"), conforme a natureza do achado — no mesmo espírito da regra 10 do `CLAUDE.md` (nunca apagar entrada antiga).
@@ -285,8 +371,10 @@ Objetivo / Conclusão / Qualidade / Evidência: a definir quando o primeiro clie
   - **5. Execução:** rodar o plano até 100% verde ou até esgotar o teto de tentativas declarado em cada item; o que não fechar vira relatório curto, não fica escondido.
   - **6. Relatório final:** parecer explícito — recomenda ou não recomenda trazer os avanços do bench para `main`.
   - **7. Regra permanente e não negociável: o CODE nunca executa esse merge por conta própria.** Mesmo com todos os testes 100% verdes e parecer final favorável. O CODE entrega o parecer e para — ordenar o merge é atribuição exclusiva de Max.
-  - **Instância 01.8 executada em 2026-08-17** (6 falhas reais encontradas e corrigidas — ver Subetapa 01.8 e `docs/RELATORIO_01.8_PORTAO_ADVERSARIAL.md`). Esta entrada segue aberta porque a instância **02.6** ainda não rodou. Aprendizado a levar para a 02.6: os vetores que mais renderam não foram os de RLS de tabela (todos verdes), e sim **coluna de privilégio dentro de linha autorizada**, **credencial legível pela API** e **código de servidor rodando com `service_role`** — começar por eles.
-- [ ] `select('*')` quebra em tabela com narrowing por coluna — gatilho: primeira tela da Etapa 02 que toque `webhook_endpoints`, `api_keys`, `account_invitations`, `aba_ai.ia_configuracoes` ou as duas tabelas de segredo de `aba_messaging` — risco: o erro é `42501 permission denied for table`, que parece falha de RLS e manda a investigação para o lado errado; a correção é listar colunas explicitamente no `.select()`. Consequência aceita conscientemente da correção A03/A04/A05/A07 da Subetapa 01.8 (esconder credencial vale o custo). Ver `handoffs/instrucoes.md` §6.
+  - **Instância 01.8 executada em 2026-08-17** (6 falhas reais encontradas e corrigidas — ver Subetapa 01.8 e `docs/RELATORIO_01.8_PORTAO_ADVERSARIAL.md`). Esta entrada segue aberta porque a instância **02.15** (renumerada da antiga 02.6 na Subetapa 02.0) ainda não rodou. Aprendizado a levar para a 02.15: os vetores que mais renderam não foram os de RLS de tabela (todos verdes), e sim **coluna de privilégio dentro de linha autorizada**, **credencial legível pela API** e **código de servidor rodando com `service_role`** — começar por eles. **Superfície nova a cobrir, definida na Subetapa 02.0:** as 16 telas reais (XSS armazenado), o fluxo de convite/aceite (token adivinhado, convite reusado, escalada de papel no aceite) e os jobs de `pg_cron` (que rodam fora da RLS e precisam do `account_id` no `WHERE`).
+- [ ] `select('*')` quebra em tabela com narrowing por coluna — gatilho: primeira tela da Etapa 02 que toque `webhook_endpoints`, `api_keys`, `account_invitations`, `aba_ai.ia_configuracoes` ou as duas tabelas de segredo de `aba_messaging` — risco: o erro é `42501 permission denied for table`, que parece falha de RLS e manda a investigação para o lado errado; a correção é listar colunas explicitamente no `.select()`. Consequência aceita conscientemente da correção A03/A04/A05/A07 da Subetapa 01.8 (esconder credencial vale o custo). Ver `handoffs/instrucoes.md` §6. **Absorvida na Subetapa 02.0 como Qualidade fixa de toda subetapa de tela (02.1–02.12)** — deixa de depender de alguém lembrar dela no momento certo; segue listada aqui como definição normativa.
+- [ ] `pg_cron` declarado na arquitetura mas nunca instalado — gatilho: **Subetapa 02.10** — medido na Subetapa 02.0: `pg_available_extensions` mostra `pg_cron 1.6.4` disponível com `installed_version = null`. `docs/01_ARQUITETURA.md` §2 o declara como o agendador que substitui o pinger externo do Maximus, e quatro rotinas já existem no banco sem nenhum motor que as chame (`aba_finance.marcar_faturas_vencidas()`, `aba_finance.expirar_planos()`, a drenagem de `aba_automations.automacao_execucoes_pendentes` e o disparo de `aba_scheduling.lembretes`) — risco: o produto sai no ar com fatura que nunca vence, plano que nunca expira e lembrete que nunca dispara, e o sintoma é ausência de comportamento, que não gera erro nenhum. Exige *search-first* na documentação vigente da Supabase antes da migration, e a extensão nunca em `public`.
+- [ ] Itens de navegação do wireframe sem modelo de dados — gatilho: **Subetapa 02.1**, ao montar a sidebar — `Propostas` (`aba_sales`) e `Espera e encaixes` (`aba_scheduling`) aparecem no `Shell.dc.html` do pacote de design mas não têm tabela nenhuma no banco; "Lista de espera e encaixe" já consta do backlog de versionamento como *futuro*. A busca global do header (`Buscar pessoa, atendimento, serviço…`) também não tem subetapa dona — risco: alguém inventar tabela para casar com o desenho, em vez de tratar o desenho como aspiracional. **Decisão da Subetapa 02.0: ficam fora da navegação do v01.** Reabrir só como item de backlog com escopo próprio.
 - [ ] Proteção contra senha vazada indisponível no plano gratuito do Supabase — gatilho: decisão de Max sobre migrar de plano — risco: senha comprovadamente vazada em incidente público não é bloqueada no cadastro. **Confirmado na documentação oficial em 2026-08-07:** a verificação contra o HaveIBeenPwned é recurso do plano Pro e acima. Não existe contorno gratuito dentro do Supabase Auth — a alternativa seria validação própria no cadastro, que é trabalho de produto, não de configuração. Segue em aberto por decisão consciente, sob o circuit breaker de R$0/mês.
 - [ ] Teto de usuários editado direto no banco — gatilho: existir o painel de gestão dos CRMs-filho — risco: erro de digitação em produção, sem trilha de interface.
 - [ ] Consentimento de uso de imagem trava a **exibição** da foto clínica, não o envio — e trava para todos, inclusive para quem tirou a foto — gatilho: a prova de fogo será quando um profissional de verdade usar o módulo — risco: a profissional não enxerga o "antes" ao acompanhar a evolução do tratamento. **Decisão de Max (2026-08-08): manter como está.** O motivo é a assimetria de custo — afrouxar depois é uma condição na migration 069, sem migração de dado, porque a foto já está guardada; apertar depois é impossível, porque foto já vista não desvê. Se a 03.1 confirmar o incômodo, a correção certa **não** é liberar geral: é separar as duas perguntas que hoje um interruptor só responde — "posso documentar" passa a ser o consentimento de tratamento de dados, e "posso divulgar" segue sendo o de uso de imagem, valendo para exportação e publicação. Entra como candidato à Subetapa 03.2 (generalizações apontadas pela prova de fogo).
@@ -331,10 +419,10 @@ Objetivo / Conclusão / Qualidade / Evidência: a definir quando o primeiro clie
 6. [x] Cada portão de saída declara condição + prova executável + o que fica proibido enquanto vermelho.
 7. [x] Toda subetapa `[Goal]` tem Esforço máximo declarado.
 8. [x] Toda subetapa `[Goal]` tem Escalonamento de LLM e a regra "se esgotar → relatório curto".
-9. [x] Etapa 01 prevê HANDOFF_BUILD (Subetapa 01.9); Etapa 02 prevê HANDOFF_UPGRADE (Subetapa 02.7).
+9. [x] Etapa 01 prevê HANDOFF_BUILD (Subetapa 01.9); Etapa 02 prevê HANDOFF_UPGRADE (Subetapa 02.16, renumerada da 02.7 na Subetapa 02.0).
 10. [x] Pendências vigiadas e Backlog de versionamento presentes.
-11. [x] Subetapa de varredura de segredos no histórico do git, com evidência executável e saída esperada zero — Subetapas 01.7 e 02.5.
+11. [x] Subetapa de varredura de segredos no histórico do git, com evidência executável e saída esperada zero — Subetapas 01.7 e 02.14.
 12. [x] Nenhuma credencial ou segredo aparece neste plano — apenas nomes de variáveis.
 13. [x] `CHANGELOG.md` existe e está referenciado no README; `handoffs/instrucoes.md` existe e está referenciado no README e no HANDOFF_CODE.
 14. [x] `.gitignore` e `.env` gerados como arquivos prontos, e o `.gitignore` ignora `.env` sem exceção. `.env.example` foi eliminado por decisão de Max (Subetapa 01.0) — o `.env` real já existe, gitignorado, sem versão de exemplo no repositório.
-15. [x] Fim das Etapas 01 e 02 possuem **Portão de segurança adversarial obrigatório** antes de qualquer mudança de etapa ou deploy real — Subetapas 01.8 e 02.6.
+15. [x] Fim das Etapas 01 e 02 possuem **Portão de segurança adversarial obrigatório** antes de qualquer mudança de etapa ou deploy real — Subetapas 01.8 e 02.15.
