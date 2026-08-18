@@ -75,6 +75,18 @@ describe("V1 — escalação de privilégio no núcleo", () => {
       await deleteThrowawayUser(admin, atacante.userId);
     });
 
+    // Desde a Subetapa 02.2, todo profile nasce com um funcionário
+    // automático (trigger aba_people.nascer_funcionario_do_perfil).
+    // funcionarios_ativo_exige_login exige profile_id preenchido
+    // enquanto ativo=true — sem desativar primeiro, o DELETE abaixo
+    // dispararia o FK ON DELETE SET NULL de funcionarios.profile_id e
+    // violaria esse CHECK. Desativar aqui é só destravar o DELETE, não
+    // faz parte do que o ataque está medindo.
+    const { data: perfilAtacante } = await admin.from("profiles").select("id").eq("user_id", atacante.userId).single();
+    if (perfilAtacante) {
+      await admin.schema("aba_people").from("funcionarios").update({ ativo: false }).eq("profile_id", perfilAtacante.id);
+    }
+
     // Estado "usuário sem perfil": alcançável de verdade em produção
     // porque handle_new_user (001_core_public.sql) engole qualquer
     // exceção com EXCEPTION WHEN OTHERS ... RETURN NEW — o usuário

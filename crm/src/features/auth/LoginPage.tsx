@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,7 @@ type FormValues = z.infer<typeof schema>;
 export function LoginPage() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [erro, setErro] = useState<string | null>(null);
 
   const {
@@ -32,7 +33,10 @@ export function LoginPage() {
       setErro(error);
       return;
     }
-    navigate("/", { replace: true });
+    // Subetapa 02.2: preserva o retorno para /convite?token=... quando o
+    // login aconteceu no meio do fluxo de aceite de convite.
+    const redirecionarPara = searchParams.get("redirect") || "/";
+    navigate(redirecionarPara, { replace: true });
   }
 
   return (

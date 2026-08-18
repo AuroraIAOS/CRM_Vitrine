@@ -28,6 +28,7 @@ type AuthContextValue = {
   loading: boolean;
   profileLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 };
 
@@ -105,6 +106,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null };
   }
 
+  async function signUp(email: string, password: string, fullName: string) {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: fullName } },
+    });
+    return { error: error?.message ?? null };
+  }
+
   async function signOut() {
     await supabase.auth.signOut();
   }
@@ -118,6 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         profileLoading,
         signIn,
+        signUp,
         signOut,
       }}
     >

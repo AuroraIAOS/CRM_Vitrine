@@ -48,7 +48,13 @@ export function AppShell() {
   const settingsItem = findSettingsNavItem(modules ?? []);
 
   const currentModule = moduleItems.find((item) => item.path === location.pathname);
-  const breadcrumb = currentModule ? `aba_${currentModule.moduleKey} > ${currentModule.label}` : "core > dashboard";
+  const breadcrumb = currentModule
+    ? `aba_${currentModule.moduleKey} > ${currentModule.label}`
+    : settingsItem && location.pathname === settingsItem.path
+      ? `core > ${settingsItem.label}`
+      : location.pathname === "/suporte"
+        ? "core > Suporte"
+        : "core > dashboard";
 
   return (
     <div className="grid min-h-screen grid-cols-[236px_1fr] grid-rows-[56px_1fr] bg-background text-foreground">

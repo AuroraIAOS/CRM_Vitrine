@@ -2,6 +2,12 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-08-18 (Subetapa 02.2)
+- **Fluxo de equipe de ponta a ponta:** owner/admin convida por e-mail (RPC `criar_convite`, token de 256 bits gerado e hasheado no banco), o convidado aceita (`resgatar_convite`) e é movido para a conta com o papel do convite, um `aba_people.funcionarios` nasce automaticamente e ativo (trigger `nascer_funcionario_do_perfil`), e o owner/admin liga ou desliga o atributo profissional (`aba_scheduling.definir_profissional`) por um interruptor — regra nova: só quem tem papel `agent` pode virar profissional.
+- **Gestão de membro:** `set_member_role` (mudar papel), `remove_account_member` (remover, com conta pessoal nova) e `transfer_account_ownership` (transferir titularidade — fecha a promessa da correção de segurança A02 da Subetapa 01.8) portados do CRM Maximus.
+- **UI nova:** aba Equipe em Configurações (lista de membros, formulário de convite com link copiável, toggle de profissional, seletor de papel) e página pública de aceite de convite (`/convite?token=...`).
+- Suíte de RLS ampliada para 110 testes (10 novos cobrindo o fluxo de equipe); dois CHECKs de integridade novos (`funcionarios_ativo_exige_login`, `profissionais_ativo_exige_funcionario`) fecham a mesma classe de gap que a migration 075 do Maximus existe para corrigir.
+
 ## [+0.1] - 2026-08-18 (Subetapa 02.1)
 - **Identidade visual ratificada aplicada ao app** — paleta e tipografia de `docs/04_DESIGN_E_MARCA.md` §5 substituem o placeholder neutro do shadcn/ui; IBM Plex Sans/Mono carregada; `AppShell` reconstruído no shell do pacote de wireframes (sidebar 236px, header 56px, breadcrumb mono, área de conteúdo `#f4f6f7`).
 - **Sessão passa a resolver `public.profiles` e a navegação é 100% dirigida por `access.readable_modules()`** — nenhum módulo listado à mão no front; trocar o papel do usuário no banco muda o conjunto de itens visíveis sem nenhuma alteração de código.

@@ -192,7 +192,7 @@ describe("aba_finance — comissão restrita a admin+ (Subetapa 01.3)", () => {
     const { data: prof, error } = await admin
       .schema("aba_scheduling")
       .from("profissionais")
-      .insert({ account_id: ctx.accountId, nome_exibicao: "Profissional Fictício Comissão 01.3" })
+      .insert({ account_id: ctx.accountId, nome_exibicao: "Profissional Fictício Comissão 01.3", ativo: false })
       .select("id")
       .single();
     if (error) throw error;

@@ -3,6 +3,8 @@ import { AppShell } from "./AppShell";
 import { RoleGate } from "./RoleGate";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
+import { AceitarConvitePage } from "@/features/convite/AceitarConvitePage";
+import { EquipePage } from "@/features/settings/EquipePage";
 import { Placeholder } from "@/components/shared/Placeholder";
 
 // Rotas 1:1 com nav.ts (MODULE_ROUTE) + /suporte, que não é módulo de
@@ -10,8 +12,11 @@ import { Placeholder } from "@/components/shared/Placeholder";
 // constrói aquele módulo (docs/00_PLANO_E_CRITERIOS.md, Subetapas
 // 02.3–02.12) — a rota já existe desde a 02.1 para a navegação funcionar,
 // mesmo que access.can() esconda o item de quem não tem permissão.
+// /configuracoes já entrega a aba Equipe (Subetapa 02.2) — as demais 8
+// seções de Configurações (1m) entram na Subetapa 02.12.
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
+  { path: "/convite", element: <AceitarConvitePage /> },
   {
     element: <RoleGate />,
     children: [
@@ -28,7 +33,7 @@ export const router = createBrowserRouter([
           { path: "mensagens", element: <Placeholder titulo="Mensagens" /> },
           { path: "automacoes", element: <Placeholder titulo="Automações" /> },
           { path: "ia", element: <Placeholder titulo="IA" /> },
-          { path: "configuracoes", element: <Placeholder titulo="Configurações" /> },
+          { path: "configuracoes", element: <EquipePage /> },
           { path: "suporte", element: <Placeholder titulo="Suporte" /> },
         ],
       },

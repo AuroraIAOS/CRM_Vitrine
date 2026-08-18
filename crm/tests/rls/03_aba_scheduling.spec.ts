@@ -27,10 +27,13 @@ async function apagarCliente(admin: ReturnType<typeof adminClient>, clienteId: s
 
 /** Profissional com expediente cobrindo os 7 dias da semana (evita flakiness por dia de execução). */
 async function criarProfissionalComExpediente(admin: ReturnType<typeof adminClient>, accountId: string, nome: string) {
+  // ativo:false — só alvo de FK para agendamentos/horários, sem
+  // vínculo de governança (Subetapa 02.2 exige funcionario_id+
+  // profile_id quando ativo=true).
   const { data: prof, error: profErr } = await admin
     .schema("aba_scheduling")
     .from("profissionais")
-    .insert({ account_id: accountId, nome_exibicao: nome })
+    .insert({ account_id: accountId, nome_exibicao: nome, ativo: false })
     .select("id")
     .single();
   if (profErr) throw profErr;
@@ -74,7 +77,7 @@ describe("aba_scheduling — RLS e regras de agenda (Subetapa 01.3)", () => {
     const { data: profSem, error } = await admin
       .schema("aba_scheduling")
       .from("profissionais")
-      .insert({ account_id: ctx.accountId, nome_exibicao: "Profissional Sem Expediente 01.3" })
+      .insert({ account_id: ctx.accountId, nome_exibicao: "Profissional Sem Expediente 01.3", ativo: false })
       .select("id")
       .single();
     if (error) throw error;

@@ -160,7 +160,11 @@ describe("aba_health — concessão nominal (negado/permitido) + log obrigatóri
     const { data: profissional, error: profErr } = await admin
       .schema("aba_scheduling")
       .from("profissionais")
-      .insert({ account_id: ctx.accountId, nome_exibicao: "Profissional Fictício Evolução 01.4" })
+      // Só precisa existir como alvo de FK para evolucoes.profissional_id
+      // — não representa vínculo de governança (Subetapa 02.2), então
+      // ativo:false satisfaz profissionais_ativo_exige_funcionario sem
+      // precisar de um funcionário/login por trás.
+      .insert({ account_id: ctx.accountId, nome_exibicao: "Profissional Fictício Evolução 01.4", ativo: false })
       .select("id")
       .single();
     expect(profErr).toBeNull();
@@ -203,7 +207,8 @@ describe("aba_health — concessão nominal (negado/permitido) + log obrigatóri
     const { data: profissional, error: profErr } = await admin
       .schema("aba_scheduling")
       .from("profissionais")
-      .insert({ account_id: ctx.accountId, nome_exibicao: "Profissional Fictício Trava 01.4" })
+      // Idem — só alvo de FK, ativo:false satisfaz o CHECK sem funcionário.
+      .insert({ account_id: ctx.accountId, nome_exibicao: "Profissional Fictício Trava 01.4", ativo: false })
       .select("id")
       .single();
     expect(profErr).toBeNull();
@@ -272,21 +277,20 @@ describe("aba_health — atributo profissional exige funcionário ativo (Maximus
 
     // Funcionário (chave compartilhada com pessoas) vinculado ao profile
     // do usuário de teste "agent" — é esse vínculo que o atributo
-    // profissional segue.
-    const { data: pessoaFuncionario, error: pessoaErr } = await admin
-      .schema("aba_people")
-      .from("pessoas")
-      .insert({ account_id: ctx.accountId, nome_exibicao: "Funcionário Fictício 01.4" })
-      .select("id")
-      .single();
-    if (pessoaErr) throw pessoaErr;
-
-    const { error: funcErr } = await admin
+    // profissional segue. Desde a Subetapa 02.2, todo profile já nasce
+    // com um funcionário automático (trigger aba_people.
+    // nascer_funcionario_do_perfil, aplicado por backfill aos 4 perfis
+    // de teste) — reaproveita esse funcionário em vez de criar um
+    // segundo (o índice único idx_funcionarios_profile_unico bloquearia
+    // um profile_id duplicado).
+    const { data: funcionarioExistente, error: funcErr } = await admin
       .schema("aba_people")
       .from("funcionarios")
-      .insert({ id: pessoaFuncionario.id, account_id: ctx.accountId, profile_id: ctx.profileIds.agent, ativo: true });
+      .select("id")
+      .eq("profile_id", ctx.profileIds.agent)
+      .single();
     if (funcErr) throw funcErr;
-    funcionarioId = pessoaFuncionario.id;
+    funcionarioId = funcionarioExistente.id;
 
     const { data: profissional, error: profErr } = await admin
       .schema("aba_scheduling")
@@ -315,8 +319,9 @@ describe("aba_health — atributo profissional exige funcionário ativo (Maximus
     });
 
     await admin.schema("aba_scheduling").from("profissionais").delete().eq("id", profissionalId);
-    await admin.schema("aba_people").from("funcionarios").delete().eq("id", funcionarioId);
-    await admin.schema("aba_people").from("pessoas").delete().eq("id", funcionarioId);
+    // funcionarioId aponta para o funcionário PERMANENTE do fixture
+    // rls.agent (nascido pelo backfill da Subetapa 02.2) — não é deste
+    // teste para apagar, só para usar como referência.
     await admin.schema("aba_health").from("log_acesso").delete().eq("cliente_id", clienteId);
     await admin.schema("aba_health").from("prontuarios").delete().eq("id", prontuarioId);
     await apagarCliente(admin, clienteId);

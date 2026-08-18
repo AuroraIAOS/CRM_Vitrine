@@ -502,8 +502,21 @@ describe("V7 — dado pessoal e prontuário", () => {
 
     const sessao = await signInAs(invasor.email, invasor.password);
 
+    // Desde a Subetapa 02.2, todo profile nasce com uma pessoa/funcionário
+    // próprios (trigger aba_people.nascer_funcionario_do_perfil) — a
+    // conta pessoal do invasor não está mais vazia em aba_people.pessoas,
+    // tem exatamente 1 linha: ele mesmo. Isso é dado LEGÍTIMO da própria
+    // conta, não vazamento — a checagem de segurança real é "nenhuma
+    // linha de OUTRA conta aparece", não "zero linhas".
+    const { data: perfilInvasor } = await admin.from("profiles").select("account_id").eq("user_id", invasor.userId).single();
+    const contaInvasor = perfilInvasor!.account_id;
+
+    const { data: pessoasEmbed } = await sessao.schema("aba_people").from("pessoas").select("*, clientes(*)").limit(5);
+    for (const row of (pessoasEmbed ?? []) as Array<{ account_id: string }>) {
+      expect(row.account_id, "pessoa de OUTRA conta apareceu via embedding").toBe(contaInvasor);
+    }
+
     const tentativas: Array<() => Promise<{ data: unknown[] | null }>> = [
-      async () => await sessao.schema("aba_people").from("pessoas").select("*, clientes(*)").limit(5),
       async () => await sessao.schema("aba_sales").from("oportunidades").select("*, pessoas(*)").limit(5),
       async () => await sessao.schema("aba_messaging").from("conversas").select("*, mensagens(*)").limit(5),
       async () => await sessao.schema("aba_finance").from("faturas").select("*, clientes(*)").limit(5),
