@@ -72,14 +72,34 @@ export type Conversa = {
 };
 
 /**
+ * Forma canônica do telefone no banco = o `wa_id` da Meta, que para
+ * celular brasileiro antigo vem SEM o nono dígito (`55` + DDD + 8 = 12).
+ * Quem digita na UI naturalmente informa a forma discável, COM o nono
+ * (13) — se guardássemos assim, a mesma pessoa viraria dois contatos:
+ * um criado à mão e outro criado pelo webhook quando ela escrevesse.
+ * Então a entrada manual é convertida para a forma do `wa_id` aqui, e a
+ * conversão inversa (para 13) acontece só na borda de saída, dentro do
+ * `whatsapp-enviar` — ver o comentário longo lá.
+ *
+ * Medido na Subetapa 02.5: foi exatamente assim que "Max" (13 dígitos,
+ * criado à mão) e "Maxwell Ribeiro" (12, criado pelo webhook) viraram
+ * duas conversas para o mesmo WhatsApp.
+ */
+function paraFormaWaId(telefone: string): string {
+  const digitos = telefone.replace(/\D/g, "");
+  if (!digitos.startsWith("55") || digitos.length !== 13) return digitos;
+  const ddd = digitos.slice(2, 4);
+  const assinante = digitos.slice(4);
+  // Celular com nono dígito: `9` seguido de 8 dígitos começando em 6–9.
+  if (!/^9[6-9]/.test(assinante)) return digitos;
+  return `55${ddd}${assinante.slice(1)}`;
+}
+
+/**
  * Abre uma conversa a partir de um telefone digitado, sem depender de o
  * cliente ter escrito primeiro. Sem isso, a caixa de entrada só mostra
  * conversas nascidas do webhook, e não há por onde exercitar o envio
  * (gap achado no diagnóstico da 02.5).
- *
- * `wa_id` da Meta é só dígitos (código do país + número, sem "+" nem
- * separador) — normaliza aqui para bater com o formato que o webhook
- * grava, senão a mesma pessoa vira dois contatos.
  */
 export function useIniciarConversa() {
   const { profile } = useAuth();
@@ -88,7 +108,7 @@ export function useIniciarConversa() {
   return useMutation({
     mutationFn: async (input: { telefone: string; nome?: string }): Promise<string> => {
       const accountId = profile!.accountId;
-      const telefone = input.telefone.replace(/\D/g, "");
+      const telefone = paraFormaWaId(input.telefone);
       if (telefone.length < 10) throw new Error("Telefone incompleto — use código do país + DDD + número.");
 
       const { data: contato, error: erroContato } = await db()

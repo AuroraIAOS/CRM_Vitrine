@@ -52,6 +52,32 @@ function hexToBytes(hex: string): Uint8Array {
   return bytes;
 }
 
+/**
+ * Nono dígito brasileiro — a Meta fala DUAS formas do mesmo número.
+ *
+ * Ela DEVOLVE o `wa_id` de celular brasileiro antigo sem o nono dígito
+ * (`55` + DDD + 8 dígitos = 12), que é o que o webhook grava em
+ * `contatos_canal.telefone` e, portanto, a forma canônica do banco. Mas
+ * a lista de destinatários de teste (e o número que o cliente conhece)
+ * guarda a forma discável, COM o nono dígito (13). Enviar usando o
+ * `wa_id` cru bate em `131030 — Recipient phone number not in allowed
+ * list`, medido ao vivo na Subetapa 02.5; enviar com 13 dígitos passa e
+ * a própria Meta normaliza de volta para 12 no evento de status.
+ *
+ * Só mexe em celular: no Brasil o assinante de móvel começa em 6–9;
+ * fixo (2–5) não leva nono dígito e passa intacto. Qualquer número que
+ * não seja BR de 12 dígitos também passa intacto — a função é um no-op
+ * fora do caso que ela existe para resolver.
+ */
+function normalizarTelefoneParaEnvio(telefone: string): string {
+  const digitos = telefone.replace(/\D/g, "");
+  if (!digitos.startsWith("55") || digitos.length !== 12) return digitos;
+  const ddd = digitos.slice(2, 4);
+  const assinante = digitos.slice(4);
+  if (!/^[6-9]/.test(assinante)) return digitos;
+  return `55${ddd}9${assinante}`;
+}
+
 /** Par de whatsapp-configurar.encrypt — mesmo formato, ver aquela função. */
 async function decrypt(cifrado: string, chaveHex: string): Promise<string> {
   const partes = cifrado.split(":");
@@ -139,13 +165,16 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Token de acesso corrompido — reconecte o WhatsApp" }, 500);
   }
 
+  const destino = normalizarTelefoneParaEnvio(contato.telefone);
+  console.log(`whatsapp-enviar: destino canonico=${contato.telefone} normalizado=${destino}`);
+
   const envio = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${config.id_numero_telefone}/messages`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify({
       messaging_product: "whatsapp",
       recipient_type: "individual",
-      to: contato.telefone,
+      to: destino,
       type: "text",
       text: { body: texto },
     }),
