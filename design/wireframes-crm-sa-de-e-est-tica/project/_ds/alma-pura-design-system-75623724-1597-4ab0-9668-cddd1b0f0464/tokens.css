@@ -1,0 +1,118 @@
+/* ═══════════════════════════════════════════════════════
+   ALMA PURA · DESIGN TOKENS
+   Estética: aquarela · dandelion · leveza
+   ═══════════════════════════════════════════════════════ */
+:root {
+  /* ——— AQUARELA · TEAL FAMILY (primária) ——— */
+  --ap-teal-900: #1B5E52;  /* aquarela densa */
+  --ap-teal-700: #2D7A6E;  /* aquarela média */
+  --ap-teal-500: #5B9E7A;  /* sage intermediário */
+  --ap-teal-300: #A8D5B5;  /* difusão verde-água */
+  --ap-teal-100: #DCEBE2;  /* brisa */
+  --ap-teal-050: #F0F7F4;  /* névoa */
+
+  /* ——— AQUARELA · BLUE FAMILY (ambiente frio) ——— */
+  --ap-blue-900: #003352;  /* prussian · institucional */
+  --ap-blue-700: #0A5D89;  /* steel */
+  --ap-blue-500: #11718A;  /* ocean · aquarela azul das imagens */
+  --ap-blue-300: #8EBFCF;  /* céu aquarelado */
+  --ap-blue-100: #D6E6EC;
+
+  /* ——— DOURADO · ACENTO (uso cirúrgico) ——— */
+  --ap-gold-700: #8A6634;  /* pólen escuro */
+  --ap-gold-500: #AC8345;  /* golden · CTA */
+  --ap-gold-300: #CDB08E;  /* suede · apoio */
+  --ap-gold-100: #EADFC9;
+
+  /* ——— NEUTROS · PAPEL AQUARELA ——— */
+  --ap-paper:    #FBF9F3;  /* papel cru */
+  --ap-ivory:    #F5F0E3;  /* canto superior das imagens */
+  --ap-sand:     #F5F5DC;
+  --ap-ice:      #F8F9FA;
+  --ap-mist:     #ECEFE8;  /* neblina */
+
+  /* ——— GRAFITE · HASTES BOTÂNICAS ——— */
+  --ap-stem:     #3A4A44;  /* hastes */
+  --ap-graphite: #2E3733;
+  --ap-ink:      #1A2420;
+
+  /* ——— SEMÂNTICOS ——— */
+  --bg-primary:    var(--ap-paper);
+  --bg-ambient:    var(--ap-teal-050);
+  --bg-deep:       var(--ap-blue-900);
+  --fg-primary:    var(--ap-graphite);
+  --fg-muted:      #5F6C66;
+  --fg-whisper:    #8B9591;
+  --accent:        var(--ap-gold-500);
+  --accent-soft:   var(--ap-gold-300);
+  --seal:          var(--ap-teal-700);
+
+  /* ——— TIPOGRAFIA ——— */
+  --ff-display: 'Cinzel', 'Cormorant Garamond', Georgia, serif;
+  --ff-body:    'Lato', -apple-system, 'Helvetica Neue', sans-serif;
+  --ff-mono:    'JetBrains Mono', 'Courier New', monospace;
+
+  --fs-eyebrow: 0.7rem;
+  --fs-caption: 0.8rem;
+  --fs-body:    1rem;
+  --fs-lead:    1.15rem;
+  --fs-h4:      1.25rem;
+  --fs-h3:      1.625rem;
+  --fs-h2:      2.25rem;
+  --fs-h1:      3.25rem;
+  --fs-display: 4.75rem;
+
+  --lh-tight: 1.18;
+  --lh-snug:  1.35;
+  --lh-body:  1.75;
+  --lh-loose: 2;
+
+  --ls-display: 0.04em;
+  --ls-title:   0.06em;
+  --ls-eyebrow: 0.22em;
+  --ls-cta:     0.18em;
+
+  /* ——— ESPAÇAMENTO (escala aquarelada — fluida) ——— */
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-5:  24px;
+  --sp-6:  32px;
+  --sp-7:  48px;
+  --sp-8:  64px;
+  --sp-9:  96px;
+  --sp-10: 128px;
+
+  /* ——— RAIOS (orgânico — nunca muito redondo) ——— */
+  --r-1: 2px;
+  --r-2: 4px;
+  --r-3: 8px;
+  --r-4: 14px;
+  --r-pill: 999px;
+
+  /* ——— SOMBRAS (aquarela · sem preto duro) ——— */
+  --shadow-breath: 0 1px 2px rgba(27,94,82,0.04), 0 8px 24px rgba(27,94,82,0.06);
+  --shadow-float:  0 2px 4px rgba(27,94,82,0.05), 0 16px 40px rgba(27,94,82,0.10);
+  --shadow-rest:   0 1px 0 rgba(46,55,51,0.04);
+
+  /* ——— BORDAS ——— */
+  --bd-hairline: 1px solid rgba(46,55,51,0.08);
+  --bd-whisper:  1px solid rgba(46,55,51,0.12);
+  --bd-gold:     1px solid rgba(172,131,69,0.35);
+
+  /* ——— GRADIENTES AQUARELA ——— */
+  --grad-meadow:
+    radial-gradient(ellipse 80% 60% at 15% 40%, rgba(27,94,82,0.22), transparent 60%),
+    radial-gradient(ellipse 70% 55% at 85% 30%, rgba(17,113,138,0.16), transparent 55%),
+    radial-gradient(ellipse 90% 70% at 50% 100%, rgba(91,158,122,0.20), transparent 65%),
+    linear-gradient(180deg, var(--ap-ivory) 0%, var(--ap-teal-050) 60%, var(--ap-teal-100) 100%);
+
+  --grad-breeze:
+    radial-gradient(ellipse 60% 50% at 20% 30%, rgba(168,213,181,0.35), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 70%, rgba(214,230,236,0.40), transparent 60%),
+    var(--ap-paper);
+
+  --grad-dusk:
+    linear-gradient(180deg, rgba(0,51,82,0.94) 0%, rgba(10,93,137,0.88) 100%);
+}

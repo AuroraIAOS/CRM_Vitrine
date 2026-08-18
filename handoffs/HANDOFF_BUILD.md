@@ -20,8 +20,15 @@ Fundação concluída e versionada. `main` = `c5f8e4f`, alinhada ao projeto Supa
 - **App base:** Vite+React 18+TS+PWA em `crm/`, conectado ao Supabase (`crm/.env.test` local, gitignorado; `.env` da raiz com as credenciais reais, também gitignorado). Nenhuma tela de negócio construída ainda — só o esqueleto de auth (login → dashboard → logout) da Subetapa 01.1.
 - **Documentação viva:** `handoffs/instrucoes.md` (padrões herdados §4, problemas/soluções §5, armadilhas §6, candidatos a promoção §7 — leitura obrigatória de abertura de sessão) e `docs/RELATORIO_01.8_PORTAO_ADVERSARIAL.md` (auditoria adversarial completa, achado a achado).
 
+## Design — pacote de wireframes ratificado (Etapa de Transição 1→2, 2026-08-18)
+Antes da 02.0 rodar, Max fechou o design do MVP no Claude Design e entregou o pacote (`design/wireframes-crm-sa-de-e-est-tica/`, 16 telas). Decisões já registradas — **a 02.0 não precisa reabri-las, só confirmar que seguem valendo**:
+- **Navegação/paleta/tipografia/componentes:** `docs/01_ARQUITETURA.md` §7 + `docs/04_DESIGN_E_MARCA.md` §5 + inventário completo em `design/README.md`.
+- **Login multi-conta:** adiado para `+1.0` (backlog de versionamento) — 02.1 constrói single-account.
+- **Perfis 1n/1o:** mapeados sobre o RBAC existente (`agent`+atributo profissional / `admin`), sem tabela/enum novo.
+- **Pendência real que a 02.0 PRECISA formalizar no roteiro:** o fluxo de convite→funcionário→atributo profissional foi verificado contra o CRM Maximus (018/019/074/075/076) e segue deferido desde a Etapa 01 — falta construir as RPCs de convite, o trigger de nascimento automático de funcionário e a RPC de liga/desliga do atributo profissional (com regra nova: só `agent`, nunca `admin`). Decidir onde isso entra no roteiro (dentro da 02.1 ou subetapa própria) é trabalho da 02.0. Ver `docs/01_ARQUITETURA.md` §7.4.
+
 ## O que a Etapa 02 deve construir (do PLANO_E_CRITERIOS)
-1. **02.0** — Leitura de referências e revisão do plano (convenção `0X.0`, `[Plan]`, Opus): reconferir `HANDOFF_BUILD.md` e as decisões da Etapa 01 contra o estado real do repositório/banco; reconsultar CRM-Sindcom por padrões de UI ainda não usados; ajustar `docs/00_PLANO_E_CRITERIOS.md` se necessário.
+1. **02.0** — Leitura de referências e revisão do plano (convenção `0X.0`, `[Plan]`, Opus): reconferir `HANDOFF_BUILD.md` e as decisões da Etapa 01 contra o estado real do repositório/banco; reconsultar CRM-Sindcom por padrões de UI ainda não usados; ajustar `docs/00_PLANO_E_CRITERIOS.md` se necessário — **incluindo formalizar a pendência do fluxo de convite/funcionário acima.**
 2. **02.1** — CRUD de Pessoas (`aba_people`), `[Goal] [Manual]`, Sonnet: listar/criar/editar lead → converter para cliente, tags/notas/campos customizados persistindo através da conversão.
 3. **02.2** — CRUD de Vendas (`aba_sales`), `[Goal] [Manual]`, Sonnet: kanban de funil com oportunidades arrastáveis, sempre ligadas a `pessoa_id`.
 4. **02.3** — Mensageria (Meta Cloud API), `[Goal] [Manual]`, Sonnet: tela de conversa enviando/recebendo via Meta Cloud API real (conta de teste), sem credencial de canal exposta no client.
@@ -36,6 +43,7 @@ Toda subetapa `[Goal]` tem esforço máximo e escalonamento de LLM declarados em
 Lista completa e viva em `handoffs/instrucoes.md` §6. As mais relevantes para quem vai construir UI agora:
 
 - **`select('*')` quebra em 6 tabelas com narrowing de coluna** (`webhook_endpoints`, `api_keys`, `account_invitations`, `aba_ai.ia_configuracoes`, `aba_messaging.configuracao_whatsapp`, `aba_messaging.provedores_canal`) — devolve `42501 permission denied for table`, que parece falha de RLS e engana a investigação. Toda tela que toque essas tabelas precisa listar colunas explicitamente no `.select()`.
+- **`design/wireframes-crm-sa-de-e-est-tica/project/_ds/` não é a fonte da paleta/tipografia** — os dois design systems ali dentro não foram usados nos 16 wireframes reais (um pertence a outro produto de Max inteiramente). A paleta ratificada está em `docs/04_DESIGN_E_MARCA.md` §5.
 - **XSS armazenado é fronteira aberta por design nesta Etapa** — o banco guarda payload malicioso literal (correto, é dado); a defesa é da camada de renderização. **Item obrigatório da Subetapa 02.6** — testar contra a UI real assim que ela existir.
 - **`service_role` ignora RLS** — qualquer Edge Function/job novo da Etapa 02 precisa reafirmar `account_id` no filtro à mão; a RLS não participa desse caminho (achado A06 da 01.8, já corrigido no webhook existente, mas o padrão vale para qualquer função nova).
 - **Onde estabelecer um hardening de segurança novo, varrer o catálogo inteiro** (`information_schema` + `has_column_privilege`/`has_function_privilege`) em vez de confiar em releitura de módulo por módulo — foi assim que a 01.8 achou o 4º caso de credencial exposta que a leitura de código sozinha não tinha achado.

@@ -2,6 +2,12 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+0.1] - 2026-08-18 (Etapa de Transição 1 → 2)
+- **Design do MVP ratificado.** Max concluiu o estágio de design no Claude Design; o pacote de 16 wireframes foi lido e interpretado por completo, e as decisões de arquitetura/UI que ele obriga ficam registradas em `docs/01_ARQUITETURA.md` §7 e `docs/04_DESIGN_E_MARCA.md` §5 (paleta, tipografia, biblioteca de ícones, padrões de componente, navegação/ordem de módulo).
+- **Login multi-conta adiado para `+1.0`** (decisão de Max) — o schema atual (1 usuário = 1 conta) não suporta o seletor de conta que o wireframe mostra; a Etapa 02 constrói login single-account.
+- **Fluxo de convite→funcionário→atributo profissional verificado migration a migration contra o CRM Maximus** (018/019/074/075/076) — mesmo desenho de 5 passos confirmado; a ponta final já estava portada fielmente desde a Subetapa 01.4 (`aba_health.pode_acessar()`); as RPCs que faltam continuam deferidas para a Etapa 02, agora com uma regra nova: o atributo profissional só pode ser concedido a `agent`, nunca a `admin`.
+- Nenhuma migration nova, nenhuma mudança de comportamento do produto — só documentação e decisão registrada.
+
 ## [+0.1] - 2026-08-17 (Subetapa 01.9)
 - `handoffs/HANDOFF_BUILD.md` preenchido por inteiro — estado real da fundação (22 migrations, 100/100 testes de RLS, webhook v3, bucket clínico, varredura de segredos zerada, portão adversarial com parecer favorável), artefatos e onde encontrá-los, resumo das 8 subetapas da Etapa 02, armadilhas conhecidas mais relevantes para quem constrói UI a partir de agora, e o primeiro passo concreto (Subetapa 02.0).
 - **Portão de saída da Etapa 01 declarado aberto** em `docs/00_PLANO_E_CRITERIOS.md`: todos os schemas do MVP aplicados, RLS 100% verde, segredos zerados, portão adversarial executado e merge realizado. A Etapa 02 pode abrir.

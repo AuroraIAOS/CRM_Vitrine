@@ -102,6 +102,14 @@ CREATE TABLE aba_people.funcionarios (
   atualizado_em  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Pendência de Etapa 02 (Transição 1→2, 2026-08-18): RPCs de convite
+-- (peek/resgatar), trigger de nascimento automático de funcionário e RPC
+-- de liga/desliga do atributo profissional (aba_scheduling.profissionais)
+-- ainda faltam — deferidas desde a Subetapa 01.2/01.3, fluxo verificado
+-- contra o CRM Maximus (018/019/074/075/076). Regra nova desta sessão:
+-- atributo profissional só pode ser concedido a funcionário com
+-- account_role = 'agent' (nunca 'admin'). Ver docs/01_ARQUITETURA.md §7.4.
+
 -- Papel: fornecedor (NOVO — não existia no Maximus, gap identificado nesta sessão)
 CREATE TABLE aba_people.fornecedores (
   id             UUID PRIMARY KEY REFERENCES aba_people.pessoas(id) ON DELETE CASCADE,

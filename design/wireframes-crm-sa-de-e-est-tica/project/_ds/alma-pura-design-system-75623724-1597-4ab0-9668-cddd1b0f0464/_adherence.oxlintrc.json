@@ -1,0 +1,209 @@
+{
+  "plugins": [
+    "react",
+    "import"
+  ],
+  "rules": {
+    "react/forbid-elements": [
+      "warn",
+      {
+        "forbid": []
+      }
+    ],
+    "no-restricted-imports": [
+      "warn",
+      {
+        "patterns": [
+          {
+            "group": [
+              "ui_kits/aurora/**",
+              "ui_kits/landing/**"
+            ],
+            "message": "Import design-system components from 'index.js', not component internals."
+          }
+        ]
+      }
+    ],
+    "no-restricted-syntax": [
+      "warn",
+      {
+        "selector": "Literal[value=/#[0-9a-fA-F]{3,8}\\b/]",
+        "message": "Raw hex color — use a design-system color token via var()."
+      },
+      {
+        "selector": "Literal[value=/\\b\\d+px\\b/]",
+        "message": "Raw px value — use a design-system spacing token via var()."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/index.js"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ],
+  "x-omelette": {
+    "components": {},
+    "tokens": [
+      "--accent",
+      "--accent-soft",
+      "--ap-blue-100",
+      "--ap-blue-300",
+      "--ap-blue-500",
+      "--ap-blue-700",
+      "--ap-blue-900",
+      "--ap-gold-100",
+      "--ap-gold-300",
+      "--ap-gold-500",
+      "--ap-gold-700",
+      "--ap-graphite",
+      "--ap-ice",
+      "--ap-ink",
+      "--ap-ivory",
+      "--ap-mist",
+      "--ap-paper",
+      "--ap-sand",
+      "--ap-stem",
+      "--ap-teal-050",
+      "--ap-teal-100",
+      "--ap-teal-300",
+      "--ap-teal-500",
+      "--ap-teal-700",
+      "--ap-teal-900",
+      "--bd-gold",
+      "--bd-hairline",
+      "--bd-whisper",
+      "--bg-ambient",
+      "--bg-deep",
+      "--bg-primary",
+      "--ff-body",
+      "--ff-display",
+      "--ff-mono",
+      "--fg-muted",
+      "--fg-primary",
+      "--fg-whisper",
+      "--fs-body",
+      "--fs-caption",
+      "--fs-display",
+      "--fs-eyebrow",
+      "--fs-h1",
+      "--fs-h2",
+      "--fs-h3",
+      "--fs-h4",
+      "--fs-lead",
+      "--grad-breeze",
+      "--grad-dusk",
+      "--grad-meadow",
+      "--lh-body",
+      "--lh-loose",
+      "--lh-snug",
+      "--lh-tight",
+      "--ls-cta",
+      "--ls-display",
+      "--ls-eyebrow",
+      "--ls-title",
+      "--r-1",
+      "--r-2",
+      "--r-3",
+      "--r-4",
+      "--r-pill",
+      "--seal",
+      "--shadow-breath",
+      "--shadow-float",
+      "--shadow-rest",
+      "--sp-1",
+      "--sp-10",
+      "--sp-2",
+      "--sp-3",
+      "--sp-4",
+      "--sp-5",
+      "--sp-6",
+      "--sp-7",
+      "--sp-8",
+      "--sp-9"
+    ],
+    "tokenKinds": {
+      "--ap-teal-900": "color",
+      "--ap-teal-700": "color",
+      "--ap-teal-500": "color",
+      "--ap-teal-300": "color",
+      "--ap-teal-100": "color",
+      "--ap-teal-050": "color",
+      "--ap-blue-900": "color",
+      "--ap-blue-700": "color",
+      "--ap-blue-500": "color",
+      "--ap-blue-300": "color",
+      "--ap-blue-100": "color",
+      "--ap-gold-700": "color",
+      "--ap-gold-500": "color",
+      "--ap-gold-300": "color",
+      "--ap-gold-100": "color",
+      "--ap-paper": "color",
+      "--ap-ivory": "color",
+      "--ap-sand": "color",
+      "--ap-ice": "color",
+      "--ap-mist": "color",
+      "--ap-stem": "color",
+      "--ap-graphite": "color",
+      "--ap-ink": "color",
+      "--bg-primary": "color",
+      "--bg-ambient": "color",
+      "--bg-deep": "color",
+      "--fg-primary": "color",
+      "--fg-muted": "color",
+      "--fg-whisper": "color",
+      "--accent": "color",
+      "--accent-soft": "color",
+      "--seal": "color",
+      "--ff-display": "other",
+      "--ff-body": "other",
+      "--ff-mono": "other",
+      "--fs-eyebrow": "spacing",
+      "--fs-caption": "spacing",
+      "--fs-body": "spacing",
+      "--fs-lead": "spacing",
+      "--fs-h4": "spacing",
+      "--fs-h3": "spacing",
+      "--fs-h2": "spacing",
+      "--fs-h1": "spacing",
+      "--fs-display": "spacing",
+      "--lh-tight": "other",
+      "--lh-snug": "other",
+      "--lh-body": "other",
+      "--lh-loose": "other",
+      "--ls-display": "spacing",
+      "--ls-title": "spacing",
+      "--ls-eyebrow": "spacing",
+      "--ls-cta": "spacing",
+      "--sp-1": "spacing",
+      "--sp-2": "spacing",
+      "--sp-3": "spacing",
+      "--sp-4": "spacing",
+      "--sp-5": "spacing",
+      "--sp-6": "spacing",
+      "--sp-7": "spacing",
+      "--sp-8": "spacing",
+      "--sp-9": "spacing",
+      "--sp-10": "spacing",
+      "--r-1": "spacing",
+      "--r-2": "spacing",
+      "--r-3": "spacing",
+      "--r-4": "spacing",
+      "--r-pill": "spacing",
+      "--shadow-breath": "shadow",
+      "--shadow-float": "shadow",
+      "--shadow-rest": "shadow",
+      "--bd-hairline": "other",
+      "--bd-whisper": "other",
+      "--bd-gold": "other",
+      "--grad-meadow": "color",
+      "--grad-breeze": "color",
+      "--grad-dusk": "other"
+    },
+    "fontFamilies": []
+  }
+}

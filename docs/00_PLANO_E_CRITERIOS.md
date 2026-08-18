@@ -148,6 +148,27 @@ Todas as condições do portão de saída declarado acima estão satisfeitas: to
 
 ---
 
+## ETAPA DE TRANSIÇÃO 1 → 2 — Registro de decisões de design [Plan] [LLM: Sonnet]
+
+**Data:** 2026-08-18. Não é uma subetapa numerada (`0X.n`) — é o registro do trabalho feito entre o fechamento formal da Etapa 01 (01.9) e a abertura de fato da Etapa 02 (02.0), motivado por um evento fora do roteiro original: Max concluiu o estágio de design no Claude Design e entregou o pacote de wireframes antes da 02.0 rodar.
+
+**Objetivo:** ler e interpretar por completo o pacote `design/wireframes-crm-sa-de-e-est-tica/` (16 telas), registrar as decisões de arquitetura/UI que ele obriga, e verificar se o fluxo de convite/funcionário/atributo profissional do Vitrine ainda bate com o que foi implantado no CRM Maximus — pergunta que Max fez diretamente ao ver as telas 1n/1o.
+
+**Conclusão:**
+- `docs/01_ARQUITETURA.md` §7 — navegação/ordem de módulo (ordem do wireframe vence, migration de realinhamento fica para a Etapa 02), login multi-conta adiado para `+1.0` (decisão de Max), perfis de UI 1n/1o mapeados sobre o RBAC existente (`agent`+atributo profissional / `admin`, sem papel novo), fluxo de convite→funcionário verificado migration a migration contra o CRM Maximus (018/019/074/075/076) — mesmo desenho de 5 passos, ponta final já portada desde a Subetapa 01.4, peças que faltam continuam deferidas conscientemente para a Etapa 02, mais uma regra nova (atributo profissional só para `agent`).
+- `docs/04_DESIGN_E_MARCA.md` §5 — paleta, tipografia, radius/espaçamento/sombra, biblioteca de ícones (`lucide-react`) e padrões de componente ratificados a partir das 16 telas reais (não dos dois `_ds/*` do pacote, que não foram usados — comparação registrada em `handoffs/instrucoes.md` §5).
+- `design/README.md` — inventário completo das 16 telas com módulo/componentes-chave.
+- `docs/02_MODELO_DE_DADOS.md` — nota apontando a pendência de RPCs de convite/funcionário para quem for mexer em `aba_people.funcionarios`/`aba_scheduling.profissionais` na Etapa 02.
+- `handoffs/instrucoes.md` §5 — dois registros novos (verificação do fluxo Maximus; descarte fundamentado dos `_ds/*`).
+
+**Qualidade:** nenhuma decisão registrada como definitiva sem antes confirmar com Max os dois pontos que contradiziam o schema já aplicado (login multi-conta vs. `profiles.user_id UNIQUE`; papéis `PERFIS` do wireframe vs. `account_role_enum`) — ambos resolvidos por decisão explícita dele antes da escrita nos docs.
+
+**Pendência que nasce daqui para a Etapa 02:** construir as RPCs de convite (`peek`/`resgatar`), o trigger de nascimento automático de funcionário e a RPC de liga/desliga do atributo profissional (com a regra nova "só `agent`") — ver `docs/01_ARQUITETURA.md` §7.4. Onde exatamente isso entra no roteiro de subetapas (dentro da 02.1 ou como subetapa própria) é decisão da **Subetapa 02.0**, não desta rodada.
+
+**Evidência:** os 5 arquivos listados acima, publicados e commitados nesta mesma sessão.
+
+---
+
 ## ETAPA 02 — CONSTRUÇÃO E DEPLOY DO MVP (v01 / fatia vertical)
 Objetivo geral: construir a UI, semear dados de demonstração, testar e refazer até o MVP 100% verde e no ar. Gerar HANDOFF_UPGRADE ao final.
 Modo predominante: [Manual Mode] + [Goal] (um /goal por subetapa)
@@ -296,6 +317,7 @@ Objetivo / Conclusão / Qualidade / Evidência: a definir quando o primeiro clie
 - [ ] Telegram como canal completo — não — +1.0.
 - [ ] Alarme de queda de sessão com deduplicação — não — +0.1.
 - [ ] Conferência automática do webhook após reconexão — não — +0.1.
+- [ ] Login multi-conta (seletor de CRM-filho pós-autenticação, tela `1a` do wireframe) — impacto no MVP? Não — versão alvo +1.0. Exigiria tabela de associação usuário↔conta N:N; schema atual (`public.profiles.user_id UNIQUE`) trava 1 usuário = 1 conta. Decisão de Max, Etapa de Transição 1→2 (2026-08-18) — ver `docs/01_ARQUITETURA.md` §7.2.
 
 ---
 

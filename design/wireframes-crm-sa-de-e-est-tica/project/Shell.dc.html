@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"></helmet>
+<div style="width:1280px;height:820px;display:grid;grid-template-columns:236px 1fr;grid-template-rows:56px 1fr;background:#ffffff;border:1px solid #dde4e8;border-radius:10px;overflow:hidden;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#26313a">
+  <div style="grid-column:1;grid-row:1;display:flex;align-items:center;gap:9px;padding:0 12px;border-right:1px solid #e6ebee;border-bottom:1px solid #e6ebee">
+    <div style="width:22px;height:22px;border-radius:5px;background:#dae4ea"></div>
+    <span style="font-size:12.5px;font-weight:600;letter-spacing:0.04em">CRM Vitrine</span>
+    <div style="margin-left:auto;display:flex;flex-direction:column;gap:3px;width:14px">
+      <div style="height:1.5px;background:#a8b6bf"></div><div style="height:1.5px;background:#a8b6bf"></div><div style="height:1.5px;background:#a8b6bf"></div>
+    </div>
+  </div>
+  <div style="grid-column:2;grid-row:1;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid #e6ebee">
+    <div style="min-width:190px;padding:6px 11px;border:1px solid #e6ebee;border-radius:5px;background:#f7f9fa;font-size:11.5px;font-weight:500;color:#41535f">{{ titulo }}</div>
+    <div style="flex:1;display:flex;align-items:center;gap:7px;padding:6px 11px;border:1px solid #e6ebee;border-radius:5px;background:#f7f9fa;font-size:11.5px;color:#93a1aa">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#93a1aa" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+      Buscar pessoa, atendimento, servi&ccedil;o&hellip;
+    </div>
+    <div style="display:flex;gap:7px">
+      <div style="width:26px;height:26px;border-radius:50%;border:1px solid #e6ebee;background:#f7f9fa"></div>
+      <div style="width:26px;height:26px;border-radius:50%;border:1px solid #e6ebee;background:#f7f9fa"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border:1px solid #e6ebee;border-radius:999px">
+      <div style="width:22px;height:22px;border-radius:50%;background:#dae4ea"></div>
+      <span style="font-size:11.5px;color:#41535f">{{ usuario }}</span>
+    </div>
+  </div>
+  <aside style="grid-column:1;grid-row:2;display:flex;flex-direction:column;border-right:1px solid #e6ebee;background:#fafbfc;padding:10px 8px;overflow:hidden">
+    <div style="display:flex;flex-direction:column;gap:9px;flex:1">
+      <sc-for list="{{ grupos }}" as="g" hint-placeholder-count="8">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#9aa8b1;padding:0 6px 2px">{{ g.eixo }}</div>
+          <sc-for list="{{ g.itens }}" as="it" hint-placeholder-count="2">
+            <div style="display:flex;align-items:center;gap:8px;padding:4px 7px;border-radius:5px;background:{{ it.bg }}">
+              <div style="width:12px;height:12px;border-radius:3px;background:{{ it.marca }}"></div>
+              <span style="font-size:11.5px;color:{{ it.cor }};font-weight:{{ it.peso }}">{{ it.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding-top:9px;border-top:1px solid #e6ebee">
+      <div style="display:flex;align-items:center;gap:8px;padding:4px 7px"><div style="width:12px;height:12px;border-radius:3px;background:#cfd9de"></div><span style="font-size:11.5px;color:#5c6b76">Configura&ccedil;&otilde;es</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:4px 7px"><div style="width:12px;height:12px;border-radius:3px;background:#cfd9de"></div><span style="font-size:11.5px;color:#5c6b76">Suporte</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:4px 7px"><div style="width:12px;height:12px;border-radius:3px;background:#cfd9de"></div><span style="font-size:11.5px;color:#5c6b76">Sair</span></div>
+    </div>
+  </aside>
+  <section style="grid-column:2;grid-row:2;display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 16px;border-bottom:1px solid #e6ebee;background:#ffffff">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8b98a2">{{ caminho }}</span>
+      <div style="display:flex;gap:7px">
+        <div style="padding:4px 11px;border:1px solid #e6ebee;border-radius:5px;background:#f7f9fa;font-size:10.5px;color:#5c6b76">Per&iacute;odo</div>
+        <div style="padding:4px 11px;border:1px solid #e6ebee;border-radius:5px;background:#f7f9fa;font-size:10.5px;color:#5c6b76">Filtros</div>
+      </div>
+    </div>
+    <div style="flex:1;padding:14px 16px;background:#f4f6f7;overflow:hidden">{{ children }}</div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:820},&quot;active&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;pessoas&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;titulo&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Pessoas&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;caminho&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;aba_people &gt; pessoas&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;usuario&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Dra. Helena M.&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;perfil&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;admin&quot;,&quot;profissional&quot;,&quot;recepcao&quot;],&quot;default&quot;:&quot;admin&quot;,&quot;tsType&quot;:&quot;\&quot;admin\&quot; | \&quot;profissional\&quot; | \&quot;recepcao\&quot;&quot;,&quot;section&quot;:&quot;Acesso&quot;}}">
+const GRUPOS = [
+  { eixo: "aba_people", itens: [["Pessoas", "pessoas"], ["Tags e segmentos", "tags"]] },
+  { eixo: "aba_scheduling", itens: [["Agenda", "agenda"], ["Espera e encaixes", "espera"]] },
+  { eixo: "aba_sales", itens: [["Pipeline", "pipeline"], ["Propostas", "propostas"]] },
+  { eixo: "aba_finance", itens: [["Recebimentos", "financeiro"], ["Comiss\u00f5es", "comissoes"]] },
+  { eixo: "aba_health", itens: [["Prontu\u00e1rios", "prontuario"], ["Anamneses", "anamneses"]] },
+  { eixo: "aba_catalog", itens: [["Servi\u00e7os", "catalogo"], ["Pacotes", "pacotes"]] },
+  { eixo: "aba_messaging", itens: [["Conversas", "conversas"], ["Modelos", "modelos"]] },
+  { eixo: "aba_automations", itens: [["Fluxos", "fluxos"]] },
+  { eixo: "aba_ai", itens: [["Agente", "agente"], ["Conhecimento", "conhecimento"]] }
+];
+
+// Eixos visíveis por perfil de acesso (access.* / RBAC) — a sidebar é montada
+// pelo subconjunto do perfil, não escondida no cliente por conveniência.
+const PERFIS = {
+  admin: null,
+  profissional: {
+    aba_people: ["Pessoas"],
+    aba_scheduling: ["Agenda", "Espera e encaixes"],
+    aba_health: ["Prontu\u00e1rios", "Anamneses"],
+    aba_catalog: ["Servi\u00e7os"],
+    aba_messaging: ["Conversas"]
+  },
+  recepcao: {
+    aba_people: ["Pessoas", "Tags e segmentos"],
+    aba_scheduling: ["Agenda", "Espera e encaixes"],
+    aba_sales: ["Pipeline"],
+    aba_finance: ["Recebimentos"],
+    aba_catalog: ["Servi\u00e7os", "Pacotes"],
+    aba_messaging: ["Conversas", "Modelos"]
+  }
+};
+
+class Component extends DCLogic {
+  renderVals() {
+    const a = this.props.active;
+    const permitido = PERFIS[this.props.perfil ?? "admin"] ?? null;
+    const GRUPOS_VISIVEIS = permitido
+      ? GRUPOS
+          .filter(g => permitido[g.eixo])
+          .map(g => ({ eixo: g.eixo, itens: g.itens.filter(([label]) => permitido[g.eixo].includes(label)) }))
+      : GRUPOS;
+    return {
+      grupos: GRUPOS_VISIVEIS.map(g => ({
+        eixo: g.eixo,
+        itens: g.itens.map(([label, id]) => ({
+          label,
+          bg: id === a ? "#e8eff4" : "transparent",
+          cor: id === a ? "#2b5f80" : "#5c6b76",
+          peso: id === a ? 600 : 400,
+          marca: id === a ? "#5b87a8" : "#cfd9de"
+        }))
+      })),
+      titulo: this.props.titulo ?? "Dashboard",
+      caminho: this.props.caminho ?? "public > dashboard",
+      usuario: this.props.usuario ?? "Dra. Helena M.",
+      children: this.props.children
+    };
+  }
+}
+</script>
+</body>
+</html>
