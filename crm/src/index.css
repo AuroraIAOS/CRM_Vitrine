@@ -2,30 +2,62 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Paleta neutra padrão shadcn/ui — placeholder até docs/04_DESIGN_E_MARCA.md
-   fechar cor de destaque por conta. Mecanismo de tema (classe .dark no root)
-   reaproveita o padrão já validado no CRM Maximus (docs/04 §1). */
+/* Paleta ratificada em docs/04_DESIGN_E_MARCA.md §5.2/§5.3, extraída das 16
+   telas do pacote de wireframes (Etapa de Transição 1→2). Cada variável traz
+   o hex de origem em comentário — o hex nunca aparece fora deste arquivo
+   (docs/04 §4). Conversão hex→HSL feita manualmente na Subetapa 02.1.
+   Modo Dark: o pacote de wireframes é 100% light — nenhuma variante dark
+   foi ratificada ainda. O bloco `.dark` abaixo é o placeholder herdado do
+   shadcn/ui (não a paleta do CRM Maximus, que docs/04 §1 planeja reaproveitar
+   — isso é tarefa futura, sem toggle de tema wireframed em nenhuma das 16
+   telas). Não remover: mantém o mecanismo `.dark` pronto para quando a
+   variante ratificada existir. */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
+    --background: 0 0% 100%;              /* #ffffff — fundo do shell/card */
+    --foreground: 207 21% 19%;            /* #26313a — texto primário */
+    --card: 0 0% 100%;                    /* #ffffff */
+    --card-foreground: 207 21% 19%;       /* #26313a */
+    --popover: 0 0% 100%;                 /* #ffffff */
+    --popover-foreground: 207 21% 19%;    /* #26313a */
+
+    --primary: 204 42% 41%;               /* #3d7396 — accent/primary (azul clínico), botão/link */
+    --primary-foreground: 0 0% 100%;      /* #ffffff */
+
+    --secondary: 200 16% 96%;             /* #f4f6f7 — fundo de área de conteúdo, usado como secundário */
+    --secondary-foreground: 204 19% 31%;  /* #41535f — texto secundário */
+
+    --muted: 200 16% 96%;                 /* #f4f6f7 */
+    --muted-foreground: 204 10% 54%;      /* #7c8b95 — texto muted */
+
+    --accent: 205 35% 93%;                /* #e8eff4 — tint de fundo do azul (estado ativo de nav) */
+    --accent-foreground: 203 50% 34%;     /* #2b5f80 — texto sobre tint */
+
+    --destructive: 10 21% 57%;            /* #a8827a — perigo/vencido (terracota) */
+    --destructive-foreground: 0 0% 100%;
+    --destructive-tint: 12 4% 95%;        /* #f8f0ee */
+    --destructive-tint-foreground: 13 25% 49%; /* #9c6b5e */
+
+    --success: 157 20% 63%;               /* #8fb4a6 — sucesso/positivo (sage) */
+    --success-foreground: 0 0% 100%;
+    --success-tint: 150 21% 95%;          /* #eef4f1 */
+    --success-tint-foreground: 156 23% 39%; /* #4d7c69 */
+
+    --warning: 38 29% 69%;                /* #c8b79a — atenção/pendente (tan-dourado) */
+    --warning-foreground: 0 0% 100%;
+    --warning-tint: 38 5% 96%;            /* #faf6ef */
+    --warning-tint-foreground: 38 27% 43%; /* #8a7550 */
+
+    --border: 204 23% 91%;                /* #e4eaee — borda de card */
+    --input: 202 19% 89%;                 /* #dde4e8 — borda de input/divisor forte */
+    --ring: 204 42% 41%;                  /* mesma cor do primary — foco em azul */
+
+    --content: 200 16% 96%;               /* #f4f6f7 — fundo da área de conteúdo do shell */
+    --hairline: 200 3% 95%;               /* #eef2f4 — linha entre itens de lista/tabela */
+
+    /* docs/04 §5.3 — 7-8px é o padrão de card; a escala existente
+       (lg=radius, md=radius-2px, sm=radius-4px) já bate com
+       card 8px / nota-aninhada 6px / botão-input 4px sem alteração. */
     --radius: 0.5rem;
   }
 
@@ -49,6 +81,8 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
+    --content: 240 3.7% 15.9%;
+    --hairline: 240 3.7% 15.9%;
   }
 
   * {
@@ -56,7 +90,7 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
   }
 
   #root {

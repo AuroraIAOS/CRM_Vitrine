@@ -2,6 +2,13 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+0.1] - 2026-08-18 (Subetapa 02.1)
+- **Identidade visual ratificada aplicada ao app** — paleta e tipografia de `docs/04_DESIGN_E_MARCA.md` §5 substituem o placeholder neutro do shadcn/ui; IBM Plex Sans/Mono carregada; `AppShell` reconstruído no shell do pacote de wireframes (sidebar 236px, header 56px, breadcrumb mono, área de conteúdo `#f4f6f7`).
+- **Sessão passa a resolver `public.profiles` e a navegação é 100% dirigida por `access.readable_modules()`** — nenhum módulo listado à mão no front; trocar o papel do usuário no banco muda o conjunto de itens visíveis sem nenhuma alteração de código.
+- `access.modules.position` realinhado à ordem de navegação ratificada (`sales` antes de `catalog`/`messaging`), via migration `023` (UPDATE puro).
+- Dependências de UI instaladas para os módulos das próximas subetapas: `@tanstack/react-table`, `date-fns`, `@dnd-kit/*`.
+- Nenhuma mudança de dado do usuário final — só fundação de shell/sessão; os 11 módulos (9 `aba_*` + Configurações + Suporte) seguem como placeholder até as subetapas 02.3–02.12.
+
 ## [+0.1] - 2026-08-18 (Subetapa 02.0)
 - **Plano da Etapa 02 reescrito de 8 para 17 subetapas** (02.0–02.16), à luz do design ratificado e de duas decisões de Max: o fluxo de convite/funcionário vira subetapa própria (02.2, antes da de Pessoas) e os módulos restantes ganham CRUD completo antes do deploy — a Etapa 02 passa a cobrir as 16 telas do design, e não só três módulos.
 - **Divergência zero entre documentação e banco confirmada objeto a objeto** — 22 migrations, 12 schemas, contagem de tabela por schema e inventário de função conferidos contra o projeto Supabase real; nenhuma subetapa 02.x referencia nome que não exista.
