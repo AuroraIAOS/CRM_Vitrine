@@ -110,6 +110,15 @@ export function ConhecimentoPanel() {
             placeholder={"Um parágrafo por assunto — cada parágrafo vira um trecho recuperável.\n\nDeixe uma linha em branco entre eles."}
             className="rounded-md border bg-content px-2.5 py-2 text-[11px] leading-relaxed"
           />
+          {/* Alerta no ponto exato onde o risco existe. O que for escrito
+              aqui é enviado ao provedor de IA a cada resposta — a base é
+              o único caminho pelo qual dado sensível sai do produto sem
+              trava técnica nenhuma (o prontuário está bloqueado no banco;
+              isto aqui não está, porque é texto livre). */}
+          <span className="rounded bg-warning-tint px-2 py-1.5 text-[9.5px] leading-relaxed text-warning-tint-foreground">
+            O que você escrever aqui é enviado ao provedor de IA a cada resposta do agente. Não inclua dado de saúde,
+            documento, endereço ou qualquer informação sigilosa de cliente.
+          </span>
           {erro && <span className="text-[10.5px] text-destructive">{erro}</span>}
           <Button size="sm" onClick={() => void aoSalvar()} disabled={salvar.isPending}>
             {editando ? "Salvar alterações" : "Adicionar documento"}

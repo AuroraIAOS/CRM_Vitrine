@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ConhecimentoPanel } from "./ConhecimentoPanel";
+import { AvisoTratamentoDeDados } from "./AvisoTratamentoDeDados";
 import {
   MODELOS,
   ROTULO_PROVEDOR,
@@ -109,6 +110,10 @@ function FormularioChave({ jaConfigurada }: { jaConfigurada: boolean }) {
           guardada; nem esta tela nem o banco a devolvem depois.
         </span>
       </div>
+
+      {/* O aviso vem ANTES dos campos: ele existe para informar a decisão,
+          não para justificá-la depois de tomada. */}
+      <AvisoTratamentoDeDados provedor={provedor} />
 
       <div className="grid gap-2 md:grid-cols-2">
         <label className="flex flex-col gap-1">
@@ -259,6 +264,10 @@ export function AgentePage() {
       </Card>
 
       {!config && <FormularioChave jaConfigurada={false} />}
+
+      {/* Com a chave já conectada o aviso continua visível: o dado sai a
+          cada resposta, não só no momento de configurar. */}
+      {config && <AvisoTratamentoDeDados provedor={config.provedor} />}
 
       {config && (
         <div className="grid min-h-0 gap-3 lg:grid-cols-2">
