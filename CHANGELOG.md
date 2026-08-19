@@ -2,6 +2,14 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-08-19 (Subetapa 02.11)
+- **Módulo IA (`aba_ai`) ganha UI completa** (`/ia`, tela `1l`): métricas de uso do período, card de comportamento (instrução do agente, modelo, horário de atuação e interruptores de permissão), base de conhecimento com teste de recuperação, consumo registrado e um "Perguntar" que exercita o agente.
+- **A conta cola a própria chave de IA** — o produto não tem chave de LLM própria. A chave é **verificada contra o provedor antes de ser gravada** (chave errada é recusada na hora, com a mensagem do próprio provedor, e nada é salvo), cifrada em AES-256-GCM e nunca devolvida: nem a tela nem o banco a mostram de volta, só os quatro últimos caracteres para o operador reconhecer qual está guardada.
+- **O agente não lê prontuário, e isso é garantido pelo banco.** O interruptor existe no desenho e nasce travado por regra de integridade: um agente automático lê com privilégio de servidor, que não passa pelo controle de acesso clínico nem registra quem leu — liberar exigiria construir esse caminho auditado antes. Nem o proprietário da conta consegue ligá-lo.
+- **Busca de conhecimento corrigida na raiz**: a recuperação exigia que o trecho contivesse **todas** as palavras da pergunta, então "quanto custa a limpeza de pele" não encontrava o trecho que responde exatamente isso. Agora ordena por relevância — e o defeito era silencioso, porque não achar nada parecia apenas base incompleta.
+- **Mensagem de erro do provedor chega ao operador**: antes a tela dizia apenas "Edge Function returned a non-2xx status code" para chave errada, chave sem crédito e provedor fora do ar — três problemas com ações diferentes e a mesma mensagem inútil.
+- **Ressalva declarada:** a chamada ao provedor com uma chave válida não foi exercida — por desenho o projeto não tem chave própria. Todo o caminho está construído e implantado; fica como pendência vigiada para quando houver uma chave conectada.
+
 ## [+1.0] - 2026-08-19 (Subetapa 02.10)
 - **O produto ganha motor.** `pg_cron` instalado e **cinco jobs no ar**: drenagem da fila de espera das automações (a cada minuto), disparo de lembretes vencidos (a cada 5 min), expiração de fluxo conversacional ocioso (de hora em hora), `marcar_faturas_vencidas()` e `expirar_planos()` (diários). As quatro rotinas que existiam no banco desde a Etapa 01 **sem ninguém que as chamasse** finalmente rodam — fatura passa a vencer, plano passa a expirar, lembrete passa a ficar pronto.
 - **Módulo Automações (`aba_automations`) ganha UI completa** (`/automacoes`, tela `1k`): lista de automações com interruptor de ativação, editor de passos conectados verticalmente com cor por família (Gatilho azul / Condição sage / Ação tan), ramos sim/não da condição, log de execução passo a passo, e aba de Fluxos conversacionais com disparo e avanço de execução.
