@@ -2,6 +2,11 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-08-18 (Subetapa 02.6)
+- **Módulo Agenda (`aba_scheduling`) ganha três telas**: grade semanal completa (`/agenda`, tela `1e`) com criação/edição/cancelamento de atendimento, bloqueio de horário (folga) e detecção automática de conflito; "Meu dia" (tela `1n`, perfil profissional) e "Balcão" (tela `1o`, perfil recepção) — as duas últimas são **filtro de UI sobre o RBAC já existente**, sem papel novo: `agent` com atributo profissional ativo vê `1n`; `admin` sem o atributo vê `1o`; os demais casos veem a grade completa.
+- **Sobreposição de horário e violação de expediente/folga agora têm mensagem distinta e legível** — o banco já recusava as duas (`23P01`/`23514`), a UI passa a explicar qual das duas regras bloqueou em vez de um erro genérico.
+- Nenhuma migration nova — `aba_scheduling` já estava 100% aplicado desde a Subetapa 01.3; suíte de RLS revalidada sem regressão desta subetapa (106/108 executados verdes; as 2 falhas restantes são pré-existentes da Subetapa 02.5, fora de escopo — ver `handoffs/instrucoes.md` §5).
+
 ## [+1.0] - 2026-08-18 (Subetapa 02.4)
 - **Módulo Vendas (`aba_sales`) ganha kanban de pipeline** (`/vendas`): funil "Comercial padrão" provisionado sob demanda com as 5 etapas do design (Novo contato → Avaliação agendada → Proposta enviada → Negociação → Fechado), oportunidades arrastáveis entre etapas via `@dnd-kit`, sempre ligadas a `pessoa_id` (nunca a um contato de canal).
 - **Ciclo de status `ativa → ganha | perdida` é terminal**: uma vez fechado (ganho ou perdido), o negócio sai da lista de "em aberto" e deixa de ser arrastável ou reabrível pela UI.
