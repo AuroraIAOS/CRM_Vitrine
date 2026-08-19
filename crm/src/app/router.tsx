@@ -12,6 +12,8 @@ import { AgendaPage } from "@/features/scheduling/AgendaPage";
 import { CatalogoPage } from "@/features/catalog/CatalogoPage";
 import { FinanceiroPage } from "@/features/finance/FinanceiroPage";
 import { MessagingPage } from "@/features/messaging/MessagingPage";
+import { ProntuarioPage } from "@/features/health/ProntuarioPage";
+import { MapasClinicosPage } from "@/features/health/MapasClinicosPage";
 import { Placeholder } from "@/components/shared/Placeholder";
 
 // Rotas 1:1 com nav.ts (MODULE_ROUTE) + /suporte, que não é módulo de
@@ -30,6 +32,8 @@ import { Placeholder } from "@/components/shared/Placeholder";
 // /catalogo (tela 1i, abas Serviços/Planos + painel de Categorias) já
 // entregue pela Subetapa 02.7. /financeiro (tela 1g, KPIs + gráfico +
 // abas Lançamentos/Comissões/Conciliação) já entregue pela Subetapa 02.8.
+// /prontuario, /prontuario/:clienteId (tela 1h) e /prontuario/mapas
+// (tela 1p) já entregues pela Subetapa 02.9.
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
   { path: "/convite", element: <AceitarConvitePage /> },
@@ -45,7 +49,11 @@ export const router = createBrowserRouter([
           { path: "agenda", element: <AgendaPage /> },
           { path: "vendas", element: <SalesKanbanPage /> },
           { path: "financeiro", element: <FinanceiroPage /> },
-          { path: "prontuario", element: <Placeholder titulo="Prontuário" /> },
+          { path: "prontuario", element: <ProntuarioPage /> },
+          // Rota estática antes da dinâmica não é acidente: `mapas`
+          // também casaria com `:clienteId`.
+          { path: "prontuario/mapas", element: <MapasClinicosPage /> },
+          { path: "prontuario/:clienteId", element: <ProntuarioPage /> },
           { path: "catalogo", element: <CatalogoPage /> },
           { path: "mensagens", element: <MessagingPage /> },
           { path: "automacoes", element: <Placeholder titulo="Automações" /> },

@@ -92,6 +92,41 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 
 ## 5. Problemas e soluções deste projeto
 
+### Coluna acrescentada a tabela de `aba_health` NÃO herda o `GRANT SELECT` por coluna — e é isso que se quer
+- **Gatilho:** Subetapa 02.9 — acrescentar `mapa_tipo`/`marcacoes` a `aba_health.evolucoes`, tabela cuja leitura é fechada por revogação POR COLUNA desde a migration 013.
+- **Ação:** medir com `has_column_privilege('authenticated', 'aba_health.evolucoes', <coluna>, 'SELECT')` **logo após a migration**, antes de escrever qualquer linha de UI contra a coluna. Resultado medido: coluna nova nasce com `SELECT` = false e `UPDATE` = true, idêntica às colunas clínicas existentes — porque a 013 revogou `SELECT` da tabela e reconcedeu só uma lista de colunas, enquanto `INSERT`/`UPDATE` continuaram no nível de tabela. A migration 024 ainda assim reafirma com um `REVOKE SELECT (mapa_tipo, marcacoes)` explícito: custa nada e documenta a intenção para quem ler o catálogo de privilégios depois, em vez de deixar a garantia dependendo de um efeito colateral.
+- **Consequência prática:** a coluna nova só sai por `aba_health.ler_evolucoes()`, ou seja, já nasce dentro do regime de log. **Se o efeito fosse o contrário** (herdar o `SELECT`), uma coluna clínica nova teria nascido legível sem log e ninguém perceberia — o teste custa dez segundos e distingue os dois mundos.
+- **Regra que fica:** toda coluna nova em `aba_health` é medida antes de ser usada. Nunca presumir herança de privilégio em tabela com narrowing por coluna, em nenhum dos dois sentidos.
+- **Evidência:** `db/migrations/024_aba_health_marcacoes_mapa.sql`; teste "marcacoes e mapa_tipo NÃO são legíveis por select direto" em `crm/tests/rls/05_aba_health.spec.ts` (42501 mesmo para o owner).
+- **Fonte:** Subetapa 02.9, sessão de 2026-08-19.
+
+### `storage.objects` recusa `DELETE` por SQL — limpeza de fixture de bucket só existe pela Storage API
+- **Gatilho:** Subetapa 02.9 — remover o anexo clínico de teste ao final da evidência, pelo mesmo `execute_sql` que limpou todas as outras tabelas.
+- **Erro:** `42501: Direct deletion from storage tables is not allowed. Use the Storage API instead.` — trigger `storage.protect_delete()` da plataforma, que existe justamente para evitar linha apagada com o blob órfão.
+- **Ação:** remover pela Storage API (`supabase.storage.from(bucket).remove([...])`) com `service_role`, a partir de um script Node rodado **de dentro de `crm/`** (o `node_modules` está lá; rodar de outra pasta dá `ERR_MODULE_NOT_FOUND` em `dotenv`). Lembrar que `anexos-clinicos` **não tem política de DELETE de propósito** (migration 014): nem o usuário final apaga anexo clínico, então não existe caminho de UI para essa limpeza — é operação de manutenção, e é assim que deve ser.
+- **Regra que fica:** ao planejar a limpeza de uma evidência que envolva Storage, contar com um passo fora do SQL. Apagar só a referência em `aba_health.evolucoes.anexos` deixaria o arquivo no bucket — numa tabela de dado clínico, exatamente o resíduo que não se pode deixar.
+- **Fonte:** Subetapa 02.9, sessão de 2026-08-19.
+
+### Cache de React Query em leitura clínica precisa de `staleTime: Infinity` — senão a auditoria registra o que a biblioteca decidiu, não o que a pessoa olhou
+- **Gatilho:** Subetapa 02.9 — as quatro leituras clínicas passam por funções que gravam `log_acesso` na mesma transação.
+- **Ação:** `staleTime: Infinity` + `refetchOnWindowFocus: false` em `useProntuario`/`useEvolucoes`/`useRespostasAnamnese`/`useConsentimentos`. Sem isso, cada volta de foco à janela geraria uma linha nova de leitura de prontuário, e o log — que é a peça de prova de quem acessou o quê — passaria a medir comportamento de cache em vez de comportamento humano.
+- **Contraponto que justifica a escolha:** o preço é que a tela não se atualiza sozinha em segundo plano; a invalidação explícita depois de cada mutação cobre o caso que importa. Numa tela clínica, log fiel vale mais que frescor automático.
+- **Fonte:** Subetapa 02.9, sessão de 2026-08-19.
+
+### Mapa clínico que só mostra a sessão ABERTA apaga o histórico que ele existe para dar
+- **Gatilho:** Subetapa 02.9, durante a colheita da evidência — assinada a sessão, o mapa voltou a ficar vazio e o painel passou a dizer "sem marcações".
+- **Causa:** a marcação vive na evolução, e a tela só olhava a evolução em rascunho. Tecnicamente correto, funcionalmente errado: o wireframe `1p` promete "histórico comparável entre sessões", e na sessão seguinte a profissional não veria o que marcou na anterior — exatamente o acompanhamento que motiva existir um mapa.
+- **Ação:** sem sessão aberta, exibir a última evolução **assinada** daquele mapa, em somente leitura, rotulada como tal. Marcar continua exigindo sessão aberta.
+- **Regra que fica:** só apareceu porque a evidência foi colhida ponta a ponta na UI real, com o ciclo completo (abrir → marcar → assinar → reabrir). Evidência que para na primeira tela verde não encontra esta classe de defeito.
+- **Fonte:** Subetapa 02.9, sessão de 2026-08-19.
+
+### Tela que declara "profissional com concessão lê e escreve" precisa de tela que CONCEDA — senão o cenário permitido só existe por SQL
+- **Gatilho:** Subetapa 02.9 — a Conclusão declarada exigia os dois cenários (negado e permitido) pela UI, e o wireframe `1h` não desenha painel de concessões.
+- **Causa:** `aba_health.pode_acessar()` abre por três vias (owner, concessão nominal, atributo profissional + permissão de módulo). Sem painel de concessões, a única via acionável pela aplicação era o atributo profissional — que ainda depende de `access.can('health', ação)`, sem UI até a Subetapa 02.12. Resultado: o produto não conseguia produzir o próprio cenário permitido.
+- **Ação:** portar `grants-panel.tsx` do CRM Maximus (`ConcessoesPanel.tsx`), respeitando a RLS que já existia — leitura `admin+`, escrita `owner`, sem repetir checagem de papel no client.
+- **Regra que fica:** ao ler a Conclusão de uma subetapa, perguntar quem executa cada verbo dela **dentro do produto**. Verbo sem tela é trabalho não atribuído, e costuma aparecer só na hora da evidência.
+- **Fonte:** Subetapa 02.9, sessão de 2026-08-19.
+
 ### Suíte de RLS não fecha 100% desde a 02.5 — conflito pré-existente em `configuracao_whatsapp`, fora do escopo de quem só está testando outro módulo
 - **Gatilho:** Subetapa 02.6 — ao revalidar a suíte completa depois de construir a Agenda (nenhuma migration tocada), `09_aba_messaging.spec.ts` e `12_adversarial_webhook.spec.ts` falharam com `duplicate key value violates unique constraint "configuracao_whatsapp_account_id_key"`.
 - **Causa:** a conta de teste compartilhada (`rls.owner`) tem uma linha real em `aba_messaging.configuracao_whatsapp` (`status='conectado'`) desde a Subetapa 02.5 — Max conectou um número de WhatsApp de verdade para provar o envio/recebimento contra a Meta. Os dois testes acima seguem o padrão de outros fixtures do projeto (inserir a própria configuração no `beforeAll`, apagar no `afterAll`), mas nunca esperavam encontrar uma linha JÁ existente na conta compartilhada — a restrição `UNIQUE(account_id)` rejeita a segunda.
@@ -369,6 +404,7 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **O wireframe é aspiracional em pelo menos dois pontos.** `Propostas` (`aba_sales`) e `Espera e encaixes` (`aba_scheduling`) estão na sidebar do `Shell.dc.html` e não têm tabela nenhuma; a segunda consta do backlog como *futuro*. Não inventar tabela para casar com o desenho — o desenho é que se ajusta ao escopo contratado. Fonte: Subetapa 02.0.
 - **Hardening de um módulo não se propaga para os outros.** O padrão de esconder credencial nasceu em `aba_messaging` (01.6) e o núcleo ficou dois meses exposto porque ninguém reaplicou. Ao estabelecer um padrão de segurança novo, varrer o catálogo inteiro atrás de quem mais se encaixa nele — não confiar em releitura de migration. Fonte: Subetapa 01.8, achados A03/A04/A05/A07.
 - **App da Meta não publicado não recebe webhook de mensagem real.** Handshake, `subscribed_apps` e envio respondem sucesso normalmente; só o despacho do evento de entrada é bloqueado, sem erro em lugar nenhum. Antes de caçar bug no webhook, conferir o modo do app no painel ("Em desenvolvimento" vs. publicado). Detalhe completo e caminhos de saída em §5. Fonte: Subetapa 02.5.
+- **`resize_window` da automação do Chrome relata sucesso e pode encolher a janela até inutilizá-la.** Na Subetapa 02.9, chamadas sucessivas levaram a janela a `outerWidth` 160 — com a ferramenta respondendo "Successfully resized" a cada uma, inclusive já sem caber nada. Medir sempre com `javascript_tool` (`innerWidth`/`outerWidth`) em vez de confiar no retorno; o conserto é abrir uma **aba nova**, que nasce no tamanho normal. Vale junto a regra de layout: com viewport abaixo de 1024px o grid `lg:` empilha e a coluna direita da tela vai parar embaixo — o que parece "a coluna sumiu" costuma ser só o breakpoint. Fonte: Subetapa 02.9.
 - **Edge Function chamada do browser precisa de CORS explícito.** `supabase.functions.invoke` dispara preflight `OPTIONS` (headers `authorization`/`apikey`); sem `Access-Control-Allow-*` e sem tratar `OPTIONS`, o erro que chega ao client é `"Failed to send a request to the Edge Function"` — genérico, sem log nenhum na função, porque a requisição morre no browser. O `whatsapp-webhook` nunca precisou disso por ser server-a-server. Vale para toda Edge Function nova consumida pela UI. Fonte: Subetapa 02.5.
 
 ---

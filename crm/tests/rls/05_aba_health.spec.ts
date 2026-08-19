@@ -352,3 +352,146 @@ describe("aba_health — atributo profissional exige funcionário ativo (Maximus
     await admin.schema("aba_people").from("funcionarios").update({ ativo: true }).eq("id", funcionarioId);
   });
 });
+
+describe("aba_health — marcação de mapa clínico segue o mesmo regime (Subetapa 02.9, migration 024)", () => {
+  const admin = adminClient();
+  let ctx: TestContext;
+  let clienteId: string;
+  let profissionalId: string;
+  let evolucaoId: string;
+  let concessaoId: string | undefined;
+
+  beforeAll(async () => {
+    ctx = await loadContext();
+    clienteId = await criarClienteFixture(admin, ctx.accountId, "Cliente Fictício Mapa 02.9");
+
+    const { data: profissional, error: profErr } = await admin
+      .schema("aba_scheduling")
+      .from("profissionais")
+      // Só alvo de FK, como nos demais fixtures deste arquivo.
+      .insert({ account_id: ctx.accountId, nome_exibicao: "Profissional Fictício Mapa 02.9", ativo: false })
+      .select("id")
+      .single();
+    if (profErr) throw profErr;
+    profissionalId = profissional.id;
+
+    const { data: evolucao, error } = await admin
+      .schema("aba_health")
+      .from("evolucoes")
+      .insert({
+        account_id: ctx.accountId,
+        cliente_id: clienteId,
+        profissional_id: profissionalId,
+        avaliacao: "Sessão com mapa facial",
+        mapa_tipo: "facial",
+        marcacoes: [{ regiao: "zona_t", rotulo: "Zona T", estado: "achado_ativo", nota: "Oleosidade grau 3" }],
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+    evolucaoId = evolucao.id;
+  });
+
+  afterAll(async () => {
+    if (concessaoId) {
+      await admin.schema("aba_health").from("concessoes_prontuario").delete().eq("id", concessaoId);
+    }
+    await admin.schema("aba_health").from("log_acesso").delete().eq("cliente_id", clienteId);
+    await admin.schema("aba_health").from("evolucoes").delete().eq("id", evolucaoId);
+    await admin.schema("aba_scheduling").from("profissionais").delete().eq("id", profissionalId);
+    await apagarCliente(admin, clienteId);
+  });
+
+  it("marcacoes e mapa_tipo NÃO são legíveis por select direto — nem para o owner (privilégio de coluna, 013+024)", async () => {
+    const owner = await clientAs("owner");
+    for (const coluna of ["marcacoes", "mapa_tipo"]) {
+      const { error } = await owner.schema("aba_health").from("evolucoes").select(coluna).eq("id", evolucaoId);
+      // 42501: revogação por COLUNA — independe da RLS de linha, que o
+      // owner passaria. Leitura de marcação sem log é impossível.
+      expect(ehErroRls(error), `coluna ${coluna} deveria estar revogada`).toBe(true);
+    }
+  });
+
+  it("ler_evolucoes() devolve mapa_tipo e marcacoes E grava log de leitura", async () => {
+    const antes = await contarLog(admin, clienteId, ctx.userIds.owner, "leitura");
+
+    const owner = await clientAs("owner");
+    const { data, error } = await owner.schema("aba_health").rpc("ler_evolucoes", { p_cliente_id: clienteId });
+    expect(error).toBeNull();
+    expect(data).toHaveLength(1);
+    expect(data![0].mapa_tipo).toBe("facial");
+    expect(data![0].marcacoes).toEqual([
+      { regiao: "zona_t", rotulo: "Zona T", estado: "achado_ativo", nota: "Oleosidade grau 3" },
+    ]);
+
+    const depois = await contarLog(admin, clienteId, ctx.userIds.owner, "leitura");
+    expect(depois).toBe(antes + 1);
+  });
+
+  it("gravar marcação pela UI gera log de atualização automaticamente (trigger 070)", async () => {
+    const antes = await contarLog(admin, clienteId, ctx.userIds.owner, "atualizacao");
+
+    const owner = await clientAs("owner");
+    const { error } = await owner
+      .schema("aba_health")
+      .from("evolucoes")
+      .update({ marcacoes: [{ regiao: "malar_esq", rotulo: "Malar esquerdo", estado: "em_melhora", nota: "" }] })
+      .eq("id", evolucaoId);
+    expect(error).toBeNull();
+
+    const depois = await contarLog(admin, clienteId, ctx.userIds.owner, "atualizacao");
+    expect(depois).toBe(antes + 1);
+  });
+
+  it("CHECK do banco recusa mapa_tipo fora do catálogo dos quatro mapas", async () => {
+    const owner = await clientAs("owner");
+    const { error } = await owner
+      .schema("aba_health")
+      .from("evolucoes")
+      .update({ mapa_tipo: "mapa_inventado" })
+      .eq("id", evolucaoId);
+    expect(error).not.toBeNull();
+    expect(error?.code).toBe("23514");
+  });
+
+  it("CHECK do banco recusa marcacoes que não sejam array JSON", async () => {
+    const owner = await clientAs("owner");
+    const { error } = await owner
+      .schema("aba_health")
+      .from("evolucoes")
+      .update({ marcacoes: { regiao: "zona_t" } })
+      .eq("id", evolucaoId);
+    expect(error).not.toBeNull();
+    expect(error?.code).toBe("23514");
+  });
+
+  it("evolução assinada não aceita alteração de marcação — só adendo em linha nova", async () => {
+    const owner = await clientAs("owner");
+    const { error: assinarErr } = await owner
+      .schema("aba_health")
+      .from("evolucoes")
+      .update({ travada: true })
+      .eq("id", evolucaoId);
+    expect(assinarErr).toBeNull();
+
+    const { error } = await owner
+      .schema("aba_health")
+      .from("evolucoes")
+      .update({ marcacoes: [{ regiao: "mento", rotulo: "Mento", estado: "em_tratamento", nota: "" }] })
+      .eq("id", evolucaoId);
+    expect(error).not.toBeNull();
+    expect(error?.code).toBe("23514");
+  });
+
+  it("agent sem concessão nem atributo profissional não enxerga marcação nenhuma", async () => {
+    const antes = await contarLog(admin, clienteId, ctx.userIds.agent, "leitura");
+
+    const agent = await clientAs("agent");
+    const { data, error } = await agent.schema("aba_health").rpc("ler_evolucoes", { p_cliente_id: clienteId });
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+
+    const depois = await contarLog(admin, clienteId, ctx.userIds.agent, "leitura");
+    expect(depois).toBe(antes); // nada lido, nada logado
+  });
+});

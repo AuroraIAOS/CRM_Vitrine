@@ -46,6 +46,35 @@ function AbaNaoImplementada({ modulo, subetapa }: { modulo: string; subetapa: st
   );
 }
 
+/**
+ * A aba Prontuário da ficha (tela `1d`) LEVA ao módulo, nunca embute o
+ * prontuário aqui. Duas razões: só cliente tem prontuário
+ * (`aba_health.prontuarios.cliente_id → aba_people.clientes`), e todo
+ * conteúdo clínico exigiria as funções `ler_*()` com log — carregar isso
+ * de dentro de uma ficha cadastral geraria linha de `log_acesso` a cada
+ * visita a uma aba vizinha, poluindo a auditoria com acesso que ninguém
+ * pediu. Subetapa 02.9.
+ */
+function AtalhoProntuario({ pessoa }: { pessoa: PessoaDetalhe }) {
+  if (!pessoa.cliente) {
+    return (
+      <div className="flex items-center justify-center rounded-md border border-dashed border-input py-10 text-center text-[11.5px] text-muted-foreground">
+        Só cliente tem prontuário. Converta esta pessoa em cliente para abrir a ficha clínica.
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed border-input py-10 text-center">
+      <span className="text-[11.5px] text-muted-foreground">
+        O prontuário abre no módulo Prontuário, sob o regime de acesso próprio de <code>aba_health</code>.
+      </span>
+      <Link to={`/prontuario/${pessoa.id}`} className="text-[11.5px] text-primary underline-offset-2 hover:underline">
+        Abrir prontuário de {pessoa.nomeExibicao} →
+      </Link>
+    </div>
+  );
+}
+
 function CabecalhoPessoa({ pessoa }: { pessoa: PessoaDetalhe }) {
   const [editando, setEditando] = useState(false);
   const [nome, setNome] = useState(pessoa.nomeExibicao);
@@ -406,7 +435,7 @@ export function PessoaFichaPage() {
               <SecaoTags pessoa={pessoa} />
             </div>
             {aba === "timeline" && <LinhaDoTempo pessoa={pessoa} />}
-            {aba === "prontuario" && <AbaNaoImplementada modulo="Prontuário" subetapa="02.9" />}
+            {aba === "prontuario" && <AtalhoProntuario pessoa={pessoa} />}
             {aba === "financeiro" && <AbaNaoImplementada modulo="Financeiro" subetapa="02.8" />}
             {aba === "documentos" && <AbaNaoImplementada modulo="Documentos" subetapa="futura (backlog)" />}
             {aba === "campos" && <CamposPersonalizados pessoa={pessoa} />}

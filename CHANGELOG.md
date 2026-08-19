@@ -2,6 +2,15 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-08-19 (Subetapa 02.9)
+- **Módulo Prontuário (`aba_health`) ganha UI completa** (`/prontuario`, telas `1h` e `1p`): ficha clínica, seletor dos 4 mapas clínicos com marcação por região, abas Anamnese/Evoluções/Anexos/Consentimentos, sessões anteriores e a biblioteca de mapas (`/prontuario/mapas`). A aba "Prontuário" da ficha da pessoa (tela `1d`), placeholder desde a Subetapa 02.3, passa a levar ao módulo.
+- **Nenhuma leitura clínica passa por `select` direto** — ficha, anamnese, evolução e consentimento saem exclusivamente por `ler_prontuario()`, `ler_respostas_anamnese()`, `ler_evolucoes()` e `ler_consentimentos()`, que gravam `log_acesso` na mesma transação. Foto e documento são servidos pelo bucket privado `anexos-clinicos` por **URL assinada de 60 segundos**, nunca por link público.
+- **Consentimento de uso de imagem trava a exibição da foto para todos, inclusive para quem a enviou** (decisão de Max, mantida): o envio nunca é bloqueado, a exibição sim — e quem explica o bloqueio é a tela, quem o aplica é a política do bucket.
+- **Evolução assinada não se altera**: "Assinar e encerrar sessão" trava o registro no banco e a única continuação oferecida pela tela é adendo em linha nova, ligada à original.
+- **Concessão nominal de prontuário ganha painel próprio** (portado do CRM Maximus): sem ele, o proprietário não tinha caminho de aplicação para autorizar alguém — só SQL. Uma negação vigente vence tudo, inclusive o próprio proprietário da conta.
+- **Migration nova `024_aba_health_marcacoes_mapa.sql`** — primeira desde a Subetapa 02.1: `aba_health.evolucoes` ganha `mapa_tipo` e `marcacoes`, colunas que nascem sem `SELECT` para o usuário final e portanto só saem por `ler_evolucoes()`, herdando log, RLS e trava de evolução assinada sem abrir nenhuma superfície nova no schema mais sensível do produto. A arte definitiva dos 4 mapas segue como pendência de asset (`docs/04` §5.5), sem bloquear a subetapa.
+- Suíte de RLS ampliada com 7 testes novos de `aba_health` (113/117 executados verdes; as 2 falhas restantes continuam sendo as pré-existentes da Subetapa 02.5, fora de escopo).
+
 ## [+1.0] - 2026-08-18 (Subetapa 02.8)
 - **Módulo Financeiro (`aba_finance`) ganha UI completa** (`/financeiro`, tela `1g`): KPIs (recebido no mês, a receber, vencido, comissões a pagar), gráfico Faturado×Recebido de 6 meses via SVG inline, formas de pagamento do mês, e abas Lançamentos/Comissões/Conciliação.
 - **Venda de plano pela UI** cria contrato + fatura + item por escrita direta e só então chama `aba_finance.vender_plano()` para gerar o saldo de sessões — nunca escrita direta em `saldos_plano`/`planos_cliente`. Pagamento registrado dá baixa automática na fatura via trigger existente. Atendimento concluído na Agenda consome saldo do plano e gera comissão automaticamente (novo campo "Consumir sessão do plano" no formulário de atendimento). Estorno de sessão sempre via `estornar_sessao()`, nunca `UPDATE` direto.

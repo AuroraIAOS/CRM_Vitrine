@@ -277,6 +277,8 @@ O "Wait step" do Maximus dependia de um endpoint Next.js pingado por scheduler e
 
 **Nota crítica sobre `aba_health`:** é a peça de maior valor jurídico (LGPD, dado clínico sensível). `concessoes_prontuario` (ABAC/IBAC) + `log_acesso` são o que garante que só profissional explicitamente autorizado — não qualquer `agent` da conta — lê prontuário. Portar sem simplificar essa parte, mesmo sob pressão de prazo.
 
+**Acréscimo da Subetapa 02.9 (`db/migrations/024`), sem equivalente no Maximus:** `aba_health.evolucoes` ganhou `mapa_tipo` (`facial`/`corporal`/`odontograma`/`acupuntura`) e `marcacoes` (array `jsonb` de `{regiao, rotulo, estado, nota}`), que sustentam os mapas clínicos das telas `1h`/`1p`. Estrutura **nova deste produto** — o CRM Maximus não tem mapa clínico nenhum —, e por isso registrada aqui e não no mapa de renomeação acima. Ficaram como **coluna da evolução, não tabela própria**, para herdar sem duplicação o regime que já estava provado: RLS por `pode_acessar()`, log de escrita por trigger, leitura só por `ler_evolucoes()` e a trava de evolução assinada. As duas colunas nascem **sem `SELECT`** para `authenticated` (medido por `has_column_privilege` após a migration), como toda coluna de conteúdo clínico.
+
 ## 8. Núcleo (`public`) — inalterado
 
 `accounts`, `account_invitations`, `profiles`, `api_keys`, `webhook_endpoints`, `notifications`, `member_presence` — copiar como estão. `access` (RBAC fino) e `licensing` (limites de plano) também copiar como estão, apenas confirmando que `access.modules` ganha as chaves novas: `sales`, `automations`, `ai`.
