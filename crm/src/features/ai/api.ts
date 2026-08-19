@@ -58,7 +58,7 @@ async function mensagemDeErroDaFuncao(erro: unknown, fallback: string): Promise<
 // Catálogo de modelos oferecidos
 // ============================================================
 
-export type Provedor = "anthropic" | "openai";
+export type Provedor = "anthropic" | "openai" | "openrouter";
 
 /**
  * O banco aceita qualquer texto em `modelo` (o CHECK cobre só o
@@ -84,11 +84,34 @@ export const MODELOS: Record<Provedor, { id: string; rotulo: string; nota?: stri
     { id: "claude-haiku-4-5", rotulo: "Claude Haiku 4.5", nota: "mais barato e rápido" },
   ],
   openai: [],
+  // OpenRouter roteia para dezenas de modelos de vários provedores, e o
+  // catálogo muda com frequência — lista fechada aqui envelheceria em
+  // semanas. Campo livre, com a tela dizendo onde copiar o identificador.
+  openrouter: [],
 };
 
 export const ROTULO_PROVEDOR: Record<Provedor, string> = {
   anthropic: "Anthropic (Claude)",
   openai: "OpenAI",
+  openrouter: "OpenRouter",
+};
+
+/**
+ * Observação de privacidade específica por provedor, mostrada junto do
+ * seletor. O caso do OpenRouter é materialmente diferente dos outros
+ * dois e o usuário precisa saber **antes** de escolher: lá a política de
+ * dados é de cada provedor roteado, não da plataforma, e existe ajuste
+ * separado para modelos gratuitos sobre permitir roteamento a provedores
+ * que treinam com os dados enviados (verificado na documentação deles em
+ * 2026-08-19).
+ */
+export const NOTA_PRIVACIDADE_PROVEDOR: Record<Provedor, string> = {
+  anthropic:
+    "A política comercial da Anthropic declara não usar entradas e saídas da API para treinar modelos, por padrão. Confira os termos vigentes na conta que você usar.",
+  openai:
+    "Confira nos termos da sua conta OpenAI a política de retenção e de uso dos dados para treinamento aplicável ao seu plano.",
+  openrouter:
+    "Atenção: no OpenRouter a política de dados é de CADA provedor roteado, não da plataforma — e há configuração separada, na conta deles, sobre permitir roteamento a provedores que podem treinar com os seus dados. Revise essa configuração antes de usar modelos gratuitos com dado de cliente.",
 };
 
 // ============================================================
@@ -440,5 +463,58 @@ export function useTestarAgente() {
       void qc.invalidateQueries({ queryKey: ["ia-resumo-uso"] });
       void qc.invalidateQueries({ queryKey: ["ia-log-uso"] });
     },
+  });
+}
+
+// ============================================================
+// Aceite do termo de tratamento de dados (migration 030)
+// ============================================================
+
+/**
+ * O aceite é a porta que dá acesso ao formulário de credenciais. Ele
+ * precisa existir **antes** de haver configuração — por isso mora em
+ * tabela própria, e não numa coluna de `ia_configuracoes`, que só
+ * poderia ser preenchida depois de a chave já ter sido colada.
+ *
+ * A consulta é por versão: aceitar a versão anterior não vale para a
+ * atual. `aceites_termo_ia` não tem policy de UPDATE nem DELETE —
+ * aceite que se reescreve não é prova.
+ */
+export function useAceiteTermoIA(versao: string) {
+  const { profile } = useAuth();
+  const userId = profile ? profile.id : null;
+  return useQuery({
+    queryKey: ["ia-aceite", userId, versao],
+    enabled: !!profile,
+    queryFn: async (): Promise<{ aceitoEm: string } | null> => {
+      const { data, error } = await db()
+        .from("aceites_termo_ia")
+        .select("aceito_em")
+        .eq("versao_termo", versao)
+        .order("aceito_em", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data ? { aceitoEm: data.aceito_em as string } : null;
+    },
+  });
+}
+
+export function useRegistrarAceite() {
+  const { profile, user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (versao: string) => {
+      const { error } = await db().from("aceites_termo_ia").insert({
+        account_id: profile!.accountId,
+        // A policy exige `usuario_id = auth.uid()`: ninguém aceita em
+        // nome de outro, porque um aceite que um terceiro pudesse
+        // inserir não provaria ciência de ninguém.
+        usuario_id: user!.id,
+        versao_termo: versao,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["ia-aceite"] }),
   });
 }

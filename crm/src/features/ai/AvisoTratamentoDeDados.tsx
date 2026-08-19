@@ -1,6 +1,16 @@
 import { ROTULO_PROVEDOR, type Provedor } from "./api";
 
 /**
+ * Versão do termo. **Mudou o texto abaixo? Mude esta constante.**
+ *
+ * `aba_ai.aceites_termo_ia` guarda qual versão cada pessoa aceitou, e o
+ * portão compara com esta. Sem isso, alterar o texto deixaria aceites
+ * antigos valendo para um termo que ninguém leu — que é exatamente o
+ * vício que um registro de aceite existe para não ter.
+ */
+export const VERSAO_TERMO_IA = "2026-08-19.1";
+
+/**
  * Aviso de tratamento de dados por provedor externo de IA.
  *
  * POR QUE ELE EXISTE, E POR QUE ESTÁ ESCRITO ASSIM

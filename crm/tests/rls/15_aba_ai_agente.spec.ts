@@ -315,3 +315,119 @@ describe("aba_ai — base de conhecimento e isolamento na recuperação (Subetap
     expect(ehErroRls(escritaErr)).toBe(true);
   });
 });
+
+describe("aba_ai — aceite do termo e provedor openrouter (complemento da 02.11, migration 030)", () => {
+  const admin = adminClient();
+  let ctx: TestContext;
+  const VERSAO = "teste-02.11-aceite";
+
+  beforeAll(async () => {
+    ctx = await loadContext();
+  });
+
+  afterAll(async () => {
+    await admin.schema("aba_ai").from("aceites_termo_ia").delete().eq("versao_termo", VERSAO);
+    await admin.schema("aba_ai").from("ia_configuracoes").delete().eq("account_id", ctx.accountId);
+  });
+
+  it("'openrouter' é aceito como provedor nas duas tabelas", async () => {
+    const { error } = await admin.schema("aba_ai").from("ia_configuracoes").upsert(
+      {
+        account_id: ctx.accountId,
+        provedor: "openrouter",
+        modelo: "algum/modelo",
+        chave_api: "aaaa:bbbb:cccc",
+        ativo: false,
+      },
+      { onConflict: "account_id" },
+    );
+    expect(error).toBeNull();
+
+    const { error: logErr } = await admin.schema("aba_ai").from("ia_log_uso").insert({
+      account_id: ctx.accountId,
+      modo: "rascunho",
+      provedor: "openrouter",
+      modelo: "algum/modelo",
+      tokens_prompt: 1,
+      tokens_resposta: 1,
+      tokens_total: 2,
+    });
+    expect(logErr).toBeNull();
+    await admin.schema("aba_ai").from("ia_log_uso").delete().eq("account_id", ctx.accountId);
+  });
+
+  it("provedor fora da lista continua recusado — a ampliação não afrouxou o CHECK", async () => {
+    const { error } = await admin.schema("aba_ai").from("ia_configuracoes").update({ provedor: "provedor_inventado" })
+      .eq("account_id", ctx.accountId);
+    expect(error).not.toBeNull();
+    expect(error?.code).toBe("23514");
+  });
+
+  it("owner registra o próprio aceite do termo", async () => {
+    const owner = await clientAs("owner");
+    const { error } = await owner.schema("aba_ai").from("aceites_termo_ia").insert({
+      account_id: ctx.accountId,
+      usuario_id: ctx.userIds.owner,
+      versao_termo: VERSAO,
+    });
+    expect(error).toBeNull();
+
+    const { data } = await owner
+      .schema("aba_ai")
+      .from("aceites_termo_ia")
+      .select("versao_termo, usuario_id")
+      .eq("versao_termo", VERSAO)
+      .single();
+    expect(data!.usuario_id).toBe(ctx.userIds.owner);
+  });
+
+  it("NINGUÉM aceita em nome de outro — a policy exige usuario_id = auth.uid()", async () => {
+    const owner = await clientAs("owner");
+    const { error } = await owner.schema("aba_ai").from("aceites_termo_ia").insert({
+      account_id: ctx.accountId,
+      // Tentando registrar o aceite do agent usando a sessão do owner:
+      // um aceite que um terceiro pudesse inserir não provaria ciência
+      // de ninguém.
+      usuario_id: ctx.userIds.agent,
+      versao_termo: VERSAO,
+    });
+    expect(ehErroRls(error)).toBe(true);
+  });
+
+  it("aceite NÃO se edita nem se apaga — sem policy de UPDATE/DELETE para ninguém", async () => {
+    const owner = await clientAs("owner");
+
+    const { error: updateErr } = await owner
+      .schema("aba_ai")
+      .from("aceites_termo_ia")
+      .update({ versao_termo: "versao-forjada" })
+      .eq("versao_termo", VERSAO);
+    // Sem policy de UPDATE: a linha é filtrada, nada muda.
+    expect(updateErr).toBeNull();
+    const { data: depoisUpdate } = await admin
+      .schema("aba_ai")
+      .from("aceites_termo_ia")
+      .select("versao_termo")
+      .eq("versao_termo", VERSAO);
+    expect(depoisUpdate).toHaveLength(1);
+
+    await owner.schema("aba_ai").from("aceites_termo_ia").delete().eq("versao_termo", VERSAO);
+    const { data: depoisDelete } = await admin
+      .schema("aba_ai")
+      .from("aceites_termo_ia")
+      .select("versao_termo")
+      .eq("versao_termo", VERSAO);
+    // Continua lá: aceite que se apaga não é prova.
+    expect(depoisDelete).toHaveLength(1);
+  });
+
+  it("agent não registra aceite — configurar IA exige admin+, e quem não configura não aceita", async () => {
+    const agent = await clientAs("agent");
+    const { error } = await agent.schema("aba_ai").from("aceites_termo_ia").insert({
+      account_id: ctx.accountId,
+      usuario_id: ctx.userIds.agent,
+      versao_termo: VERSAO,
+    });
+    expect(ehErroRls(error)).toBe(true);
+  });
+});

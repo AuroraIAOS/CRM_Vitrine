@@ -98,6 +98,17 @@ async function verificarChave(provedor: string, chave: string): Promise<{ ok: bo
       return { ok: false, erro: corpo?.error?.message ?? `HTTP ${r.status}` };
     }
 
+    if (provedor === "openrouter") {
+      // `/api/v1/key` devolve os dados da própria chave — é o endpoint
+      // natural de verificação, e não consome cota de geração.
+      const r = await fetch("https://openrouter.ai/api/v1/key", {
+        headers: { Authorization: `Bearer ${chave}` },
+      });
+      if (r.ok) return { ok: true };
+      const corpo = await r.json().catch(() => ({}));
+      return { ok: false, erro: corpo?.error?.message ?? `HTTP ${r.status}` };
+    }
+
     const r = await fetch("https://api.openai.com/v1/models", {
       headers: { Authorization: `Bearer ${chave}` },
     });
@@ -149,8 +160,8 @@ Deno.serve(async (req: Request) => {
   const modelo = body.modelo;
   const chaveApi = body.chave_api;
 
-  if (provedor !== "anthropic" && provedor !== "openai") {
-    return json({ error: "provedor deve ser 'anthropic' ou 'openai'" }, 400);
+  if (provedor !== "anthropic" && provedor !== "openai" && provedor !== "openrouter") {
+    return json({ error: "provedor deve ser 'anthropic', 'openai' ou 'openrouter'" }, 400);
   }
   if (!modelo) return json({ error: "modelo é obrigatório" }, 400);
   if (!chaveApi) return json({ error: "chave_api é obrigatória" }, 400);

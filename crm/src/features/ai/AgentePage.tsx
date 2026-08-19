@@ -3,9 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ConhecimentoPanel } from "./ConhecimentoPanel";
-import { AvisoTratamentoDeDados } from "./AvisoTratamentoDeDados";
+import { PortaoAceite } from "./PortaoAceite";
 import {
   MODELOS,
+  NOTA_PRIVACIDADE_PROVEDOR,
   ROTULO_PROVEDOR,
   useAtualizarConfiguracaoIA,
   useConfigurarChave,
@@ -111,10 +112,6 @@ function FormularioChave({ jaConfigurada }: { jaConfigurada: boolean }) {
         </span>
       </div>
 
-      {/* O aviso vem ANTES dos campos: ele existe para informar a decisão,
-          não para justificá-la depois de tomada. */}
-      <AvisoTratamentoDeDados provedor={provedor} />
-
       <div className="grid gap-2 md:grid-cols-2">
         <label className="flex flex-col gap-1">
           <span className="text-[10.5px] text-secondary-foreground">Provedor</span>
@@ -123,6 +120,9 @@ function FormularioChave({ jaConfigurada }: { jaConfigurada: boolean }) {
             onChange={(e) => {
               const p = e.target.value as Provedor;
               setProvedor(p);
+              // Trocar de provedor limpa o modelo: um id de um provedor
+              // nunca é válido no outro, e deixar o anterior no campo é
+              // convite a salvar configuração que só falha ao responder.
               setModelo(MODELOS[p][0]?.id ?? "");
             }}
             className="h-8 rounded-md border px-1.5 text-[11px]"
@@ -154,8 +154,16 @@ function FormularioChave({ jaConfigurada }: { jaConfigurada: boolean }) {
             <input
               value={modelo}
               onChange={(e) => setModelo(e.target.value)}
-              placeholder="identificador do modelo (ex.: o da documentação do provedor)"
-              className="h-8 rounded-md border px-2 text-[11px]"
+              placeholder="identificador do modelo, como no catálogo do provedor"
+              // `autoComplete="off"` + `name` neutro não são zelo excessivo:
+              // sem eles o Chrome tratou este campo como identificação e o
+              // preencheu com o e-mail do usuário ao trocar de provedor
+              // (medido na evidência da 02.11). O resultado seria uma
+              // configuração salva com nome de modelo inválido, que só
+              // falharia na primeira pergunta ao agente.
+              name="identificador-do-modelo"
+              autoComplete="off"
+              className="h-8 rounded-md border px-2 font-mono text-[11px]"
             />
           )}
         </label>
@@ -163,10 +171,17 @@ function FormularioChave({ jaConfigurada }: { jaConfigurada: boolean }) {
 
       {modelosDoProvedor.length === 0 && (
         <span className="text-[10px] leading-relaxed text-muted-foreground">
-          Copie o identificador exato da documentação do provedor. Ele não é validado ao salvar — um nome errado só
-          aparece no teste do agente, com a mensagem do próprio provedor.
+          Copie o identificador exato do catálogo do provedor. Ele não é validado ao salvar — um nome errado só aparece
+          no teste do agente, com a mensagem do próprio provedor.
         </span>
       )}
+
+      {/* Nota de privacidade específica do provedor selecionado. O caso do
+          OpenRouter é materialmente diferente e precisa aparecer no momento
+          da escolha, não depois. */}
+      <span className="rounded bg-content px-2 py-1.5 text-[10px] leading-relaxed text-muted-foreground">
+        {NOTA_PRIVACIDADE_PROVEDOR[provedor]}
+      </span>
 
       <label className="flex flex-col gap-1">
         <span className="text-[10.5px] text-secondary-foreground">Chave da API</span>
@@ -175,7 +190,13 @@ function FormularioChave({ jaConfigurada }: { jaConfigurada: boolean }) {
           value={chave}
           onChange={(e) => setChave(e.target.value)}
           placeholder="cole aqui a chave da sua conta no provedor"
-          autoComplete="off"
+          name="chave-do-provedor"
+          // `new-password`, e não `off`: o Chrome ignora `off` em campo de
+          // senha e, pior, passa a procurar um campo de "usuário" por perto
+          // para preencher junto — foi assim que ele injetou o e-mail do
+          // usuário no campo de modelo (medido na evidência da 02.11).
+          // `new-password` diz que não há par usuário/senha a completar.
+          autoComplete="new-password"
           className="h-8 rounded-md border px-2 font-mono text-[11px]"
         />
       </label>
@@ -263,11 +284,12 @@ export function AgentePage() {
         )}
       </Card>
 
+      {/* Tudo o que envia dado ao provedor fica atrás do portão: enquanto
+          o termo da versão vigente não for aceito, o formulário de
+          credenciais nem é renderizado. Se o texto do termo mudar de
+          versão, o portão volta a exigir aceite antes de continuar. */}
+      <PortaoAceite>
       {!config && <FormularioChave jaConfigurada={false} />}
-
-      {/* Com a chave já conectada o aviso continua visível: o dado sai a
-          cada resposta, não só no momento de configurar. */}
-      {config && <AvisoTratamentoDeDados provedor={config.provedor} />}
 
       {config && (
         <div className="grid min-h-0 gap-3 lg:grid-cols-2">
@@ -411,6 +433,7 @@ export function AgentePage() {
       )}
 
       {config && <FormularioChave jaConfigurada />}
+      </PortaoAceite>
     </div>
   );
 }

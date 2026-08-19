@@ -85,7 +85,7 @@ async function decrypt(cifrado: string, chaveHex: string): Promise<string> {
 }
 
 type Configuracao = {
-  provedor: "anthropic" | "openai";
+  provedor: "anthropic" | "openai" | "openrouter";
   modelo: string;
   chave_api: string;
   prompt_sistema: string | null;
@@ -177,29 +177,63 @@ async function responderAnthropic(
   };
 }
 
-async function responderOpenAI(
+/**
+ * OpenAI e OpenRouter compartilham o formato *chat completions*, então
+ * compartilham esta função — confirmado na documentação do OpenRouter
+ * (search-first, 2026-08-19): a API deles é compatível e aceita o mesmo
+ * corpo, no endpoint `https://openrouter.ai/api/v1/chat/completions`
+ * com `Authorization: Bearer`.
+ *
+ * Duas diferenças, ambas tratadas abaixo:
+ *   · `max_completion_tokens` é o nome atual na OpenAI; o OpenRouter
+ *     segue o campo clássico `max_tokens`, então cada um recebe o que
+ *     entende — mandar o campo errado faz o teto ser ignorado em
+ *     silêncio, que é como uma resposta longa vira fatura inesperada;
+ *   · o OpenRouter recomenda `HTTP-Referer` e `X-OpenRouter-Title` para
+ *     identificar a aplicação. São opcionais e não alteram cobrança.
+ */
+async function responderChatCompletions(
   cfg: Configuracao,
   chave: string,
   instrucoes: string,
   mensagem: string,
 ): Promise<{ texto: string; tokensPrompt: number; tokensResposta: number }> {
-  const r = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${chave}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: cfg.modelo,
-      max_completion_tokens: MAX_TOKENS_RESPOSTA,
-      messages: [
-        { role: "system", content: instrucoes },
-        { role: "user", content: mensagem },
-      ],
-    }),
-  });
+  const ehOpenRouter = cfg.provedor === "openrouter";
+  const url = ehOpenRouter
+    ? "https://openrouter.ai/api/v1/chat/completions"
+    : "https://api.openai.com/v1/chat/completions";
+
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${chave}`,
+    "Content-Type": "application/json",
+  };
+  if (ehOpenRouter) {
+    headers["HTTP-Referer"] = "https://vitrine.strategicepiphany.com";
+    headers["X-OpenRouter-Title"] = "CRM Vitrine";
+  }
+
+  const corpoRequisicao: Record<string, unknown> = {
+    model: cfg.modelo,
+    messages: [
+      { role: "system", content: instrucoes },
+      { role: "user", content: mensagem },
+    ],
+  };
+  if (ehOpenRouter) corpoRequisicao.max_tokens = MAX_TOKENS_RESPOSTA;
+  else corpoRequisicao.max_completion_tokens = MAX_TOKENS_RESPOSTA;
+
+  const r = await fetch(url, { method: "POST", headers, body: JSON.stringify(corpoRequisicao) });
   if (!r.ok) {
     const erro = await r.json().catch(() => ({}));
-    throw new Error(erro?.error?.message ?? `OpenAI respondeu ${r.status}`);
+    const nome = ehOpenRouter ? "OpenRouter" : "OpenAI";
+    throw new Error(erro?.error?.message ?? `${nome} respondeu ${r.status}`);
   }
   const corpo = await r.json();
+
+  // O OpenRouter roteia entre provedores e nem todos devolvem `usage`.
+  // Zero aqui significa "não informado", não "não consumiu" — o log
+  // registra a chamada de qualquer forma, que é o que permite conferir
+  // volume mesmo quando a contagem de tokens não vem.
   return {
     texto: (corpo?.choices?.[0]?.message?.content ?? "").trim(),
     tokensPrompt: corpo?.usage?.prompt_tokens ?? 0,
@@ -292,7 +326,7 @@ Deno.serve(async (req: Request) => {
   try {
     resultado = cfg.provedor === "anthropic"
       ? await responderAnthropic(cfg, chave, instrucoes, mensagem)
-      : await responderOpenAI(cfg, chave, instrucoes, mensagem);
+      : await responderChatCompletions(cfg, chave, instrucoes, mensagem);
   } catch (e) {
     // A mensagem do provedor volta para a tela poder explicar (chave sem
     // crédito, modelo inexistente, limite de taxa). A chave não aparece
