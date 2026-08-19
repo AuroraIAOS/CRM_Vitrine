@@ -92,6 +92,30 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 
 ## 5. Problemas e soluções deste projeto
 
+### `functions.invoke` engole a mensagem de erro da Edge Function — ela está em `error.context`, não em `error.message`
+- **Gatilho:** Subetapa 02.11 — colar uma chave de IA inválida na tela e receber, em vez do motivo, a mensagem genérica **"Edge Function returned a non-2xx status code"**.
+- **Causa:** quando a função responde fora de 2xx, `supabase.functions.invoke` devolve `data: null` e um `FunctionsHttpError` cuja `message` é sempre essa string fixa. O corpo da resposta — onde a função escreveu o motivo real — fica em `error.context`, que é um `Response` **ainda não lido**. Ler `data` não adianta: `data` é `null` justamente nesse caso.
+- **Ação:**
+  ```ts
+  const contexto = (erro as { context?: unknown })?.context;
+  if (contexto instanceof Response) {
+    const corpo = await contexto.clone().json().catch(() => null);
+    if (corpo?.error) return corpo.error;
+  }
+  ```
+  `clone()` importa: o corpo só pode ser lido uma vez, e sem clonar a segunda tentativa de ler falha.
+- **Por que não é detalhe cosmético:** as três causas que a tela precisa distinguir — chave errada, chave sem crédito, provedor fora do ar — chegam todas como o mesmo "non-2xx status code". O operador fica sem ação possível. Depois da correção a tela mostra "O provedor recusou a chave: API key is invalid".
+- **Vale para toda Edge Function consumida pela UI** — `whatsapp-configurar` e `whatsapp-enviar` (Subetapa 02.5) têm o mesmo padrão de resposta e merecem a mesma leitura quando alguém tocar naquelas telas.
+- **Fonte:** Subetapa 02.11, sessão de 2026-08-19.
+
+### `plainto_tsquery` liga os termos com AND — busca de conhecimento que só acha quando o cliente repete as palavras do documento
+- **Gatilho:** Subetapa 02.11 — o teste "a busca devolve o trecho relevante" falhou com a pergunta `"quanto custa a limpeza de pele"` contra o trecho `"A limpeza de pele profunda custa 180 reais…"`.
+- **Causa, medida no banco antes de corrigir:** `plainto_tsquery('simple', …)` produz `'quanto' & 'custa' & 'a' & 'limpeza' & 'de' & 'pele'` — **todos** os termos exigidos. O trecho não contém "quanto", então não casa. A config `'simple'` (escolhida na 01.5 para o produto não ficar preso a um idioma) agrava: ela não remove palavra vazia, então "a", "de", "quanto" viram exigências.
+- **Ação (migration 029):** trocar `&` por `|` **na saída** de `plainto_tsquery` — que já normalizou e escapou a entrada do cliente, preservando a proteção contra injeção de operador que a 01.5 construiu —, deixando `ts_rank` ordenar por relevância, mais um piso de relevância (`> 0.04`) para descartar o casamento por palavra comum sozinha.
+- **Por que passaria despercebido:** devolver zero trecho é um resultado plausível. O agente responderia "vou confirmar com a equipe" e ninguém suspeitaria da recuperação — a base pareceria só incompleta. Só apareceu porque o teste usou uma pergunta em linguagem natural em vez de uma palavra-chave isolada.
+- **Regra que fica:** ao testar busca textual, escreva a consulta **como o cliente escreveria**, com pergunta inteira. Teste com palavra-chave isolada passa em cima de um AND quebrado.
+- **Fonte:** Subetapa 02.11, sessão de 2026-08-19.
+
 ### Rodar a suíte de RLS várias vezes seguidas estoura o rate limit de auth do Supabase — e o sintoma parece regressão de RLS em módulos aleatórios
 - **Gatilho:** Subetapa 02.10 — depois de rodar `vitest run tests/rls` quatro vezes em poucos minutos (mais a evidência no browser), a suíte passou de 2 arquivos falhos para 5, depois 8, com falhas espalhadas por `people`, `catalog`, `sales`, `scheduling`, `ai` e `cross_account` — módulos que a sessão não havia tocado.
 - **Sintoma enganoso:** as asserções falham como `expected [] to have a length of 2` e `expected undefined to be <id>`, ou seja, **conjunto vazio onde deveria haver linha** — exatamente o que uma RLS quebrada produziria. A investigação vai direto para "o que eu quebrei nas políticas".

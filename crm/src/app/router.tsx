@@ -15,6 +15,7 @@ import { MessagingPage } from "@/features/messaging/MessagingPage";
 import { ProntuarioPage } from "@/features/health/ProntuarioPage";
 import { MapasClinicosPage } from "@/features/health/MapasClinicosPage";
 import { AutomacoesPage } from "@/features/automations/AutomacoesPage";
+import { AgentePage } from "@/features/ai/AgentePage";
 import { Placeholder } from "@/components/shared/Placeholder";
 
 // Rotas 1:1 com nav.ts (MODULE_ROUTE) + /suporte, que não é módulo de
@@ -58,7 +59,7 @@ export const router = createBrowserRouter([
           { path: "catalogo", element: <CatalogoPage /> },
           { path: "mensagens", element: <MessagingPage /> },
           { path: "automacoes", element: <AutomacoesPage /> },
-          { path: "ia", element: <Placeholder titulo="IA" /> },
+          { path: "ia", element: <AgentePage /> },
           { path: "configuracoes", element: <EquipePage /> },
           { path: "suporte", element: <Placeholder titulo="Suporte" /> },
         ],
