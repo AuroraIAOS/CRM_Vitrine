@@ -96,7 +96,7 @@ export function AnamneseTab({ clienteId, podeEscrever }: { clienteId: string; po
           const respondida = (valores[p.chave] ?? "").trim().length > 0;
           return (
             <div key={p.chave} className="flex flex-1 flex-col gap-1">
-              <div className={`h-[3px] rounded-sm ${respondida ? "bg-[#5b87a8]" : "bg-[#eef2f4]"}`} />
+              <div className={`h-[3px] rounded-sm ${respondida ? "bg-primary" : "bg-hairline"}`} />
               <span className="truncate text-[9.5px] text-muted-foreground">
                 {i + 1} · {p.rotulo}
               </span>

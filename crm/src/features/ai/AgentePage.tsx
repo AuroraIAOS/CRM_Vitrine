@@ -43,7 +43,7 @@ function Interruptor({
       className={`relative h-[14px] w-[26px] shrink-0 rounded-full transition-colors ${
         desabilitado ? "cursor-not-allowed opacity-60" : ""
       }`}
-      style={{ background: ligado ? "#5b87a8" : "#dde4e8" }}
+      style={{ background: ligado ? "hsl(var(--primary))" : "hsl(var(--input))" }}
       aria-pressed={ligado}
     >
       <span

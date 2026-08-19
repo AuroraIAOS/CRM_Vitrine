@@ -30,14 +30,14 @@ function GraficoFaturadoRecebido({ serie }: { serie: { mes: string; faturado: nu
   return (
     <div className="flex flex-col gap-2">
       <svg viewBox={`0 0 ${largura} ${altura}`} className="w-full" style={{ height: 140 }}>
-        <g stroke="#eef2f4">
+        <g stroke="hsl(var(--chart-grid))">
           <line x1="0" y1={altura * 0.25} x2={largura} y2={altura * 0.25} />
           <line x1="0" y1={altura * 0.5} x2={largura} y2={altura * 0.5} />
           <line x1="0" y1={altura * 0.75} x2={largura} y2={altura * 0.75} />
           <line x1="0" y1={altura} x2={largura} y2={altura} />
         </g>
-        <polyline points={pontos("faturado")} fill="none" stroke="#c8b79a" strokeWidth={2} strokeDasharray="4 3" />
-        <polyline points={pontos("recebido")} fill="none" stroke="#5b87a8" strokeWidth={2} />
+        <polyline points={pontos("faturado")} fill="none" stroke="hsl(var(--chart-3))" strokeWidth={2} strokeDasharray="4 3" />
+        <polyline points={pontos("recebido")} fill="none" stroke="hsl(var(--chart-1))" strokeWidth={2} />
       </svg>
       <div className="flex justify-between px-1 font-mono text-[9px] text-muted-foreground">
         {serie.map((p, i) => (
@@ -46,11 +46,11 @@ function GraficoFaturadoRecebido({ serie }: { serie: { mes: string; faturado: nu
       </div>
       <div className="flex gap-4">
         <div className="flex items-center gap-1.5">
-          <div className="h-0.5 w-3 bg-[#5b87a8]" />
+          <div className="h-0.5 w-3 bg-[hsl(var(--chart-1))]" />
           <span className="text-[10.5px] text-muted-foreground">Recebido</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="h-0.5 w-3 bg-[#c8b79a]" />
+          <div className="h-0.5 w-3 bg-[hsl(var(--chart-3))]" />
           <span className="text-[10.5px] text-muted-foreground">Faturado</span>
         </div>
       </div>

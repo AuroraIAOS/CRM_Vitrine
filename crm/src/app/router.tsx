@@ -4,7 +4,7 @@ import { RoleGate } from "./RoleGate";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { AceitarConvitePage } from "@/features/convite/AceitarConvitePage";
-import { EquipePage } from "@/features/settings/EquipePage";
+import { ConfiguracoesPage } from "@/features/settings/ConfiguracoesPage";
 import { PessoasListPage } from "@/features/people/PessoasListPage";
 import { PessoaFichaPage } from "@/features/people/PessoaFichaPage";
 import { SalesKanbanPage } from "@/features/sales/SalesKanbanPage";
@@ -23,8 +23,10 @@ import { Placeholder } from "@/components/shared/Placeholder";
 // constrói aquele módulo (docs/00_PLANO_E_CRITERIOS.md, Subetapas
 // 02.3–02.12) — a rota já existe desde a 02.1 para a navegação funcionar,
 // mesmo que access.can() esconda o item de quem não tem permissão.
-// /configuracoes já entrega a aba Equipe (Subetapa 02.2) — as demais 8
-// seções de Configurações (1m) entram na Subetapa 02.12. /pessoas e
+// /configuracoes (tela 1m) entrega as 10 seções desde a Subetapa 02.12 —
+// Equipe é a que já vinha da 02.2, reaproveitada sem alteração. A seção
+// ativa fica em `?secao=`, não em estado local, para link direto e botão
+// "voltar" funcionarem. /pessoas e
 // /pessoas/:id (telas 1c/1d) já entregues pela Subetapa 02.3. /vendas
 // (tela 1f, kanban) já entregue pela Subetapa 02.4. /mensagens (tela
 // 1j, 3 painéis + Meta Cloud API real) já entregue pela Subetapa 02.5.
@@ -60,7 +62,7 @@ export const router = createBrowserRouter([
           { path: "mensagens", element: <MessagingPage /> },
           { path: "automacoes", element: <AutomacoesPage /> },
           { path: "ia", element: <AgentePage /> },
-          { path: "configuracoes", element: <EquipePage /> },
+          { path: "configuracoes", element: <ConfiguracoesPage /> },
           { path: "suporte", element: <Placeholder titulo="Suporte" /> },
         ],
       },

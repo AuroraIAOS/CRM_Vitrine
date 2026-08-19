@@ -211,7 +211,7 @@ export function AutomacoesPage() {
                       aria-label={a.ativo ? "Desativar automação" : "Ativar automação"}
                       onClick={() => void alternar.mutateAsync({ id: a.id, ativo: !a.ativo })}
                       className="relative h-[14px] w-[26px] rounded-full transition-colors"
-                      style={{ background: a.ativo ? "#5b87a8" : "#dde4e8" }}
+                      style={{ background: a.ativo ? "hsl(var(--primary))" : "hsl(var(--input))" }}
                     >
                       <span
                         className="absolute top-[2px] h-[10px] w-[10px] rounded-full bg-white transition-all"
@@ -239,7 +239,7 @@ export function AutomacoesPage() {
               ))}
             </div>
 
-            <div className="border-t bg-[#fbfcfd] p-3">
+            <div className="border-t bg-content p-3">
               <span className="text-[10px] leading-relaxed text-muted-foreground">
                 execução agendada por pg_cron — sem serviço externo
               </span>

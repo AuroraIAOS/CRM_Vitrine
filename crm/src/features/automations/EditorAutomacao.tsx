@@ -165,7 +165,7 @@ export function EditorAutomacao({ automacao }: { automacao: Automacao }) {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-auto bg-[#fbfcfd] p-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-auto bg-content p-4">
         {/* Gatilho — é a automação, não uma etapa */}
         <CardEtapa
           familia="gatilho"

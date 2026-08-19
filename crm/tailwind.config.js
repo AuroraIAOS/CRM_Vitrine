@@ -16,7 +16,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["'IBM Plex Sans'", "ui-sans-serif", "system-ui", "sans-serif"],
+        // Roteada por CSS var para o seletor "Sans neutra / Serifa editorial"
+        // da tela 1m poder trocá-la sem rebuild (docs/04 §4). O valor de
+        // `--font-ui` vive em src/index.css.
+        sans: ["var(--font-ui)", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["'IBM Plex Mono'", "ui-monospace", "SFMono-Regular", "monospace"],
       },
       colors: {

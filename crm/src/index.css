@@ -6,14 +6,32 @@
    telas do pacote de wireframes (Etapa de Transição 1→2). Cada variável traz
    o hex de origem em comentário — o hex nunca aparece fora deste arquivo
    (docs/04 §4). Conversão hex→HSL feita manualmente na Subetapa 02.1.
-   Modo Dark: o pacote de wireframes é 100% light — nenhuma variante dark
-   foi ratificada ainda. O bloco `.dark` abaixo é o placeholder herdado do
-   shadcn/ui (não a paleta do CRM Maximus, que docs/04 §1 planeja reaproveitar
-   — isso é tarefa futura, sem toggle de tema wireframed em nenhuma das 16
-   telas). Não remover: mantém o mecanismo `.dark` pronto para quando a
-   variante ratificada existir. */
+   Modo Dark (Subetapa 02.12): o pacote de wireframes é 100% light e nenhuma
+   variante dark foi ratificada por Max. O bloco `.dark` abaixo deixou de ser
+   o placeholder cinza do shadcn/ui e passou a ser **derivado da paleta
+   ratificada acima**, papel por papel — não é uma paleta nova, é a mesma
+   família azul-clínica com as luminâncias invertidas. Fica declarado que é
+   derivação, não ratificação: quando Max fechar a variante dark de verdade,
+   é este bloco que se substitui.
+
+   O placeholder do shadcn tinha um defeito que só apareceria em produção:
+   ele não redefinia `--success`, `--warning`, `--destructive-tint` nem os
+   `*-tint-foreground`. No escuro, todo badge "Ativo"/"Vencido"/"Aguarda"
+   continuaria com tint claríssimo e texto claro por cima — ilegível. A
+   derivação abaixo cobre as quatro famílias semânticas inteiras.
+
+   Cor de destaque, densidade e tipografia (`[data-accent]`, `[data-density]`,
+   `[data-typography]`) vêm de `public.account_preferences` (migration 032) e
+   são escritas no `<html>` por `src/lib/preferencias.tsx`. O hex nunca sai
+   deste arquivo (docs/04 §4). */
 @layer base {
   :root {
+    /* Roteada por variável para o seletor "Sans neutra / Serifa editorial"
+       da tela 1m poder trocá-la sem rebuild (docs/04 §4). O mono NÃO é
+       configurável — é o "vocabulário de metadado" de docs/04 §5.1, e vale
+       igual nos dois modos. */
+    --font-ui: "IBM Plex Sans";
+
     --background: 0 0% 100%;              /* #ffffff — fundo do shell/card */
     --foreground: 207 21% 19%;            /* #26313a — texto primário */
     --card: 0 0% 100%;                    /* #ffffff */
@@ -55,34 +73,163 @@
     --content: 200 16% 96%;               /* #f4f6f7 — fundo da área de conteúdo do shell */
     --hairline: 200 3% 95%;               /* #eef2f4 — linha entre itens de lista/tabela */
 
+    /* Séries de gráfico (docs/04 §5.2, linha "Série extra de gráfico" +
+       as três cores semânticas). Tokenizadas na Subetapa 02.12 porque o
+       modo escuro passou a existir: o gráfico de 6 meses do Financeiro
+       (02.8) tinha `stroke="#5b87a8"` cravado no SVG, e cor de série
+       clara sobre card escuro fica ilegível. Cor de gráfico é cor de
+       tema — mora aqui como todas as outras (docs/04 §4). */
+    --chart-1: 206 31% 51%;               /* #5b87a8 — série 1 / azul clínico */
+    --chart-2: 157 20% 63%;               /* #8fb4a6 — série 2 / sage */
+    --chart-3: 38 29% 69%;                /* #c8b79a — série 3 / tan */
+    --chart-4: 203 32% 86%;               /* #cfdde6 — 4ª fatia, "outros", barra inativa */
+    --chart-grid: 200 21% 95%;            /* #eef2f4 — linha de grade */
+
     /* docs/04 §5.3 — 7-8px é o padrão de card; a escala existente
        (lg=radius, md=radius-2px, sm=radius-4px) já bate com
        card 8px / nota-aninhada 6px / botão-input 4px sem alteração. */
     --radius: 0.5rem;
   }
 
+  /* Derivado da paleta ratificada, papel por papel — ver cabeçalho.
+     A relação card/conteúdo se inverte de propósito: no light o card é
+     branco sobre conteúdo cinza; no dark o card é mais CLARO que o
+     conteúdo, preservando "o card salta do fundo" em vez de preservar
+     "o card é o mais claro da tela". */
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
-    --content: 240 3.7% 15.9%;
-    --hairline: 240 3.7% 15.9%;
+    --background: 208 20% 12%;            /* card/sidebar/header no escuro */
+    --foreground: 200 16% 92%;            /* texto primário */
+    --card: 208 20% 12%;
+    --card-foreground: 200 16% 92%;
+    --popover: 208 20% 15%;
+    --popover-foreground: 200 16% 92%;
+
+    --primary: 205 38% 58%;               /* azul clínico clareado p/ contrastar no escuro */
+    --primary-foreground: 208 25% 10%;
+
+    --secondary: 208 18% 18%;
+    --secondary-foreground: 200 14% 80%;
+
+    --muted: 208 18% 18%;
+    --muted-foreground: 204 10% 62%;
+
+    --accent: 205 30% 22%;                /* tint escuro do azul — estado ativo de nav */
+    --accent-foreground: 205 45% 78%;
+
+    --destructive: 10 30% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --destructive-tint: 10 20% 20%;
+    --destructive-tint-foreground: 10 45% 74%;
+
+    --success: 157 25% 55%;
+    --success-foreground: 0 0% 100%;
+    --success-tint: 155 18% 18%;
+    --success-tint-foreground: 155 35% 70%;
+
+    --warning: 38 35% 62%;
+    --warning-foreground: 208 25% 10%;
+    --warning-tint: 38 18% 19%;
+    --warning-tint-foreground: 38 45% 72%;
+
+    --border: 208 15% 22%;
+    --input: 208 15% 26%;
+    --ring: 205 38% 58%;
+
+    --content: 208 22% 9%;                /* área de conteúdo: mais escura que o card */
+    --hairline: 208 15% 20%;
+
+    --chart-1: 205 38% 58%;
+    --chart-2: 157 25% 55%;
+    --chart-3: 38 35% 62%;
+    --chart-4: 205 18% 34%;
+    --chart-grid: 208 15% 20%;
+  }
+
+  /* ----------------------------------------------------------------
+     Cor de destaque — os 5 swatches do card "Cor de destaque" da tela
+     `1m`. Quatro deles são as próprias cores semânticas de docs/04
+     §5.2 (sage/tan/terracota) na tonalidade que já garante contraste
+     com texto branco; `lilac` é o único que aparece SÓ como swatch do
+     wireframe, sem linha na tabela ratificada — derivado na mesma
+     lógica dos outros e marcado como tal.
+
+     O sexto quadrado do wireframe (tracejado, "cor livre") não foi
+     implementado de propósito: cor arbitrária escolhida por cliente
+     quebra o contraste texto-sobre-tint que a paleta ratificada
+     garante par a par. `clinical_blue` é o default e não precisa de
+     bloco — é o que `:root`/`.dark` já trazem.
+     ---------------------------------------------------------------- */
+  [data-accent="sage"] {
+    --primary: 156 23% 39%;               /* #4d7c69 */
+    --ring: 156 23% 39%;
+    --accent: 150 21% 95%;                /* #eef4f1 */
+    --accent-foreground: 156 23% 39%;
+  }
+  .dark[data-accent="sage"] {
+    --primary: 157 25% 55%;
+    --ring: 157 25% 55%;
+    --accent: 155 18% 20%;
+    --accent-foreground: 155 35% 72%;
+  }
+
+  [data-accent="tan"] {
+    --primary: 38 27% 43%;                /* #8a7550 */
+    --ring: 38 27% 43%;
+    --accent: 38 45% 94%;
+    --accent-foreground: 38 27% 43%;
+  }
+  .dark[data-accent="tan"] {
+    --primary: 38 35% 62%;
+    --ring: 38 35% 62%;
+    --accent: 38 18% 21%;
+    --accent-foreground: 38 45% 74%;
+  }
+
+  /* lilás — swatch do wireframe `1m` (#9c8fa8), sem linha em docs/04 §5.2 */
+  [data-accent="lilac"] {
+    --primary: 275 14% 42%;
+    --ring: 275 14% 42%;
+    --accent: 275 25% 95%;
+    --accent-foreground: 275 18% 40%;
+  }
+  .dark[data-accent="lilac"] {
+    --primary: 275 22% 64%;
+    --ring: 275 22% 64%;
+    --accent: 275 14% 22%;
+    --accent-foreground: 275 30% 78%;
+  }
+
+  [data-accent="terracotta"] {
+    --primary: 13 25% 49%;                /* #9c6b5e */
+    --ring: 13 25% 49%;
+    --accent: 12 35% 94%;
+    --accent-foreground: 13 25% 49%;
+  }
+  .dark[data-accent="terracotta"] {
+    --primary: 10 30% 58%;
+    --ring: 10 30% 58%;
+    --accent: 10 20% 21%;
+    --accent-foreground: 10 45% 76%;
+  }
+
+  /* ----------------------------------------------------------------
+     Densidade — "compacto vs. espaçoso" de docs/04 §2, que descreve
+     densidade como propriedade de GRADE E CONTAINER, não de tipo.
+
+     Por isso a alavanca é o `font-size` da raiz: a escala de
+     espaçamento do Tailwind é em `rem`, então padding, gap e margem da
+     interface inteira encolhem juntos, enquanto os tamanhos de texto
+     do wireframe (escritos em px arbitrário: `text-[11.5px]`,
+     `text-[26px]`) ficam exatamente onde foram ratificados. Uma linha
+     de CSS faz o que uma classe condicional em cada tela faria pior.
+     ---------------------------------------------------------------- */
+  :root[data-density="compact"] {
+    font-size: 14px;
+  }
+
+  /* Serifa editorial — a segunda opção do card "Tipografia" da tela 1m. */
+  [data-typography="serif"] {
+    --font-ui: "IBM Plex Serif";
   }
 
   * {

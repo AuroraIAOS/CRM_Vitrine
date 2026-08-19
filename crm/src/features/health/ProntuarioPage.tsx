@@ -414,7 +414,7 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
 
           {/* Mapa + marcações da sessão */}
           <div className="grid min-h-0 flex-1 gap-3 p-3.5 md:grid-cols-[1fr_210px]">
-            <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-[#fbfcfd] p-3.5">
+            <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-content p-3.5">
               <MapaClinico
                 tipo={mapaAtivo}
                 marcacoes={marcacoes}

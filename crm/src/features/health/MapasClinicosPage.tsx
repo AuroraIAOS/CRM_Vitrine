@@ -58,7 +58,7 @@ export function MapasClinicosPage() {
               <span className="text-[12.5px] font-medium text-foreground">{mapa.rotulo}</span>
               <span className="font-mono text-[9.5px] text-muted-foreground">{mapa.subtitulo}</span>
             </div>
-            <div className="flex justify-center rounded-md border bg-[#fbfcfd] p-3.5">
+            <div className="flex justify-center rounded-md border bg-content p-3.5">
               <MapaClinico
                 tipo={mapa.chave}
                 compacto
