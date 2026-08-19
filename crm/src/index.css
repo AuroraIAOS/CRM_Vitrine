@@ -236,6 +236,49 @@
     @apply border-border;
   }
 
+  /* Diz ao navegador em que esquema ele deve desenhar o que é DELE: seletor
+     de data/hora, lista aberta do `select`, caixa de seleção, barra de
+     rolagem. Sem isto, o modo escuro fica com ilhas claras que nenhuma
+     classe nossa alcança, porque esses controles são desenhados pelo
+     próprio navegador. */
+  :root {
+    color-scheme: light;
+  }
+  .dark {
+    color-scheme: dark;
+  }
+
+  /* Campo de formulário nasce com o token do tema.
+     ---------------------------------------------------------------
+     Isto é regra de camada base, e não classe repetida em cada campo, por
+     uma razão medida: na Subetapa 02.12b, 87 dos 103 campos do app não
+     tinham `bg-background`. No modo claro isso nunca apareceu — o branco
+     padrão do navegador é exatamente o fundo do tema —, então o defeito
+     ficou invisível por onze telas até o modo escuro existir, quando virou
+     campo branco com texto branco. Corrigir campo a campo consertaria as
+     telas já olhadas e deixaria as próximas nascerem erradas de novo.
+
+     Seletor de elemento puro (especificidade 0,0,1) de propósito: qualquer
+     classe utilitária escrita no componente (`bg-content`, `bg-transparent`)
+     continua vencendo. A base dá o padrão, não a última palavra. */
+  input,
+  select,
+  textarea {
+    @apply bg-background text-foreground;
+  }
+
+  /* A lista aberta do `select` é desenhada pelo navegador e não herda o
+     fundo do controle fechado. */
+  option {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-muted-foreground;
+  }
+
   body {
     @apply bg-background text-foreground font-sans;
   }

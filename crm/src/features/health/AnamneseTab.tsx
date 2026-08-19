@@ -55,11 +55,27 @@ export function AnamneseTab({ clienteId, podeEscrever }: { clienteId: string; po
   const preenchidas = formulario ? formulario.perguntas.filter((p) => (valores[p.chave] ?? "").trim()).length : 0;
   const total = formulario?.perguntas.length ?? 0;
 
+  const faltando = formulario ? formulario.perguntas.filter((p) => !(valores[p.chave] ?? "").trim()) : [];
+  const completa = !!formulario && faltando.length === 0;
+
   async function aoSalvar() {
     setErro(null);
     if (!formulario) return;
-    if (preenchidas === 0) {
-      setErro("Responda ao menos uma pergunta antes de salvar.");
+    // A trava é `< total`, não `=== 0`.
+    //
+    // A versão anterior aceitava gravar com uma pergunta respondida de cinco,
+    // e o resultado foi medido em tela: uma anamnese registrada com "3
+    // resposta(s)". Num prontuário isso é pior que um campo vazio — a linha
+    // gravada tem data, autor e aparência de registro completo, e ninguém
+    // que a leia depois sabe se "alergias" está em branco porque o paciente
+    // não tem nenhuma ou porque a pergunta não chegou a ser feita. Quem
+    // precisa registrar ausência escreve "nada consta"; o silêncio não pode
+    // ser gravado como se fosse resposta.
+    if (!completa) {
+      setErro(
+        `Faltam ${faltando.length} de ${total}: ${faltando.map((p) => p.rotulo).join(", ")}. ` +
+          `Se não houver o que relatar, escreva "nada consta" — a anamnese não aceita campo em branco.`,
+      );
       return;
     }
     try {
@@ -92,14 +108,19 @@ export function AnamneseTab({ clienteId, podeEscrever }: { clienteId: string; po
     <div className="flex flex-col gap-3">
       {/* Barra de etapas do wireframe — progresso real sobre as perguntas do formulário. */}
       <div className="flex items-center gap-2">
+        {/* Só as barras: o rótulo de cada passo repetia, em corpo 9,5px e
+            truncado, exatamente o título que aparece dois centímetros abaixo
+            em corpo legível — e era o que forçava o painel a ficar mais largo
+            que os outros três. O nome continua alcançável no `title`. */}
         {formulario.perguntas.map((p, i) => {
           const respondida = (valores[p.chave] ?? "").trim().length > 0;
           return (
-            <div key={p.chave} className="flex flex-1 flex-col gap-1">
+            <div
+              key={p.chave}
+              title={`${i + 1} · ${p.rotulo}${respondida ? "" : " (em branco)"}`}
+              className="flex flex-1 flex-col gap-1"
+            >
               <div className={`h-[3px] rounded-sm ${respondida ? "bg-primary" : "bg-hairline"}`} />
-              <span className="truncate text-[9.5px] text-muted-foreground">
-                {i + 1} · {p.rotulo}
-              </span>
             </div>
           );
         })}
@@ -141,7 +162,12 @@ export function AnamneseTab({ clienteId, podeEscrever }: { clienteId: string; po
       {erro && <span className="text-[10.5px] text-destructive">{erro}</span>}
 
       {podeEscrever && (
-        <Button size="sm" onClick={() => void aoSalvar()} disabled={responder.isPending}>
+        <Button
+          size="sm"
+          onClick={() => void aoSalvar()}
+          disabled={responder.isPending || !completa}
+          title={completa ? undefined : "A anamnese só grava com as cinco perguntas respondidas."}
+        >
           Gravar anamnese ({preenchidas}/{total})
         </Button>
       )}

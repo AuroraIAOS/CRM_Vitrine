@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -192,7 +192,6 @@ export function ProntuarioPage() {
 }
 
 function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
-  const navigate = useNavigate();
   const { data: clientes = [] } = useClientesDaConta();
   const { data: podeLer, isLoading: verificando } = usePodeAcessarClinico(clienteId, "leitura");
   const { data: podeCriar } = usePodeAcessarClinico(clienteId, "criacao");
@@ -258,13 +257,7 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
   if (!podeLer) {
     return (
       <div className="flex flex-col gap-3">
-        <button
-          type="button"
-          onClick={() => navigate("/prontuario")}
-          className="self-start text-[11px] text-primary underline-offset-2 hover:underline"
-        >
-          ← Prontuário
-        </button>
+        {/* Sem link de retorno próprio: o caminho do AppShell já leva de volta. */}
         <Card className="flex flex-col gap-2.5 p-5">
           <span className="text-[13px] font-medium text-foreground">Acesso ao prontuário não autorizado</span>
           <p className="max-w-[62ch] text-[11.5px] leading-relaxed text-secondary-foreground">
@@ -347,21 +340,23 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
   const alergias = prontuario?.alergias?.trim();
 
   return (
-    <div className="flex min-h-0 flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() => navigate("/prontuario")}
-          className="text-[11px] text-primary underline-offset-2 hover:underline"
-        >
-          ← Prontuário
-        </button>
+    // Altura explícita, não `h-full`: dentro do `main` do AppShell (que é
+    // `flex-1 overflow-auto p-4`) um filho com `h-full` não tem altura de
+    // referência resolvida e cresce além da viewport sem gerar rolagem
+    // utilizável — armadilha medida na Subetapa 02.5 e registrada em
+    // `handoffs/instrucoes.md` §5. É isto que faz as quatro abas terem o
+    // MESMO tamanho: a caixa é fixa e o conteúdo rola por dentro, em vez de
+    // a página inteira esticar conforme a aba escolhida.
+    <div className="flex h-[calc(100vh-8.5rem)] min-h-0 flex-col gap-3">
+      <div className="flex items-center justify-end">
+        {/* O retorno ao Prontuário é trabalho do caminho, no AppShell —
+            havia um "← Prontuário" aqui fazendo a mesma coisa. */}
         <Link to="/prontuario/mapas" className="text-[11px] text-primary underline-offset-2 hover:underline">
           Biblioteca de mapas clínicos
         </Link>
       </div>
 
-      <div className="grid min-h-0 gap-3 lg:grid-cols-[1.35fr_1fr]">
+      <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[1.35fr_1fr]">
         {/* ---------- Coluna esquerda: paciente + mapa ---------- */}
         <Card className="flex min-h-0 flex-col overflow-hidden">
           <div className="flex items-center justify-between border-b px-3.5 py-3">

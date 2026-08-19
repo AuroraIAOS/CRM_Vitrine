@@ -117,6 +117,22 @@ exportacoes-clinicas/
 *prontuario*.json
 *prontuario*.sql
 
+# EXCEÇÃO NECESSÁRIA — migration é código-fonte, não exportação.
+#
+# Aconteceu de verdade na Subetapa 02.12b: a migration
+# `034_anamnese_completa_obrigatoria.sql` foi escrita, aplicada no banco e
+# **não apareceu no `git status`** — engolida por `*anamnese*.sql` logo
+# acima. É exatamente a armadilha que o comentário no topo deste bloco
+# descreve, e que `handoffs/instrucoes.md` §6 registra: o `git status` diz
+# "nothing to commit", o commit sai verde, e o arquivo simplesmente não vai.
+# Neste caso o banco teria a trava e o repositório não teria a migration —
+# a próxima clonagem de CRM-filho nasceria sem ela.
+#
+# O bloco acima continua valendo em todo o resto da árvore: dump ou
+# exportação clínica em qualquer pasta segue bloqueado. Aqui só se
+# reafirma que `db/migrations/` é fonte, e fonte sempre entra.
+!db/migrations/*.sql
+
 # --------------------------------------------------------------------
 # Termos sensíveis (qualquer arquivo com estas palavras no nome)
 

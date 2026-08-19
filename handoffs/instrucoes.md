@@ -92,6 +92,31 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 
 ## 5. Problemas e soluções deste projeto
 
+### `.gitignore` por palavra solta engoliu uma migration de verdade — a armadilha de §6 aconteceu neste projeto
+- **Gatilho:** Subetapa 02.12b — a migration `034_anamnese_completa_obrigatoria.sql` foi escrita, aplicada no banco e **não apareceu no `git status`**.
+- **Causa:** o bloco de proteção contra exportação clínica do `.gitignore` traz `*anamnese*.sql` e `*prontuario*.sql`, mirando dump de dado de paciente. Migration é arquivo `.sql` com a palavra no nome — e cai no mesmo padrão.
+- **Por que é grave e não chato:** o banco ficaria com a trava e o repositório sem a migration. Nenhum erro em lugar nenhum: `git status` limpo, commit verde, push verde. O defeito só apareceria na próxima clonagem de CRM-filho, que nasceria sem a regra — longe daqui, e sem pista de origem. É exatamente o cenário que §6 deste arquivo descrevia como hipótese; agora tem instância.
+- **Ação:** `!db/migrations/*.sql` logo após o bloco, com o motivo escrito ali mesmo. `db/migrations/` é fonte; dump clínico segue bloqueado em todo o resto da árvore. Varredura com `git check-ignore` sobre todas as migrations confirmou que nenhuma outra estava sendo engolida.
+- **Regra que fica:** ao criar arquivo cujo nome contenha termo do vocabulário clínico ou de credencial, **conferir `git status` antes de commitar** — ou, melhor, `git check-ignore -v <arquivo>`, que responde qual linha do `.gitignore` pegou. Padrão amplo protege dado e ataca código no mesmo movimento; a defesa é a exceção explícita por diretório de fonte, não afrouxar o padrão.
+- **Fonte:** Subetapa 02.12b, sessão de 2026-08-19.
+
+### Modo escuro revelou que 87 dos 103 campos do app nunca tiveram token de fundo — e o modo claro escondia isso por coincidência
+- **Gatilho:** Subetapa 02.12b — Max revisou o tema escuro tela a tela e relatou campo branco com letra branca em três telas (Prontuário, Automações, IA).
+- **Medição antes de corrigir:** `grep` por `<input|<select|<textarea` sem `bg-background`/`bg-content`/`bg-transparent` devolveu **87 de 103**. Não era problema das três telas relatadas — era do app inteiro, e as três foram só as que ele abriu.
+- **Por que ficou invisível por onze telas:** no modo claro, o branco padrão do navegador para campo de formulário **coincide exatamente** com `--background`. O defeito existia desde sempre e não tinha sintoma. Só o modo escuro o revelou, porque aí o padrão do navegador e o token divergem.
+- **Ação:** regra de camada base em `src/index.css` — `input, select, textarea { @apply bg-background text-foreground }`, mais `option` (a lista aberta do `select` é desenhada pelo navegador e não herda o fundo do controle fechado) e `::placeholder`. **Seletor de elemento puro, especificidade 0,0,1**, para qualquer classe utilitária do componente continuar vencendo — a base dá o padrão, não a última palavra. Somado a `color-scheme: light`/`dark` por tema, que é o que faz o navegador desenhar seletor de data/hora, caixa de seleção e barra de rolagem no esquema certo (nenhuma classe nossa alcança esses controles).
+- **Verificação:** varredura instrumentada por `getComputedStyle` em 29 campos de 13 rotas no escuro, medindo luminância de fundo e de texto — zero campo claro, zero contraste insuficiente.
+- **Regra que fica:** **corrigir onde a causa está, não onde o sintoma apareceu.** Três telas relatadas, 87 campos afetados: consertar as três deixaria treze erradas e todas as futuras nascendo erradas. E vale a generalização — quando um tema novo revela um defeito, medir a extensão dele no app inteiro antes de escolher onde corrigir.
+- **Fonte:** Subetapa 02.12b, sessão de 2026-08-19.
+
+### Validação de formulário não é invariante — anamnese incompleta precisava de trigger, não de `if`
+- **Gatilho:** Subetapa 02.12b — Max encontrou em uso real uma anamnese gravada com **"3 resposta(s)"** de 5. `AnamneseTab` tinha `if (preenchidas === 0)`: só recusava quando NENHUMA pergunta fora respondida.
+- **Por que num prontuário isso é pior que campo vazio:** a linha gravada tem data, autor e aparência de registro completo. Quem a ler depois não distingue "o paciente não tem alergia" de "a pergunta nunca foi feita" — as duas produzem o mesmo vazio, e só uma é segura para decidir procedimento. Ausência registrada é informação; ausência não registrada é lacuna disfarçada de informação.
+- **Ação:** tela corrigida (botão desabilitado, recusa nomeando as perguntas que faltam) **e** migration `034` com trigger `aba_health.exigir_anamnese_completa()`, `23514`. Validação de formulário é conveniência: um `insert` direto pelo PostgREST passaria por cima dela, e `aba_health` tem regime declarado sem exceção (`CLAUDE.md` §5).
+- **Trigger e não CHECK, por duas razões:** a regra compara com `formularios_anamnese.perguntas`, que é **outra tabela** (CHECK não enxerga); e um CHECK seria validado contra as linhas existentes, invalidando as anamneses incompletas já gravadas — que são registro clínico e não se apagam por migration. O trigger vale do INSERT em diante e deixa o passado intacto e visível.
+- **Detalhe que importa:** `btrim` no valor — campo só com espaço não conta como resposta. E "nada consta" conta, porque é afirmação clínica.
+- **Fonte:** Subetapa 02.12b, sessão de 2026-08-19.
+
 ### O agendador da 02.10 zera o KPI "Vencido" do Financeiro — a fatura sai do contador exatamente quando vira pendência
 - **Gatilho:** Subetapa 02.12, ao montar o painel "Pendências da equipe" do dashboard sobre as mesmas tabelas que a tela `1g` já usava.
 - **Suspeita:** `aba_finance.marcar_faturas_vencidas()` (job diário desde a 02.10) faz `UPDATE ... SET status = 'vencida' WHERE status IN ('aberta','enviada')`, e `useResumoFinanceiro()` da Subetapa 02.8 filtra `if (f.status !== "aberta" && f.status !== "enviada") continue`.

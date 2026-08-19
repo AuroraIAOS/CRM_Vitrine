@@ -2,6 +2,13 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+0.1] - 2026-08-19 (Subetapa 02.12b)
+- **Corrigido: campo de formulário ilegível no modo escuro.** Fundo branco com letra branca, relatado em Prontuário, Automações e IA. A medição mostrou que **87 dos 103 campos do sistema** nunca tiveram a cor do tema — o modo claro escondia isso porque o branco do navegador coincide com o fundo claro. Corrigido de uma vez para o sistema inteiro, e não nas três telas em que foi visto.
+- **Corrigido, e é o mais sério: a anamnese aceitava ser gravada pela metade.** Havia registro salvo com 3 respostas de 5. Num prontuário isso é pior que um campo em branco — a linha tem data, autor e aparência de ficha completa, e quem a ler depois não sabe se o paciente não tem alergia ou se a pergunta nunca foi feita. Agora **o banco recusa**, não só a tela: quem não tiver o que relatar escreve "nada consta".
+- **O "caminho" no topo da tela virou navegação de verdade** — antes era só texto. Agora leva de volta, tem o fundo da área de conteúdo e apresenta cada passo em pílula, como as tags. O link "← Prontuário", que fazia o mesmo trabalho em duplicidade, saiu.
+- **As quatro abas do prontuário passaram a ter o mesmo tamanho.** A de Anamnese esticava a página inteira; agora todas ocupam a mesma caixa e rolam por dentro. As legendas dos cinco passos saíram: repetiam, truncadas e minúsculas, o título que aparece logo abaixo em corpo legível.
+- **Dashboard ganhou item próprio na navegação lateral** — só era alcançável clicando na logomarca.
+
 ## [+1.0] - 2026-08-19 (Subetapa 02.12)
 - **Dashboard geral** (`/`, tela `1b`): quatro indicadores — atendimentos de hoje, novos leads, taxa de ocupação e receita do mês —, gráfico de 12 semanas, rosca dos serviços mais realizados e três painéis (próximos atendimentos, pendências da equipe, ocupação por profissional). **Todo número sai de consulta ao banco**, e cada card diz em texto de que período está falando: número sem período é número que cada pessoa lê como quer.
 - **Quando um número não pode ser calculado, a tela diz o motivo em vez de mostrar zero.** Sem acesso ao Financeiro, "Receita do mês" mostra "sem acesso ao Financeiro", não "R$ 0" — que é indistinguível de "a clínica não faturou nada" e é a mensagem mais alarmante possível. O mesmo vale para o contador de anamneses de quem não tem alcance clínico: ele mostraria o número **máximo**, mandando a equipe atrás de um problema que não existe.

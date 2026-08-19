@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { LogOut, LifeBuoy } from "lucide-react";
+import { LogOut, LifeBuoy, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useReadableModules } from "@/lib/access";
 import { buildModuleNav, findSettingsNavItem, type NavItem } from "./nav";
@@ -52,13 +52,40 @@ export function AppShell() {
   const currentModule = moduleItems.find(
     (item) => location.pathname === item.path || location.pathname.startsWith(`${item.path}/`),
   );
-  const breadcrumb = currentModule
-    ? `aba_${currentModule.moduleKey} > ${currentModule.label}`
-    : settingsItem && location.pathname === settingsItem.path
-      ? `core > ${settingsItem.label}`
+
+  /**
+   * O caminho é a navegação de volta do app — não é enfeite.
+   *
+   * Até a Subetapa 02.12b ele era uma string solta, e por isso cada tela que
+   * precisava voltar inventava um link próprio ("← Prontuário" aparecia duas
+   * vezes em `ProntuarioPage`). Duas peças fazendo o mesmo trabalho é uma a
+   * mais: a que fica é esta, porque está em todas as telas.
+   *
+   * O primeiro segmento (`aba_health`, `core`) é **namespace, não lugar** —
+   * não há para onde ele levar, então não é link. O segundo é a página, e
+   * navega sempre: estando numa sub-rota, ele é o retorno; estando na
+   * própria página, ele recarrega, que é o comportamento normal de um
+   * caminho.
+   */
+  const trilha: { rotulo: string; caminho: string | null }[] = currentModule
+    ? [
+        { rotulo: `aba_${currentModule.moduleKey}`, caminho: null },
+        { rotulo: currentModule.label, caminho: currentModule.path },
+      ]
+    : settingsItem && location.pathname.startsWith(settingsItem.path)
+      ? [
+          { rotulo: "core", caminho: null },
+          { rotulo: settingsItem.label, caminho: settingsItem.path },
+        ]
       : location.pathname === "/suporte"
-        ? "core > Suporte"
-        : "core > dashboard";
+        ? [
+            { rotulo: "core", caminho: null },
+            { rotulo: "Suporte", caminho: "/suporte" },
+          ]
+        : [
+            { rotulo: "core", caminho: null },
+            { rotulo: "Dashboard", caminho: "/" },
+          ];
 
   return (
     <div className="grid min-h-screen grid-cols-[236px_1fr] grid-rows-[56px_1fr] bg-background text-foreground">
@@ -82,6 +109,14 @@ export function AppShell() {
       {/* Sidebar: módulos dinâmicos (access.readable_modules()) + rodapé fixo */}
       <aside className="col-start-1 row-start-2 flex flex-col overflow-y-auto border-r border-border bg-background p-2">
         <nav className="flex flex-1 flex-col gap-[9px]">
+          {/* Dashboard não é módulo de `access.modules` — é a tela inicial da
+              conta, e todo membro a alcança (o conteúdo dela é que se reduz
+              por permissão, KPI a KPI). Ficava acessível só pela logomarca,
+              o que é caminho que ninguém adivinha. */}
+          <NavLink to="/" end className={navLinkClass(location.pathname === "/")}>
+            <LayoutDashboard className="h-3.5 w-3.5" />
+            Dashboard
+          </NavLink>
           {moduleItems.map((item) => (
             <SidebarLink key={item.moduleKey} item={item} />
           ))}
@@ -108,11 +143,31 @@ export function AppShell() {
         </div>
       </aside>
 
-      {/* Área de conteúdo: faixa de breadcrumb mono + fundo #f4f6f7 */}
+      {/* Área de conteúdo: faixa do caminho + canvas.
+          A faixa usa `bg-content`, o mesmo fundo do canvas, para o caminho
+          pertencer à área de conteúdo em vez de virar uma terceira barra;
+          os segmentos ganham forma de pílula, o mesmo vocabulário já usado
+          nas tags (docs/04 §5.5). */}
       <section className="col-start-2 row-start-2 flex flex-col overflow-hidden">
-        <div className="flex items-center border-b border-border bg-background px-4 py-[9px]">
-          <span className="font-mono text-[10.5px] text-muted-foreground">{breadcrumb}</span>
-        </div>
+        <nav aria-label="Caminho" className="flex items-center gap-1.5 border-b border-border bg-content px-4 py-[7px]">
+          {trilha.map((passo, i) => (
+            <div key={passo.rotulo} className="flex items-center gap-1.5">
+              {i > 0 && <span className="font-mono text-[10px] text-muted-foreground/60">›</span>}
+              {passo.caminho ? (
+                <Link
+                  to={passo.caminho}
+                  className="rounded-full border border-border bg-background px-2.5 py-[3px] font-mono text-[10.5px] text-secondary-foreground transition-colors hover:border-primary hover:text-accent-foreground"
+                >
+                  {passo.rotulo}
+                </Link>
+              ) : (
+                <span className="rounded-full px-2 py-[3px] font-mono text-[10.5px] text-muted-foreground">
+                  {passo.rotulo}
+                </span>
+              )}
+            </div>
+          ))}
+        </nav>
         <main className="flex-1 overflow-auto bg-content p-4">
           <Outlet />
         </main>

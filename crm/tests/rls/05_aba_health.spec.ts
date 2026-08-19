@@ -495,3 +495,147 @@ describe("aba_health — marcação de mapa clínico segue o mesmo regime (Subet
     expect(depois).toBe(antes); // nada lido, nada logado
   });
 });
+
+/**
+ * Subetapa 02.12b — anamnese não grava pela metade.
+ *
+ * O defeito foi encontrado em uso real por Max: uma anamnese gravada com
+ * "3 resposta(s)" de 5, porque `AnamneseTab` só recusava quando NENHUMA
+ * pergunta havia sido respondida. A tela foi corrigida, mas validação de
+ * formulário é conveniência — estes testes batem no BANCO, que é onde a
+ * regra precisa valer para um `insert` direto pela API não passar por cima.
+ *
+ * Por que isso é invariante clínica e não capricho de formulário: a linha
+ * incompleta tem data, autor e aparência de registro completo, e quem a ler
+ * depois não distingue "o paciente não tem alergia" de "a pergunta nunca foi
+ * feita". As duas produzem o mesmo vazio, e só uma é segura para decidir
+ * procedimento.
+ */
+describe("aba_health — anamnese incompleta é recusada pelo banco (Subetapa 02.12b, migration 034)", () => {
+  const admin = adminClient();
+  let ctx: TestContext;
+  let clienteId: string;
+  let formularioId: string;
+
+  const COMPLETA = {
+    queixa_principal: "Manchas na face",
+    medicacao_continua: "Nao",
+    alergias: "nada consta",
+    historico: "nada consta",
+    habitos: "nada consta",
+  };
+
+  beforeAll(async () => {
+    ctx = await loadContext();
+    clienteId = await criarClienteFixture(admin, ctx.accountId, "Cliente Fictício Anamnese 02.12b");
+
+    const { data, error } = await admin
+      .schema("aba_health")
+      .from("formularios_anamnese")
+      .insert({
+        account_id: ctx.accountId,
+        nome: "Formulário Fictício Anamnese 02.12b",
+        versao: 1,
+        perguntas: [
+          { chave: "queixa_principal", rotulo: "Queixa principal", tipo: "texto" },
+          { chave: "medicacao_continua", rotulo: "Uso de medicação contínua", tipo: "sim_nao" },
+          { chave: "alergias", rotulo: "Alergias e sensibilidades", tipo: "texto" },
+          { chave: "historico", rotulo: "Histórico de procedimentos anteriores", tipo: "texto" },
+          { chave: "habitos", rotulo: "Hábitos", tipo: "texto" },
+        ],
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+    formularioId = data.id;
+  });
+
+  afterAll(async () => {
+    await admin.schema("aba_health").from("respostas_anamnese").delete().eq("cliente_id", clienteId);
+    await admin.schema("aba_health").from("formularios_anamnese").delete().eq("id", formularioId);
+    await admin.schema("aba_health").from("log_acesso").delete().eq("cliente_id", clienteId);
+    await admin.schema("aba_people").from("clientes").delete().eq("id", clienteId);
+    await admin.schema("aba_people").from("pessoas").delete().eq("id", clienteId);
+  });
+
+  it("recusa exatamente o caso encontrado em produção: 3 respostas de 5", async () => {
+    const { error } = await admin.schema("aba_health").from("respostas_anamnese").insert({
+      account_id: ctx.accountId,
+      cliente_id: clienteId,
+      formulario_id: formularioId,
+      respostas: { queixa_principal: "teste", medicacao_continua: "Sim", alergias: "testes" },
+    });
+
+    expect(error).not.toBeNull();
+    expect(error!.code).toBe("23514");
+    // A mensagem precisa NOMEAR o que falta — "anamnese inválida" mandaria a
+    // pessoa procurar qual dos cinco campos ficou para trás.
+    expect(error!.message).toContain("Histórico de procedimentos anteriores");
+  });
+
+  it("campo só com espaço em branco não conta como resposta", async () => {
+    const { error } = await admin
+      .schema("aba_health")
+      .from("respostas_anamnese")
+      .insert({
+        account_id: ctx.accountId,
+        cliente_id: clienteId,
+        formulario_id: formularioId,
+        respostas: { ...COMPLETA, habitos: "   " },
+      });
+
+    expect(error).not.toBeNull();
+    expect(error!.code).toBe("23514");
+  });
+
+  it("aceita a anamnese completa, com 'nada consta' onde não há o que relatar", async () => {
+    const { data, error } = await admin
+      .schema("aba_health")
+      .from("respostas_anamnese")
+      .insert({
+        account_id: ctx.accountId,
+        cliente_id: clienteId,
+        formulario_id: formularioId,
+        respostas: COMPLETA,
+      })
+      .select("id")
+      .single();
+
+    expect(error).toBeNull();
+    expect(data?.id).toBeTruthy();
+  });
+
+  it("a trava vale para UPDATE também — não dá para gravar completa e depois esvaziar", async () => {
+    const { data: linha } = await admin
+      .schema("aba_health")
+      .from("respostas_anamnese")
+      .select("id")
+      .eq("cliente_id", clienteId)
+      .limit(1)
+      .single();
+
+    const { error } = await admin
+      .schema("aba_health")
+      .from("respostas_anamnese")
+      .update({ respostas: { queixa_principal: "só isto" } })
+      .eq("id", linha!.id);
+
+    expect(error).not.toBeNull();
+    expect(error!.code).toBe("23514");
+  });
+
+  it("nem service_role escapa — a regra é do banco, não da camada de acesso", async () => {
+    // `admin` já É service_role: se os casos acima falharam para ele, a
+    // trava não depende de RLS nem de papel. Este caso registra a
+    // afirmação explicitamente, para ninguém precisar deduzi-la.
+    const { error } = await admin.schema("aba_health").from("respostas_anamnese").insert({
+      account_id: ctx.accountId,
+      cliente_id: clienteId,
+      formulario_id: formularioId,
+      respostas: {},
+    });
+
+    expect(error).not.toBeNull();
+    expect(error!.code).toBe("23514");
+  });
+});
