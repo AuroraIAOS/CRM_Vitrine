@@ -233,16 +233,47 @@ describe("aba_messaging — segredo de provedor e token de acesso nunca legívei
   let ctx: TestContext;
   let configId: string;
   let provedorId: string;
+  /** Só apaga no fim o que ESTE arquivo criou — configuração de outra subetapa não é resíduo nosso. */
+  let configEraNossa = false;
 
   beforeAll(async () => {
     ctx = await loadContext();
-    const { data: config, error } = await admin.schema("aba_messaging").from("configuracao_whatsapp").insert({
-      account_id: ctx.accountId,
-      id_numero_telefone: `teste-config-01.6-${Date.now()}`,
-      token_acesso_cifrado: "placeholder-nao-e-segredo-real",
-    }).select("id").single();
-    if (error) throw error;
-    configId = config.id;
+
+    // REAPROVEITA a configuração existente em vez de criar outra.
+    //
+    // `configuracao_whatsapp_account_id_key` é única POR CONTA: uma conta
+    // tem no máximo um número. Este bloco criava a sua às cegas, e a partir
+    // da Subetapa 02.5 — quando a UI conectou um número de verdade na conta
+    // de teste — o INSERT passou a colidir e derrubar o arquivo inteiro no
+    // `beforeAll`. Foi a falha "pré-existente" que a suíte carregou por
+    // várias subetapas.
+    //
+    // A conta de teste é compartilhada e tem estado: fixture que assume
+    // "está vazio" envelhece. Aqui o que importa é EXISTIR uma configuração
+    // na conta do `owner` — para o teste medir privilégio de COLUNA (a linha
+    // é visível pela RLS, e só `token_acesso_cifrado` é negado). De onde ela
+    // veio é irrelevante para a asserção.
+    const { data: existente, error: erroBusca } = await admin
+      .schema("aba_messaging")
+      .from("configuracao_whatsapp")
+      .select("id")
+      .eq("account_id", ctx.accountId)
+      .maybeSingle();
+    if (erroBusca) throw erroBusca;
+
+    if (existente) {
+      configId = existente.id;
+      configEraNossa = false;
+    } else {
+      const { data: config, error } = await admin.schema("aba_messaging").from("configuracao_whatsapp").insert({
+        account_id: ctx.accountId,
+        id_numero_telefone: `teste-config-01.6-${Date.now()}`,
+        token_acesso_cifrado: "placeholder-nao-e-segredo-real",
+      }).select("id").single();
+      if (error) throw error;
+      configId = config.id;
+      configEraNossa = true;
+    }
 
     const { data: provedor, error: provedorErr } = await admin.schema("aba_messaging").from("provedores_canal").insert({
       account_id: ctx.accountId,
@@ -255,7 +286,12 @@ describe("aba_messaging — segredo de provedor e token de acesso nunca legívei
   });
 
   afterAll(async () => {
-    await admin.schema("aba_messaging").from("configuracao_whatsapp").delete().eq("id", configId);
+    // Apagar a configuração de outra subetapa quebraria a tela de Mensagens
+    // dela — limpeza completa vale para o que este arquivo criou, não para
+    // o que ele encontrou.
+    if (configEraNossa) {
+      await admin.schema("aba_messaging").from("configuracao_whatsapp").delete().eq("id", configId);
+    }
     await admin.schema("aba_messaging").from("provedores_canal").delete().eq("id", provedorId);
   });
 

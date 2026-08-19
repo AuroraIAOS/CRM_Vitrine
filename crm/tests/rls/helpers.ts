@@ -1,5 +1,6 @@
 import { config } from "dotenv";
 import path from "node:path";
+import { readFileSync } from "node:fs";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 // Suíte de RLS (Subetapa 01.2, portão de fase da Etapa 01 — docs/00
@@ -86,7 +87,34 @@ export async function deleteThrowawayUser(admin: SupabaseClient, userId: string)
 
 const roleClientCache = new Map<Role, SupabaseClient>();
 
-/** Cliente autenticado como o usuário de teste do papel indicado (sessão real, cacheada entre casos). */
+/**
+ * Sessões preparadas por `globalSetup.ts`, uma vez por execução.
+ *
+ * Este `Map` continua sendo cache de MÓDULO, e é por isso que ele sozinho
+ * nunca bastou: o Vitest dá a cada arquivo de teste um registro de módulos
+ * próprio, então ele se esvazia a cada arquivo. Com 17 arquivos × 4 papéis
+ * eram até 68 `signInWithPassword` em ~45 segundos — acima do teto do
+ * endpoint de token, com sintoma idêntico a RLS quebrada (sem token o
+ * cliente vira anônimo e a RLS nega tudo).
+ *
+ * A correção não é um cache melhor em memória: é o token vir de FORA do
+ * processo do arquivo. `globalSetup` autentica os quatro papéis uma vez e
+ * grava em disco; aqui cada arquivo apenas monta o cliente com
+ * `setSession()`, sem tocar no endpoint de login.
+ */
+const CAMINHO_SESSOES = path.resolve(__dirname, ".sessoes-teste.json");
+
+type SessaoCacheada = { access_token: string; refresh_token: string; expires_at: number };
+
+function sessoesPreparadas(): Partial<Record<Role, SessaoCacheada>> {
+  try {
+    return JSON.parse(readFileSync(CAMINHO_SESSOES, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+/** Cliente autenticado como o usuário de teste do papel indicado (sessão real, preparada no globalSetup). */
 export async function clientAs(role: Role): Promise<SupabaseClient> {
   const cached = roleClientCache.get(role);
   if (cached) return cached;
@@ -94,6 +122,21 @@ export async function clientAs(role: Role): Promise<SupabaseClient> {
   const client = createClient(SUPABASE_URL!, ANON_KEY!, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+
+  const preparada = sessoesPreparadas()[role];
+  if (preparada) {
+    const { error } = await client.auth.setSession({
+      access_token: preparada.access_token,
+      refresh_token: preparada.refresh_token,
+    });
+    if (!error) {
+      roleClientCache.set(role, client);
+      return client;
+    }
+    // Token recusado (expirou entre o setup e agora): cai para o login,
+    // que é raro e ainda assim correto — nunca falhar por causa do cache.
+  }
+
   const { error } = await client.auth.signInWithPassword({
     email: TEST_EMAILS[role]!,
     password: TEST_PASSWORD!,

@@ -2,6 +2,11 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+0.1] - 2026-08-19 (Subetapa 02.13.b)
+- **A bateria de testes de segurança voltou a rodar de ponta a ponta.** Ela vinha falhando de forma dispersa e enganosa: as falhas pareciam brechas de permissão em módulos aleatórios, mas eram o servidor recusando autenticações em excesso — a suíte reautenticava os quatro perfis a cada arquivo, somando até 68 entradas em 45 segundos. Agora autentica **uma vez por execução**, e o resultado é 172 de 172 testes verdes em execução única e em quatro execuções seguidas.
+- **Isso importa antes da auditoria de segurança final**, que precisa reexecutar a bateria muitas vezes: uma execução em que metade dos casos nem chegou a autenticar **parece verde do jeito errado**.
+- **Corrigida uma falha aberta desde a integração do WhatsApp**: dois testes gravavam uma configuração de canal na conta de teste sem verificar se já havia uma, e o sistema aceita apenas uma por conta.
+
 ## [+1.0] - 2026-08-19 (Subetapa 02.13.a)
 - **O CRM está no ar em https://vitrine.strategicepiphany.com**, com dados de demonstração em todos os nove módulos — uma clínica fictícia com equipe, agenda cheia, funil de vendas, financeiro, prontuários, conversas, automações e agente de IA.
 - **A demonstração parece uma clínica em operação, e não um sistema recém-instalado**: 600 atendimentos ao longo de 13 semanas, taxa de ocupação em 53%, gráfico com volume crescente. A primeira versão do seed mostrava 2% de ocupação — número correto, mas que faz o produto parecer parado.

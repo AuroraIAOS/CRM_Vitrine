@@ -21,7 +21,7 @@
 // crm/scripts/test_webhook_meta.mjs, Subetapa 01.6).
 // ============================================================
 import { describe, it, expect, afterAll } from "vitest";
-import { adminClient, createThrowawayUser, deleteThrowawayUser, loadContext } from "./helpers";
+import { adminClient, createThrowawayUser, deleteThrowawayUser } from "./helpers";
 import { createHmac } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -79,7 +79,12 @@ async function semearInquilino(
   const { data: contato, error: contatoErr } = await admin
     .schema("aba_messaging")
     .from("contatos_canal")
-    .insert({ account_id: accountId, telefone: `5511${Math.floor(Math.random() * 1e8)}`, nome: "adv" })
+    // Indicativo +999, reservado pela ITU e nao roteavel. `5511…` gerava um
+      // numero BRASILEIRO plausivel, e a regra do projeto e nao inventar numero:
+      // o provedor completa digitos ao rotear e pode atingir terceiro (incidente
+      // real em projeto irmao, instrucoes.md §6). Fixture nunca envia, mas a
+      // regra nao abre excecao por intencao.
+      .insert({ account_id: accountId, telefone: `+9991${Math.floor(Math.random() * 1e8)}`, nome: "adv" })
     .select("id")
     .single();
   if (contatoErr) throw new Error(`semear contato: ${contatoErr.message}`);
@@ -123,7 +128,6 @@ async function semearInquilino(
 describe("A06 — isolamento entre contas no webhook público", () => {
   it("evento de status assinado só altera a mensagem da conta destinatária", async () => {
     const admin = adminClient();
-    const ctx = await loadContext();
 
     // Conta B: descartável, criada na hora (alvo contido — decisão de Max).
     const outro = await createThrowawayUser(admin, "adv-a06");
@@ -140,7 +144,22 @@ describe("A06 — isolamento entre contas no webhook público", () => {
     const numeroA = `adv-num-A-${Date.now()}`;
     const numeroB = `adv-num-B-${Date.now()}`;
 
-    const msgA = await semearInquilino(ctx.accountId, numeroA, idExterno);
+    // Conta A tambem descartavel. Antes era a conta de teste COMPARTILHADA,
+    // e a partir da 02.5 ela passou a ter uma configuracao de WhatsApp real —
+    // colidindo com `configuracao_whatsapp_account_id_key` (uma por conta) e
+    // derrubando este teste. O que A06 mede e isolamento ENTRE contas; qual
+    // conta faz o papel de A e indiferente, e usar duas descartaveis remove a
+    // dependencia do estado de uma conta que outras subetapas tambem mexem.
+    const outroA = await createThrowawayUser(admin, "adv-a06-a");
+    limpeza.push(() => deleteThrowawayUser(admin, outroA.userId));
+    const { data: perfilA } = await admin
+      .from("profiles")
+      .select("account_id")
+      .eq("user_id", outroA.userId)
+      .single();
+    const contaA = perfilA!.account_id as string;
+
+    const msgA = await semearInquilino(contaA, numeroA, idExterno);
     const msgB = await semearInquilino(contaB, numeroB, idExterno);
 
     // Evento LEGÍTIMO da Meta, endereçado ao número da conta A.
@@ -187,7 +206,7 @@ describe("A06 — isolamento entre contas no webhook público", () => {
 
     if (depoisB?.status === "lida") {
       console.error(
-        `A06 EXPLORÁVEL — evento destinado à conta ${ctx.accountId} alterou mensagem da conta ${contaB} ` +
+        `A06 EXPLORÁVEL — evento destinado à conta ${contaA} alterou mensagem da conta ${contaB} ` +
           `(id externo compartilhado: ${idExterno})`,
       );
     }
