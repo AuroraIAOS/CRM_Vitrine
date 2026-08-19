@@ -35,11 +35,13 @@
 
 import { config } from "dotenv";
 import path from "node:path";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-config({ path: path.resolve(__dirname, "../../.env") });
+const CAMINHO_ENV = path.resolve(__dirname, "../../.env");
+config({ path: CAMINHO_ENV });
 
 const URL = process.env.SUPABASE__URL;
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -49,6 +51,30 @@ const NOME_CONTA = "[demo] Clínica Vitrine — Estética & Saúde";
 
 for (const [nome, v] of Object.entries({ SUPABASE__URL: URL, SUPABASE_SERVICE_ROLE_KEY: SERVICE, DEMO_SENHA: SENHA })) {
   if (!v) throw new Error(`seed_demo: variável de ambiente ausente (${nome}). Confira o .env da raiz.`);
+}
+
+/**
+ * Guarda contra truncamento silencioso de segredo.
+ *
+ * Aconteceu de verdade: a primeira `DEMO_SENHA` foi gravada sem aspas e com
+ * `#` no meio. O dotenv trata `#` como início de comentário em valor sem
+ * aspas e leu só os 4 primeiros caracteres — e como este seed CRIAVA e o
+ * script de sessão USAVA o mesmo valor truncado, tudo passou nos testes. Sete
+ * usuários de um site público ficaram com senha de 4 caracteres, sem erro em
+ * lugar nenhum. Truncar segredo não quebra: só enfraquece, em silêncio.
+ *
+ * Por isso a comparação é contra o ARQUIVO, não contra o que o dotenv devolve.
+ */
+{
+  const linha = readFileSync(CAMINHO_ENV, "utf8").split(/\r?\n/).find((l) => l.startsWith("DEMO_SENHA="));
+  const noArquivo = linha.slice("DEMO_SENHA=".length).replace(/^'/, "").replace(/'$/, "");
+  if (noArquivo !== SENHA) {
+    throw new Error(
+      `seed_demo: DEMO_SENHA truncada pelo dotenv (${noArquivo.length} caracteres no .env, ${SENHA.length} lidos). ` +
+        `Envolva o valor em aspas simples e evite '#' no meio.`,
+    );
+  }
+  if (SENHA.length < 12) throw new Error(`seed_demo: DEMO_SENHA curta demais (${SENHA.length} caracteres). Mínimo 12.`);
 }
 
 const db = createClient(URL, SERVICE, { auth: { autoRefreshToken: false, persistSession: false } });
