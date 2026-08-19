@@ -351,7 +351,9 @@ BEGIN
         r.etapa_pai_id, r.ramo, r.proxima_posicao_etapa, r.contexto);
 
       UPDATE aba_automations.automacao_execucoes_pendentes
-      SET status = CASE WHEN v_resultado = 'aguardando' THEN 'concluido' ELSE 'concluido' END
+      -- Esta linha da fila terminou de qualquer forma: se o percurso parou
+      -- noutro `esperar`, foi uma linha NOVA que ficou pendente, não esta.
+      SET status = 'concluido'
       WHERE id = r.id;
 
       -- Só fecha o log quando o percurso terminou de verdade; se parou em
