@@ -405,6 +405,16 @@ async function semear() {
   }
   log("10 clientes (8 ativos · 2 inativos)");
 
+  // Fornecedores: o quarto papel de `aba_people`, e o único que faltava na
+  // primeira versão — a tela de Pessoas mostrava "Fornecedores · 0".
+  for (const [nome, doc] of [["Distribuidora Derma Supply", "00.000.000/0001-00"], ["Cosméticos Bella Linha", "11.111.111/0001-11"]]) {
+    const [p] = await inserir("aba_people", "pessoas", [
+      { account_id: conta, nome_exibicao: nome, email: `contato@${nome.split(" ")[0].toLowerCase()}.invalid` },
+    ]);
+    await inserir("aba_people", "fornecedores", [{ id: p.id, account_id: conta, razao_social: nome, documento: doc }]);
+  }
+  log("2 fornecedores");
+
   const tags = await inserir("aba_people", "tags", [
     { account_id: conta, nome: "VIP", cor: "#c8b79a" },
     { account_id: conta, nome: "Retorno pendente", cor: "#a8827a" },

@@ -13,46 +13,79 @@ export async function semearOperacao(db, ctx, u) {
   const { log, inserir, ok, dia, iso, horaLocal, diaUtil, telefoneFicticio, s } = u;
 
   // ================================================================ AGENDA
-  // Um profissional por horário em cada data: nenhum profissional e nenhuma
-  // sala se sobrepõem, e tudo cai dentro do expediente 09-18 de seg a sex
-  // (o trigger `verificar_expediente_agendamento` recusa fora dele).
-  const PLANO_AGENDA = [
-    // [diasDeslocamento, hora, profissional, status]
-    [-11, 9, "prof1", "concluido"], [-11, 11, "prof2", "concluido"], [-11, 14, "prof3", "concluido"],
-    [-8, 9, "prof1", "concluido"], [-8, 11, "prof2", "nao_compareceu"], [-8, 14, "prof3", "nao_compareceu"],
-    [-5, 9, "prof1", "cancelado"], [-5, 11, "prof2", "cancelado"], [-5, 14, "prof3", "concluido"],
-    [0, 9, "prof1", "em_andamento"], [0, 11, "prof2", "em_andamento"], [0, 15, "prof3", "confirmado"],
-    [3, 9, "prof1", "agendado"], [3, 11, "prof2", "agendado"], [3, 14, "prof3", "confirmado"],
-    [6, 10, "prof1", "confirmado"], [6, 13, "prof2", "agendado"], [6, 16, "prof3", "agendado"],
-  ];
+  //
+  // A agenda é gerada, não listada à mão, e o motivo é de VITRINE: a primeira
+  // versão tinha 18 atendimentos espalhados em 6 datas, e o dashboard mostrou
+  // **taxa de ocupação de 2%**. O número estava certo — a conta é minutos
+  // agendados sobre minutos disponíveis, e 1 atendimento por profissional numa
+  // semana de 45 horas dá isso mesmo. Mas uma demonstração que exibe 2% de
+  // ocupação e um gráfico de 12 semanas quase vazio não mostra o produto
+  // funcionando; mostra uma clínica parada. Um seed de vitrine precisa ter
+  // volume de clínica de verdade.
+  //
+  // Regras que a geração respeita:
+  //  - só dias úteis, 09h-17h, no fuso da conta (o trigger
+  //    `verificar_expediente_agendamento` recusa fora da grade 09-18);
+  //  - cada profissional em horários distintos no mesmo dia, e cada sala
+  //    ocupada por um só atendimento por hora — sem sobreposição;
+  //  - status coerente com o tempo: passado conclui, falta ou cancela;
+  //    hoje está em andamento; futuro está agendado ou confirmado.
+  const HORAS = [9, 10, 11, 14, 15]; // 5 de 9 horas disponíveis ≈ 55% de ocupação
+  const CHAVES_PROF = ["prof1", "prof2", "prof3"];
 
-  const agendamentos = [];
-  for (let i = 0; i < PLANO_AGENDA.length; i++) {
-    const [off, hora, prof, status] = PLANO_AGENDA[i];
-    const d = diaUtil(off);
-    const inicio = horaLocal(d, hora);
-    const fim = horaLocal(d, hora + 1);
-    const [a] = await inserir("aba_scheduling", "agendamentos", [
-      {
-        account_id: conta,
-        cliente_id: clientes[i % clientes.length],
-        profissional_id: profs[prof],
-        recurso_id: recursos[i % 3].id,
-        inicio,
-        fim,
-        status,
-        valor_cobrado: status === "concluido" ? 180 : null,
-        forma_pagamento: status === "concluido" ? ["pix", "cartao", "dinheiro"][i % 3] : null,
-        motivo_cancelamento: status === "cancelado" ? "Cliente remarcou por telefone" : null,
-        criado_por: equipe.recepcao.userId,
-      },
-    ]);
-    agendamentos.push(a);
-    await inserir("aba_scheduling", "agendamento_servicos", [
-      { account_id: conta, agendamento_id: a.id, servico_id: servicos[i % 4].id, preco: 180, duracao_minutos: 60 },
-    ]);
+  const linhasAgenda = [];
+  for (let semana = 11; semana >= -1; semana--) {
+    for (let d = 0; d < 5; d++) {
+      const offset = -(semana * 7) + d - ((new Date().getDay() + 6) % 7);
+      const data_ = dia(offset);
+      if (data_.getDay() === 0 || data_.getDay() === 6) continue;
+      for (let h = 0; h < HORAS.length; h++) {
+        for (let p = 0; p < CHAVES_PROF.length; p++) {
+          // Rareia o passado distante e o futuro, para o gráfico ter relevo
+          // em vez de um platô — clínica real não tem semana idêntica à outra.
+          const densidade = semana > 6 ? 2 : semana > 2 ? 3 : semana >= 0 ? 5 : 3;
+          if (h >= densidade) continue;
+
+          const inicio = horaLocal(data_, HORAS[h]);
+          const passou = new Date(inicio) < new Date();
+          const i = linhasAgenda.length;
+          const status = passou
+            ? i % 11 === 0 ? "cancelado" : i % 7 === 0 ? "nao_compareceu" : "concluido"
+            : offset === 0 ? "em_andamento" : i % 3 === 0 ? "confirmado" : "agendado";
+
+          linhasAgenda.push({
+            account_id: conta,
+            cliente_id: clientes[i % clientes.length],
+            profissional_id: profs[CHAVES_PROF[p]],
+            // Sala por profissional: dois profissionais nunca dividem sala no
+            // mesmo horário, porque cada um tem a sua.
+            recurso_id: recursos[p].id,
+            inicio,
+            fim: horaLocal(data_, HORAS[h] + 1),
+            status,
+            valor_cobrado: status === "concluido" ? [180, 220, 150, 160][i % 4] : null,
+            forma_pagamento: status === "concluido" ? ["pix", "cartao", "dinheiro", "transferencia"][i % 4] : null,
+            motivo_cancelamento: status === "cancelado" ? "Cliente remarcou por telefone" : null,
+            criado_por: equipe.recepcao.userId,
+          });
+        }
+      }
+    }
   }
-  log(`agenda: ${agendamentos.length} atendimentos cobrindo os 6 estados (>=2 cada)`);
+
+  // Em lotes: um insert por atendimento levaria minutos com este volume.
+  const agendamentos = [];
+  for (let i = 0; i < linhasAgenda.length; i += 100) {
+    agendamentos.push(...(await inserir("aba_scheduling", "agendamentos", linhasAgenda.slice(i, i + 100))));
+  }
+  const linhasServico = agendamentos.map((a, i) => ({
+    account_id: conta, agendamento_id: a.id, servico_id: servicos[i % 4].id,
+    preco: [180, 220, 150, 160][i % 4], duracao_minutos: 60,
+  }));
+  for (let i = 0; i < linhasServico.length; i += 100) {
+    await inserir("aba_scheduling", "agendamento_servicos", linhasServico.slice(i, i + 100));
+  }
+  log(`agenda: ${agendamentos.length} atendimentos em 13 semanas, cobrindo os 6 estados`);
 
   await inserir("aba_scheduling", "ausencias", [
     { account_id: conta, profissional_id: profs.prof2, inicio: iso(diaUtil(9)), fim: iso(diaUtil(11)), motivo: "Congresso de dermatofuncional", criado_por: equipe.owner.userId },
@@ -326,6 +359,27 @@ export async function semearOperacao(db, ctx, u) {
   log("prontuário: 4 fichas · 4 anamneses completas · 8 evoluções (4 mapas x2) · 6 consentimentos (3 tipos) · 5 concessões (2 efeitos · 2 escopos)");
 
   // ================================================================ MENSAGERIA
+  //
+  // A configuração de canal vem PRIMEIRO e não é detalhe: sem uma linha em
+  // `configuracao_whatsapp`, a tela `1j` mostra "Conectar WhatsApp" e as
+  // conversas semeadas ficam invisíveis — o módulo parece não configurado
+  // mesmo com 6 conversas e 22 mensagens no banco. Descoberto abrindo a tela,
+  // não lendo o script.
+  //
+  // O token é um marcador inequívoco, não credencial: a coluna é cifrada em
+  // repouso e negada a `authenticated`, e a demonstração não envia mensagem
+  // nenhuma (o token é inválido, então um envio real falharia — que é o
+  // comportamento correto para uma vitrine).
+  await inserir("aba_messaging", "configuracao_whatsapp", [
+    {
+      account_id: conta,
+      id_numero_telefone: "DEMONSTRACAO-SEM-NUMERO-REAL",
+      id_waba: "DEMONSTRACAO-SEM-WABA-REAL",
+      token_acesso_cifrado: "DEMONSTRACAO-SEM-TOKEN-REAL",
+      status: "conectado",
+      conectado_em: iso(dia(-40)),
+    },
+  ]);
   // Telefones com indicativo +999 (reservado pela ITU, não roteia) — ver a
   // regra 1 no cabeçalho da parte 1. Nunca inventar número plausível.
   const contatos = await inserir(
@@ -496,6 +550,15 @@ export async function semearOperacao(db, ctx, u) {
   // chave de verdade (bring-your-own-key, docs/00): entra um marcador
   // inequívoco e o agente nasce DESLIGADO, para a tela mostrar o módulo
   // configurado sem fingir que responderia.
+  // O aceite do termo de tratamento de dados é o portão da Subetapa 02.11:
+  // sem ele a tela `1l` para no aviso e não mostra o módulo. Numa vitrine
+  // interessa ver o agente configurado — o portão continua existindo e
+  // aparece para qualquer conta nova. Registro fictício, de usuário
+  // fictício, como todo o resto deste seed.
+  await inserir("aba_ai", "aceites_termo_ia", [
+    { account_id: conta, usuario_id: equipe.owner.userId, versao_termo: "2026-08-19.1", aceito_em: iso(dia(-40)) },
+  ]);
+
   await inserir("aba_ai", "ia_configuracoes", [
     {
       account_id: conta, criado_por: equipe.owner.userId,

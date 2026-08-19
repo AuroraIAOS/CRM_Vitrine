@@ -1,0 +1,40 @@
+# Fallback de SPA — Subetapa 02.13.a
+#
+# O CRM é uma aplicação de página única: o servidor só tem `index.html`, e
+# quem desenha `/prontuario`, `/configuracoes?secao=equipe` ou qualquer rota
+# profunda é o roteador no navegador.
+#
+# Sem estas linhas, navegar dentro do app funciona (o roteador intercepta),
+# mas **recarregar a página ou abrir um link direto devolve 404** — o Apache
+# procura um arquivo `/prontuario` que não existe. É a armadilha registrada
+# no runbook de deploy do CRM-Sindcom, medida em produção lá.
+#
+# `public/` é copiado tal e qual para `dist/` pelo Vite, então este arquivo
+# viaja junto no envio por FTP.
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Arquivo ou diretório que existe de verdade é servido normalmente —
+  # assets, ícones, manifesto e service worker precisam continuar chegando.
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Todo o resto é rota do app: entrega o index e deixa o roteador decidir.
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# O service worker não pode ser cacheado, ou o navegador segura uma versão
+# antiga do app depois de um deploy novo.
+<IfModule mod_headers.c>
+  <FilesMatch "(sw\.js|workbox-.*\.js|manifest\.webmanifest)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </FilesMatch>
+  # Assets com hash no nome podem ser cacheados com folga — o nome muda a
+  # cada build, então nunca servem conteúdo velho.
+  <FilesMatch "\.(js|css|woff2?|svg|png|jpg|jpeg|webp)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>

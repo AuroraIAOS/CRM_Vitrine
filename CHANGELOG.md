@@ -2,6 +2,13 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-08-19 (Subetapa 02.13.a)
+- **O CRM está no ar em https://vitrine.strategicepiphany.com**, com dados de demonstração em todos os nove módulos — uma clínica fictícia com equipe, agenda cheia, funil de vendas, financeiro, prontuários, conversas, automações e agente de IA.
+- **A demonstração parece uma clínica em operação, e não um sistema recém-instalado**: 600 atendimentos ao longo de 13 semanas, taxa de ocupação em 53%, gráfico com volume crescente. A primeira versão do seed mostrava 2% de ocupação — número correto, mas que faz o produto parecer parado.
+- **Cobertura conferida por contagem, não por confiança**: 130 combinações de estado verificadas, todas com pelo menos dois registros. A verificação encontrou 16 lacunas que o próprio gerador dava como preenchidas.
+- **Nenhum número de telefone plausível no seed.** Os contatos usam um indicativo internacional reservado, que não chega a assinante nenhum — um número "que parece falso" ainda pode ser completado pelo provedor e atingir uma pessoa real, incidente já ocorrido em projeto irmão.
+- **Corrigido: recarregar a página numa rota interna devolvia 404.** Abrir `/prontuario` direto pelo endereço, ou apertar F5 lá dentro, quebrava. Agora o servidor entrega o app e a navegação continua de onde estava.
+
 ## [+0.1] - 2026-08-19 (Subetapa 02.12b)
 - **Corrigido: campo de formulário ilegível no modo escuro.** Fundo branco com letra branca, relatado em Prontuário, Automações e IA. A medição mostrou que **87 dos 103 campos do sistema** nunca tiveram a cor do tema — o modo claro escondia isso porque o branco do navegador coincide com o fundo claro. Corrigido de uma vez para o sistema inteiro, e não nas três telas em que foi visto.
 - **Corrigido, e é o mais sério: a anamnese aceitava ser gravada pela metade.** Havia registro salvo com 3 respostas de 5. Num prontuário isso é pior que um campo em branco — a linha tem data, autor e aparência de ficha completa, e quem a ler depois não sabe se o paciente não tem alergia ou se a pergunta nunca foi feita. Agora **o banco recusa**, não só a tela: quem não tiver o que relatar escreve "nada consta".
