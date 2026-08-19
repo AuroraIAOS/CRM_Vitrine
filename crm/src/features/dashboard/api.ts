@@ -233,7 +233,12 @@ export function useResumoDashboard() {
                 .from("faturas")
                 .select("id, valor, status, data_vencimento")
                 .eq("account_id", accountId!)
-                .in("status", ["aberta", "enviada"])
+                // 'vencida' PRECISA estar aqui. Desde a Subetapa 02.10 o
+                // job diário `marcar-faturas-vencidas` reescreve o status
+                // de 'aberta'/'enviada' para 'vencida' — filtrar só pelos
+                // dois primeiros faria a fatura DESAPARECER do contador
+                // no exato momento em que ela passa a ser uma pendência.
+                .in("status", ["aberta", "enviada", "vencida"])
                 .then(desembrulhar)
             : Promise.resolve([]),
           podeMensageria
