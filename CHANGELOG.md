@@ -2,6 +2,11 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-08-18 (Subetapa 02.8)
+- **Módulo Financeiro (`aba_finance`) ganha UI completa** (`/financeiro`, tela `1g`): KPIs (recebido no mês, a receber, vencido, comissões a pagar), gráfico Faturado×Recebido de 6 meses via SVG inline, formas de pagamento do mês, e abas Lançamentos/Comissões/Conciliação.
+- **Venda de plano pela UI** cria contrato + fatura + item por escrita direta e só então chama `aba_finance.vender_plano()` para gerar o saldo de sessões — nunca escrita direta em `saldos_plano`/`planos_cliente`. Pagamento registrado dá baixa automática na fatura via trigger existente. Atendimento concluído na Agenda consome saldo do plano e gera comissão automaticamente (novo campo "Consumir sessão do plano" no formulário de atendimento). Estorno de sessão sempre via `estornar_sessao()`, nunca `UPDATE` direto.
+- Nenhuma migration nova — `aba_finance` já estava 100% aplicado desde a Subetapa 01.3; suíte de RLS revalidada sem regressão desta subetapa (106/108 executados verdes; as 2 falhas restantes são pré-existentes da Subetapa 02.5, fora de escopo).
+
 ## [+1.0] - 2026-08-18 (Subetapa 02.7)
 - **Módulo Catálogo (`aba_catalog`) ganha UI completa** (`/catalogo`, tela `1i`): abas Serviços/Planos com contagem real, painel de Categorias, cards em destaque, tabela completa de serviços com a variante padrão de cada um, e o fluxo completo de variante de serviço → plano → item de plano.
 - **Trocar a variante padrão de um serviço passa a ser sempre pela função `aba_catalog.definir_variante_padrao()`** — nunca `UPDATE` direto na coluna, que é exatamente o que garante no banco que existe no máximo uma variante padrão por serviço mesmo sob concorrência.

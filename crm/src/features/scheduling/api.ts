@@ -210,6 +210,38 @@ export function useClientesParaSelecao() {
 }
 
 // ============================================================
+// Planos vendidos ativos do cliente — para consumir sessão de um plano
+// (aba_finance) ao criar o agendamento. Leitura só; a venda em si é
+// escopo da Subetapa 02.8.
+// ============================================================
+export type PlanoClienteAtivo = { id: string; planoNome: string };
+
+export function usePlanosClienteAtivos(clienteId: string | undefined) {
+  return useQuery({
+    queryKey: ["planos-cliente-ativos", clienteId],
+    enabled: !!clienteId,
+    queryFn: async (): Promise<PlanoClienteAtivo[]> => {
+      const { data: planosCliente, error } = await supabase
+        .schema("aba_finance")
+        .from("planos_cliente")
+        .select("id, plano_id")
+        .eq("cliente_id", clienteId!)
+        .eq("status", "ativo");
+      if (error) throw error;
+      const lista = planosCliente ?? [];
+      if (lista.length === 0) return [];
+
+      const planoIds = Array.from(new Set(lista.map((p) => p.plano_id)));
+      const { data: planos, error: e2 } = await supabase.schema("aba_catalog").from("planos").select("id, nome").in("id", planoIds);
+      if (e2) throw e2;
+      const nomes = Object.fromEntries((planos ?? []).map((p) => [p.id, p.nome]));
+
+      return lista.map((p) => ({ id: p.id, planoNome: nomes[p.plano_id] ?? "Plano" }));
+    },
+  });
+}
+
+// ============================================================
 // Agendamentos
 // ============================================================
 export type StatusAgendamento = "agendado" | "confirmado" | "em_andamento" | "concluido" | "nao_compareceu" | "cancelado";
@@ -338,6 +370,7 @@ export function useCriarAgendamento() {
       fim: string;
       observacoes?: string;
       servico?: { servicoId: string; preco: number; duracaoMinutos: number };
+      planoClienteId?: string;
     }) => {
       const { data: agendamento, error } = await db()
         .from("agendamentos")
@@ -349,6 +382,8 @@ export function useCriarAgendamento() {
           inicio: input.inicio,
           fim: input.fim,
           observacoes: input.observacoes || null,
+          plano_cliente_id: input.planoClienteId || null,
+          valor_cobrado: input.servico?.preco ?? null,
         })
         .select("id")
         .single();

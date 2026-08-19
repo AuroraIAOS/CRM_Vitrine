@@ -10,6 +10,7 @@ import { PessoaFichaPage } from "@/features/people/PessoaFichaPage";
 import { SalesKanbanPage } from "@/features/sales/SalesKanbanPage";
 import { AgendaPage } from "@/features/scheduling/AgendaPage";
 import { CatalogoPage } from "@/features/catalog/CatalogoPage";
+import { FinanceiroPage } from "@/features/finance/FinanceiroPage";
 import { MessagingPage } from "@/features/messaging/MessagingPage";
 import { Placeholder } from "@/components/shared/Placeholder";
 
@@ -27,7 +28,8 @@ import { Placeholder } from "@/components/shared/Placeholder";
 // decide entre as três apresentações conforme o perfil do usuário
 // logado (docs/01_ARQUITETURA.md §7.3), nunca por rota separada.
 // /catalogo (tela 1i, abas Serviços/Planos + painel de Categorias) já
-// entregue pela Subetapa 02.7.
+// entregue pela Subetapa 02.7. /financeiro (tela 1g, KPIs + gráfico +
+// abas Lançamentos/Comissões/Conciliação) já entregue pela Subetapa 02.8.
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
   { path: "/convite", element: <AceitarConvitePage /> },
@@ -42,7 +44,7 @@ export const router = createBrowserRouter([
           { path: "pessoas/:id", element: <PessoaFichaPage /> },
           { path: "agenda", element: <AgendaPage /> },
           { path: "vendas", element: <SalesKanbanPage /> },
-          { path: "financeiro", element: <Placeholder titulo="Financeiro" /> },
+          { path: "financeiro", element: <FinanceiroPage /> },
           { path: "prontuario", element: <Placeholder titulo="Prontuário" /> },
           { path: "catalogo", element: <CatalogoPage /> },
           { path: "mensagens", element: <MessagingPage /> },

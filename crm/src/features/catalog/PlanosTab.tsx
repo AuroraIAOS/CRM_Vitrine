@@ -151,7 +151,7 @@ function DetalhePlano({ plano }: { plano: Plano }) {
           <div key={i.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
             <span className="text-[11.5px] text-foreground">
               {i.servicoNome}
-              {i.varianteNome ? ` · ${i.varianteNome}` : ""} · {i.sessoesIncluidas} sessão{i.sessoesIncluidas === 1 ? "" : "ões"}
+              {i.varianteNome ? ` · ${i.varianteNome}` : ""} · {i.sessoesIncluidas} {i.sessoesIncluidas === 1 ? "sessão" : "sessões"}
             </span>
             <button type="button" className="text-[10.5px] text-destructive hover:underline" onClick={() => remover.mutate(i.id)}>
               remover

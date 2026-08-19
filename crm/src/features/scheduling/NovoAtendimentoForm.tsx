@@ -6,6 +6,7 @@ import {
   useCriarAgendamento,
   useRecursos,
   useServicos,
+  usePlanosClienteAtivos,
   mensagemErroAgendamento,
   type Profissional,
 } from "./api";
@@ -45,6 +46,8 @@ export function NovoAtendimentoForm({
   const [profissionalId, setProfissionalId] = useState(profissionalIdPadrao ?? "");
   const [recursoId, setRecursoId] = useState("");
   const [servicoId, setServicoId] = useState("");
+  const [planoClienteId, setPlanoClienteId] = useState("");
+  const { data: planosCliente } = usePlanosClienteAtivos(clienteId || undefined);
   const [data, setData] = useState(hojeISO());
   const [horaInicio, setHoraInicio] = useState("09:00");
   const [duracaoMinutos, setDuracaoMinutos] = useState(60);
@@ -83,11 +86,13 @@ export function NovoAtendimentoForm({
               servico: servicoSelecionado
                 ? { servicoId: servicoSelecionado.id, preco: servicoSelecionado.precoBase, duracaoMinutos }
                 : undefined,
+              planoClienteId: planoClienteId || undefined,
             },
             {
               onSuccess: () => {
                 setClienteId("");
                 setServicoId("");
+                setPlanoClienteId("");
                 setObservacoes("");
                 onCriado();
               },
@@ -103,7 +108,10 @@ export function NovoAtendimentoForm({
               required
               className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
               value={clienteId}
-              onChange={(e) => setClienteId(e.target.value)}
+              onChange={(e) => {
+                setClienteId(e.target.value);
+                setPlanoClienteId("");
+              }}
             >
               <option value="" disabled>
                 Selecione...
@@ -115,6 +123,24 @@ export function NovoAtendimentoForm({
               ))}
             </select>
           </div>
+
+          {planosCliente && planosCliente.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium text-secondary-foreground">Consumir sessão do plano</label>
+              <select
+                className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
+                value={planoClienteId}
+                onChange={(e) => setPlanoClienteId(e.target.value)}
+              >
+                <option value="">Não consumir plano</option>
+                {planosCliente.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.planoNome}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="flex flex-col gap-1">
             <label className="text-[11px] font-medium text-secondary-foreground">Profissional</label>
