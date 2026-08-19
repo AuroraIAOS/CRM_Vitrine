@@ -463,6 +463,8 @@ Objetivo / Conclusão / Qualidade / Evidência: a definir quando o primeiro clie
 - [ ] Cobrança Pix e boleto por API bancária — não — +1.0.
 - [ ] Baixa automática de pagamento — não — +1.0.
 - [ ] Quadros de tarefa (`tasks`) — não — +1.0.
+- [ ] **Marca d'água de identificação na tela clínica** — impacto no MVP? Não — versão alvo `+1.0`. Sobrepor o identificador de quem está logado e o horário sobre os painéis de `aba_health`, discreto e não imprimível por cima do conteúdo. **Substitui o bloqueio de captura de tela, que foi avaliado e recusado** (ver `docs/05` §3.1): não impede a foto, mas torna a captura rastreável até quem a fez, que é o que de fato muda comportamento. Nasce da ideia de Max de 2026-08-19.
+- [ ] **Obscurecer painel clínico ao perder o foco + travar sessão por inatividade** — impacto no MVP? Não — versão alvo `+0.1`. Defende o risco mais provável e mais mundano que a captura maliciosa: prontuário esquecido aberto no balcão da recepção, ou aparecendo por engano num compartilhamento de tela. Barato, e o único destes itens que reduz exposição de verdade em vez de só rastreá-la.
 - [ ] Identidade visual por conta (`branding`) — não — +1.0.
 - [ ] Construtor de papéis customizáveis — não — +1.0.
 - [ ] Lista de espera e encaixe — não — futuro.
