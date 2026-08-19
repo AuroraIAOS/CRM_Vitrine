@@ -1,5 +1,5 @@
 -- ============================================================
--- 024_aba_health_marcacoes_mapa.sql — marcação de mapa clínico
+-- 025_aba_health_marcacoes_mapa.sql — marcação de mapa clínico
 --
 -- Subetapa 02.9 (Prontuário). O wireframe `1h`/`1p` (design/README.md)
 -- exige que a sessão registre MARCAÇÕES sobre um dos quatro mapas
