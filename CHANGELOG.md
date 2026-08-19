@@ -2,6 +2,20 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-08-19 (Subetapa 02.12)
+- **Dashboard geral** (`/`, tela `1b`): quatro indicadores — atendimentos de hoje, novos leads, taxa de ocupação e receita do mês —, gráfico de 12 semanas, rosca dos serviços mais realizados e três painéis (próximos atendimentos, pendências da equipe, ocupação por profissional). **Todo número sai de consulta ao banco**, e cada card diz em texto de que período está falando: número sem período é número que cada pessoa lê como quer.
+- **Quando um número não pode ser calculado, a tela diz o motivo em vez de mostrar zero.** Sem acesso ao Financeiro, "Receita do mês" mostra "sem acesso ao Financeiro", não "R$ 0" — que é indistinguível de "a clínica não faturou nada" e é a mensagem mais alarmante possível. O mesmo vale para o contador de anamneses de quem não tem alcance clínico: ele mostraria o número **máximo**, mandando a equipe atrás de um problema que não existe.
+- **Profissional sem grade de horário aparece como "sem grade", não como 0%** — e sai do cálculo da taxa da clínica, em vez de inflá-la entrando no numerador sem entrar no denominador.
+- **Configurações da conta** (`/configuracoes`, tela `1m`) com dez seções: aparência e layout, dados da conta, módulos e licença, perfis e permissões, equipe (já existente), serviços e agenda, formulários clínicos, integrações, chaves de IA e auditoria.
+- **Aparência agora é da conta, não do navegador**: tema claro/escuro/sistema, densidade compacta ou espaçosa, cinco cores de destaque e duas famílias tipográficas, gravados no banco e aplicados no carregamento — sem rebuild por cliente. O **modo escuro** passa a existir de verdade, derivado da paleta ratificada, incluindo as quatro famílias de badge, que o placeholder herdado deixava ilegíveis.
+- **O seletor de templates de layout mostra as quatro opções e entrega uma.** As outras três aparecem desabilitadas com o motivo escrito, e a recusa é do banco: a coluna aceita um único valor. Liberar outro template deixa de ser um clique e passa a exigir mudança deliberada no banco — que é quando o template de fato existir.
+- **A matriz de perfis e permissões é resolvida pelo banco**, nunca recalculada na tela: o que cada papel pode fazer em cada módulo, com as exceções da conta marcadas e um botão para voltar ao padrão.
+- **O grid de módulos não tem interruptor, e a tela explica por quê**: o proprietário enxerga todos os módulos por regra do sistema, antes de qualquer permissão ser consultada — um interruptor ali aceitaria o clique e não mudaria nada para quem o clicou.
+- **A titularidade da conta não é editável por formulário nenhum**, aqui nem em outra tela; ela aparece em leitura, com a rotina de transferência indicada.
+
+## [+0.1] - 2026-08-19 (Subetapa 02.12)
+- **Corrigido: o valor "Vencido" do Financeiro zerava sozinho.** Desde que o agendador entrou no ar, a rotina diária que marca faturas vencidas mudava o estado delas — e a tela contava apenas os estados antigos. Resultado medido: R$ 960,00 em atraso viravam R$ 0,00 assim que a rotina rodava, e a fatura sumia também de "A receber". Não havia erro na tela, só um zero tranquilizador.
+
 ## [+1.0] - 2026-08-19 (Subetapa 02.11)
 - **Módulo IA (`aba_ai`) ganha UI completa** (`/ia`, tela `1l`): métricas de uso do período, card de comportamento (instrução do agente, modelo, horário de atuação e interruptores de permissão), base de conhecimento com teste de recuperação, consumo registrado e um "Perguntar" que exercita o agente.
 - **A conta cola a própria chave de IA** — o produto não tem chave de LLM própria. A chave é **verificada contra o provedor antes de ser gravada** (chave errada é recusada na hora, com a mensagem do próprio provedor, e nada é salvo), cifrada em AES-256-GCM e nunca devolvida: nem a tela nem o banco a mostram de volta, só os quatro últimos caracteres para o operador reconhecer qual está guardada.

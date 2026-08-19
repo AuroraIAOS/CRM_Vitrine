@@ -125,7 +125,10 @@ export function useFaturas() {
         const item = (itens ?? []).find((i) => i.fatura_id === f.id);
         const planoCliente = (planosCliente ?? []).find((pc) => pc.fatura_id === f.id);
         const vencidaDeFato =
-          (f.status === "aberta" || f.status === "enviada") && !!f.data_vencimento && f.data_vencimento < hoje && pago < Number(f.valor);
+          (f.status === "aberta" || f.status === "enviada" || f.status === "vencida") &&
+          !!f.data_vencimento &&
+          f.data_vencimento < hoje &&
+          pago < Number(f.valor);
 
         return {
           id: f.id,
@@ -472,7 +475,14 @@ export function useResumoFinanceiro() {
       let vencido = 0;
       const hojeStr = hojeISO();
       for (const f of faturas ?? []) {
-        if (f.status !== "aberta" && f.status !== "enviada") continue;
+        // 'vencida' entra aqui desde a Subetapa 02.12, e a ausência dela
+        // era um defeito MEDIDO, não teórico: o job diário
+        // `marcar-faturas-vencidas` (Subetapa 02.10) reescreve o status de
+        // 'aberta'/'enviada' para 'vencida', e com o filtro antigo a fatura
+        // saía de "A receber" E de "Vencido" no mesmo instante em que
+        // passava a estar vencida. Medição: R$ 960,00 em atraso viravam
+        // R$ 0,00 no KPI assim que a rotina rodava.
+        if (f.status !== "aberta" && f.status !== "enviada" && f.status !== "vencida") continue;
         const pago = pagoPorFatura.get(f.id) ?? 0;
         const saldo = Number(f.valor) - pago;
         if (saldo <= 0) continue;
