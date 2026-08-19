@@ -443,6 +443,8 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 
 ## 7. Candidatos a promoção
 
+- **Suíte de RLS deveria reaproveitar sessão entre arquivos, em vez de logar a cada `clientAs()`** — na Subetapa 02.10 a suíte completa passou a falhar de forma dispersa por rate limit de auth (`429` medido nos `edge_logs`, ~40 logins aceitos e 21–34 recusados por minuto), com sintoma indistinguível de RLS quebrada. Isso não é problema do produto, é da infraestrutura de teste: cada `clientAs(role)` faz `signInWithPassword` novo, e a suíte cresceu de 11 para 130 testes desde a 01.2. Cachear o token por papel (com renovação por expiração) resolveria e deixaria a suíte reexecutável em laço — o que importa cada vez mais à medida que as subetapas revalidam a suíte inteira. Trabalho de infraestrutura, não de subetapa; candidato a item próprio antes do portão adversarial da 02.15, que vai rodar a suíte muitas vezes seguidas.
+
 - **Modularidade por schema com migration autocontida por módulo** — se a prova de fogo do Vitrine confirmar, promover a convenção oficial de "projeto-vitrine" na skill do estágio criativo.
 - **Regime de acesso a dado sensível — atributo + concessão nominal + log obrigatório** — reaproveitável em qualquer CRM-filho que toque saúde, jurídico ou financeiro de terceiro.
 - **Convenção `0X.0` de revisão de plano no início de cada Etapa** — nasceu nesta sessão por pedido de Max (ver `docs/00_PLANO_E_CRITERIOS.md`); se funcionar bem nas Etapas 02/03, candidata a virar padrão do estágio criativo para todo projeto.
