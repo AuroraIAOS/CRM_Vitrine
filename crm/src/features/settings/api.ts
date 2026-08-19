@@ -256,18 +256,16 @@ export function useResumoServicosAgenda() {
     queryKey: ["resumo-servicos-agenda", accountId],
     enabled: !!accountId,
     queryFn: async (): Promise<ResumoServicosAgenda> => {
-      const contar = (schema: string, tabela: string, filtro?: (q: any) => any) => {
-        let q = supabase.schema(schema).from(tabela).select("id", { count: "exact", head: true }).eq("account_id", accountId!);
-        if (filtro) q = filtro(q);
-        return q;
-      };
+      // `head: true` + `count: 'exact'` — o banco conta e não devolve linha.
+      const contar = (schema: string, tabela: string) =>
+        supabase.schema(schema).from(tabela).select("id", { count: "exact", head: true }).eq("account_id", accountId!);
 
       const [servicos, categorias, planos, profissionais, recursos, grades] = await Promise.all([
-        contar("aba_catalog", "servicos", (q) => q.eq("ativo", true)),
+        contar("aba_catalog", "servicos").eq("ativo", true),
         contar("aba_catalog", "categorias"),
-        contar("aba_catalog", "planos", (q) => q.eq("ativo", true)),
-        contar("aba_scheduling", "profissionais", (q) => q.eq("ativo", true)),
-        contar("aba_scheduling", "recursos", (q) => q.eq("ativo", true)),
+        contar("aba_catalog", "planos").eq("ativo", true),
+        contar("aba_scheduling", "profissionais").eq("ativo", true),
+        contar("aba_scheduling", "recursos").eq("ativo", true),
         supabase
           .schema("aba_scheduling")
           .from("horarios_profissionais")
