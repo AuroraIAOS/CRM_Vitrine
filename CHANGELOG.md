@@ -2,6 +2,11 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-08-18 (Subetapa 02.7)
+- **Módulo Catálogo (`aba_catalog`) ganha UI completa** (`/catalogo`, tela `1i`): abas Serviços/Planos com contagem real, painel de Categorias, cards em destaque, tabela completa de serviços com a variante padrão de cada um, e o fluxo completo de variante de serviço → plano → item de plano.
+- **Trocar a variante padrão de um serviço passa a ser sempre pela função `aba_catalog.definir_variante_padrao()`** — nunca `UPDATE` direto na coluna, que é exatamente o que garante no banco que existe no máximo uma variante padrão por serviço mesmo sob concorrência.
+- Nenhuma migration nova — `aba_catalog` já estava 100% aplicado desde a Subetapa 01.3; suíte de RLS revalidada sem regressão desta subetapa (106/108 executados verdes; as 2 falhas restantes são pré-existentes da Subetapa 02.5, fora de escopo).
+
 ## [+1.0] - 2026-08-18 (Subetapa 02.6)
 - **Módulo Agenda (`aba_scheduling`) ganha três telas**: grade semanal completa (`/agenda`, tela `1e`) com criação/edição/cancelamento de atendimento, bloqueio de horário (folga) e detecção automática de conflito; "Meu dia" (tela `1n`, perfil profissional) e "Balcão" (tela `1o`, perfil recepção) — as duas últimas são **filtro de UI sobre o RBAC já existente**, sem papel novo: `agent` com atributo profissional ativo vê `1n`; `admin` sem o atributo vê `1o`; os demais casos veem a grade completa.
 - **Sobreposição de horário e violação de expediente/folga agora têm mensagem distinta e legível** — o banco já recusava as duas (`23P01`/`23514`), a UI passa a explicar qual das duas regras bloqueou em vez de um erro genérico.

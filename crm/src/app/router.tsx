@@ -9,6 +9,7 @@ import { PessoasListPage } from "@/features/people/PessoasListPage";
 import { PessoaFichaPage } from "@/features/people/PessoaFichaPage";
 import { SalesKanbanPage } from "@/features/sales/SalesKanbanPage";
 import { AgendaPage } from "@/features/scheduling/AgendaPage";
+import { CatalogoPage } from "@/features/catalog/CatalogoPage";
 import { MessagingPage } from "@/features/messaging/MessagingPage";
 import { Placeholder } from "@/components/shared/Placeholder";
 
@@ -25,6 +26,8 @@ import { Placeholder } from "@/components/shared/Placeholder";
 // /agenda (telas 1e/1n/1o) já entregue pela Subetapa 02.6 — AgendaPage
 // decide entre as três apresentações conforme o perfil do usuário
 // logado (docs/01_ARQUITETURA.md §7.3), nunca por rota separada.
+// /catalogo (tela 1i, abas Serviços/Planos + painel de Categorias) já
+// entregue pela Subetapa 02.7.
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
   { path: "/convite", element: <AceitarConvitePage /> },
@@ -41,7 +44,7 @@ export const router = createBrowserRouter([
           { path: "vendas", element: <SalesKanbanPage /> },
           { path: "financeiro", element: <Placeholder titulo="Financeiro" /> },
           { path: "prontuario", element: <Placeholder titulo="Prontuário" /> },
-          { path: "catalogo", element: <Placeholder titulo="Catálogo" /> },
+          { path: "catalogo", element: <CatalogoPage /> },
           { path: "mensagens", element: <MessagingPage /> },
           { path: "automacoes", element: <Placeholder titulo="Automações" /> },
           { path: "ia", element: <Placeholder titulo="IA" /> },
