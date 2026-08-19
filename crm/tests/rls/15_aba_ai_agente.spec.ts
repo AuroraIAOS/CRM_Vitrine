@@ -431,3 +431,97 @@ describe("aba_ai — aceite do termo e provedor openrouter (complemento da 02.11
     expect(ehErroRls(error)).toBe(true);
   });
 });
+
+/**
+ * Calibração do filtro de ruído da busca (migrations 029 → 031).
+ *
+ * Os quatro casos abaixo são os que a evidência da 02.11 mediu no banco
+ * e que derrubaram dois critérios errados antes de chegar no certo:
+ *   · piso de `ts_rank` (029) — ruído pontuava MAIS que sinal, porque
+ *     ts_rank normaliza por densidade do trecho;
+ *   · "pelo menos 2 lexemas em comum" — quebraria a busca por
+ *     palavra-chave isolada, que casa 1 lexema como o ruído.
+ * O critério que passou nos quatro é a COBERTURA da pergunta.
+ */
+describe("aba_ai — calibração da recuperação de conhecimento (migration 031)", () => {
+  const admin = adminClient();
+  let ctx: TestContext;
+  let documentoId: string;
+
+  beforeAll(async () => {
+    ctx = await loadContext();
+    const { data: doc, error } = await admin
+      .schema("aba_ai")
+      .from("ia_documentos_conhecimento")
+      .insert({ account_id: ctx.accountId, titulo: "Documento Fictício Calibração 02.11", conteudo: "x" })
+      .select("id")
+      .single();
+    if (error) throw error;
+    documentoId = doc.id;
+
+    await admin.schema("aba_ai").from("ia_trechos_conhecimento").insert([
+      {
+        documento_id: documentoId,
+        account_id: ctx.accountId,
+        indice_trecho: 0,
+        conteudo: "A limpeza de pele profunda custa 180 reais e dura 60 minutos.",
+      },
+      {
+        documento_id: documentoId,
+        account_id: ctx.accountId,
+        indice_trecho: 1,
+        conteudo: "Cancelamentos sem cobrança precisam ser avisados com 24 horas de antecedência.",
+      },
+    ]);
+  });
+
+  afterAll(async () => {
+    await admin.schema("aba_ai").from("ia_documentos_conhecimento").delete().eq("id", documentoId);
+  });
+
+  async function buscar(consulta: string) {
+    const owner = await clientAs("owner");
+    const { data, error } = await owner.schema("aba_ai").rpc("buscar_conhecimento_textual", {
+      p_account_id: ctx.accountId,
+      p_consulta: consulta,
+      p_limite: 5,
+    });
+    expect(error).toBeNull();
+    return (data ?? []) as { conteudo: string }[];
+  }
+
+  it("pergunta em linguagem natural recupera o trecho que a responde", async () => {
+    const r = await buscar("quanto custa a limpeza de pele");
+    expect(r.length).toBeGreaterThan(0);
+    expect(r[0].conteudo).toContain("180 reais");
+  });
+
+  it("palavra-chave isolada continua funcionando — casa 1 lexema, mas cobre 100% da pergunta", async () => {
+    const r = await buscar("cancelamentos");
+    expect(r.length).toBeGreaterThan(0);
+    expect(r[0].conteudo).toContain("24 horas");
+  });
+
+  it("pergunta que casa SÓ por palavra vazia é descartada como ruído", async () => {
+    // "sem" existe nos dois lados, mas cobre 1/8 da pergunta. Antes da
+    // 031 este caso passava, e o trecho de cancelamento entrava no
+    // contexto de uma pergunta que ele não responde.
+    const r = await buscar("posso cancelar em cima da hora sem pagar?");
+    expect(r).toEqual([]);
+  });
+
+  it("assunto totalmente alheio devolve vazio", async () => {
+    const r = await buscar("voces vendem bicicleta eletrica");
+    expect(r).toEqual([]);
+  });
+
+  it("LIMITAÇÃO CONHECIDA: sem stemming, variação da palavra não casa (config 'simple')", async () => {
+    // "cancelar" não reduz a "cancelamentos" com a config 'simple',
+    // escolhida na 01.5 para o produto não ficar preso a um idioma. Com
+    // 'portuguese' casaria (ambos viram o lexema `cancel`). Este teste
+    // documenta o comportamento atual: se um dia mudar, ele falha e
+    // obriga a decisão a ser consciente, em vez de silenciosa.
+    const r = await buscar("cancelar");
+    expect(r).toEqual([]);
+  });
+});
