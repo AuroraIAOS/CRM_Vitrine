@@ -196,8 +196,28 @@ secrets/
 *passwords*.env
 *passwords*.txt
 *passwords*.csv
-*chave*
-*chaves*
+# `chave`/`chaves` era a última regra larga que restava neste arquivo, e
+# contradizia a política escrita logo acima. Custo real, medido na
+# Subetapa 02.14: `crm/src/features/settings/secoes/ChavesDeIA.tsx` — a
+# seção "Chaves de IA" da tela de Configurações — foi escrita, importada
+# por `ConfiguracoesPage.tsx` e NUNCA entrou no repositório. `git status`
+# dizia "nothing to commit"; um clone limpo perderia o arquivo e o build
+# quebraria no import órfão. Terceira ocorrência da mesma armadilha
+# (migration 034 na 02.12b, `*secret*` no Maximus) — ver
+# `handoffs/instrucoes.md` §6.
+
+*chave*.json
+*chave*.env
+*chave*.txt
+*chave*.csv
+*chave*.pem
+*chave*.key
+*chaves*.json
+*chaves*.env
+*chaves*.txt
+*chaves*.csv
+*chaves*.pem
+*chaves*.key
 
 # --------------------------------------------------------------------
 # Arquivos de chave, certificado e token

@@ -2,6 +2,13 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+0.1] - 2026-08-20 (Subetapa 02.14)
+- **O repositório não compilava, e ninguém tinha como perceber.** A tela de Configurações importa a seção "Chaves de IA"; o arquivo dela existia em todo computador que já rodou o projeto, mas **nunca havia entrado no repositório** — uma regra de proteção contra vazamento de credencial (`*chave*`) o escondia do git desde que foi escrito. `git status` dizia "nada a enviar", o site no ar estava correto (o pacote publicado é montado do disco, não do commit) e um clone limpo quebrava no `build`. Medido com a árvore commitada de verdade, não por dedução.
+- **A mesma mina estava no modelo herdado por todo CRM-filho** (`.gitignore.example`) — corrigida lá também, senão cada clonagem futura nasceria com ela.
+- **A varredura de segredos passa a rodar nas duas direções**: o que entrou indevidamente **e** o que o git deixou de ver. A primeira pergunta já era feita; a segunda é que encontrou este caso, e é a terceira vez que uma regra de nome larga engole código neste projeto.
+- **Nenhum segredo vazou** — histórico completo (53 commits) limpo, e o site publicado serve apenas o endereço do Supabase e a chave pública, conferido decodificando a credencial que o navegador recebe. Chave de servidor, chave de cifragem, senha de FTP e segredos de provedor: ausentes do que vai ao público.
+- **O manual de instruções do projeto estava duplicado** desde 19/08 — 1112 linhas, o texto colado dentro de si mesmo, com uma entrada partida ao meio. Reconstruído sem perder nenhuma das 331 entradas.
+
 ## [+0.1] - 2026-08-19 (Subetapa 02.13.b)
 - **A bateria de testes de segurança voltou a rodar de ponta a ponta.** Ela vinha falhando de forma dispersa e enganosa: as falhas pareciam brechas de permissão em módulos aleatórios, mas eram o servidor recusando autenticações em excesso — a suíte reautenticava os quatro perfis a cada arquivo, somando até 68 entradas em 45 segundos. Agora autentica **uma vez por execução**, e o resultado é 172 de 172 testes verdes em execução única e em quatro execuções seguidas.
 - **Isso importa antes da auditoria de segurança final**, que precisa reexecutar a bateria muitas vezes: uma execução em que metade dos casos nem chegou a autenticar **parece verde do jeito errado**.
