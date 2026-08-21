@@ -22,6 +22,7 @@
 // ============================================================
 import { describe, it, expect, afterAll } from "vitest";
 import { adminClient, createThrowawayUser, deleteThrowawayUser } from "./helpers";
+import { AMBIENTE_DE_TESTE } from "./ambiente";
 import { createHmac } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -30,18 +31,74 @@ function lerEnv(arquivo: string): Record<string, string> {
   const vars: Record<string, string> = {};
   for (const linha of readFileSync(arquivo, "utf-8").split(/\r?\n/)) {
     const m = linha.match(/^([A-Z0-9_]+)=(.*)$/);
-    if (m) vars[m[1]] = m[2].trim();
+    // Remove aspas envolventes: a regra do projeto manda gravar todo
+    // segredo do `.env` entre aspas simples (§6 de instrucoes.md), e sem
+    // isto a aspa entrava no valor — assinando o HMAC com a chave errada.
+    if (m) vars[m[1]] = m[2].trim().replace(/^'(.*)'$/, "$1").replace(/^"(.*)"$/, "$1");
   }
   return vars;
 }
 
 const raizEnv = lerEnv(path.resolve(__dirname, "../../../.env"));
-const SUPABASE_URL = raizEnv.SUPABASE__URL;
+const SUPABASE_URL = AMBIENTE_DE_TESTE.url;
 const META_APP_SECRET = raizEnv.META_APP_SECRET;
 const WEBHOOK_URL = `${SUPABASE_URL}/functions/v1/whatsapp-webhook`;
 
 function assinar(corpo: string): string {
   return "sha256=" + createHmac("sha256", META_APP_SECRET).update(corpo, "utf8").digest("hex");
+}
+
+/**
+ * O webhook é o único caso da suíte que depende de um segredo de Edge
+ * Function (`META_APP_SECRET`) configurado no MESMO projeto Supabase em
+ * que a suíte roda. Desde a Subetapa 02.15 a suíte roda no projeto de
+ * TESTES, e Max decidiu (2026-08-21) manter tudo que envolve a Meta
+ * congelado — então esse segredo não é definido lá.
+ *
+ * ESTE PREFLIGHT EXISTE PARA NÃO MENTIR EM NENHUMA DAS DUAS DIREÇÕES.
+ * Sem ele restariam duas saídas ruins: deixar o caso vermelho, e aí um
+ * problema de CONFIGURAÇÃO passaria a parecer falha de segurança no
+ * portão; ou pular em silêncio, e aí o portão exibiria verde sobre um
+ * ataque que nunca rodou — que é exatamente o defeito que a Subetapa
+ * 02.13.b encontrou e custou uma subetapa inteira para corrigir.
+ *
+ * A saída correta é a terceira: detectar, PULAR EM VOZ ALTA dizendo o
+ * motivo e o conserto, e registrar como não coberto no relatório.
+ *
+ * Vale notar o que NÃO se perde: o risco que este caso guarda (A06 —
+ * um evento destinado a uma conta alterando linha de outra) passou a
+ * ser barrado também pelo banco na migration 035, e
+ * `17_adversarial_isolamento_fk` prova que nem `service_role` — que é
+ * justamente o papel com que o webhook roda — atravessa a fronteira.
+ * O que fica sem exercício é o caminho HTTP ponta a ponta.
+ */
+async function webhookUtilizavel(): Promise<{ ok: boolean; motivo: string }> {
+  if (!META_APP_SECRET) {
+    return { ok: false, motivo: "META_APP_SECRET ausente no .env da raiz" };
+  }
+  const corpo = JSON.stringify({ object: "whatsapp_business_account", entry: [] });
+  try {
+    const r = await fetch(WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-hub-signature-256": assinar(corpo) },
+      body: corpo,
+    });
+    if (r.status === 200) return { ok: true, motivo: "" };
+    if (r.status === 401) {
+      return {
+        ok: false,
+        motivo:
+          `a função respondeu 401 a um payload corretamente assinado — o segredo META_APP_SECRET ` +
+          `não está configurado no projeto de teste (Edge Functions > Secrets), ou não é o mesmo do .env`,
+      };
+    }
+    if (r.status === 404) {
+      return { ok: false, motivo: "a Edge Function whatsapp-webhook não está implantada neste projeto" };
+    }
+    return { ok: false, motivo: `resposta inesperada do webhook: HTTP ${r.status}` };
+  } catch (e) {
+    return { ok: false, motivo: `webhook inalcançável: ${(e as Error).message}` };
+  }
 }
 
 const limpeza: Array<() => Promise<void>> = [];
@@ -126,7 +183,30 @@ async function semearInquilino(
 }
 
 describe("A06 — isolamento entre contas no webhook público", () => {
-  it("evento de status assinado só altera a mensagem da conta destinatária", async () => {
+  it("evento de status assinado só altera a mensagem da conta destinatária", async (ctx) => {
+    const disponivel = await webhookUtilizavel();
+    if (!disponivel.ok) {
+      // Barulhento de propósito. Um caso pulado que passa despercebido é
+      // pior que um caso vermelho — ver o comentário de webhookUtilizavel().
+      console.warn(
+        [
+          "",
+          "═".repeat(78),
+          "  A06 (webhook) NÃO EXERCIDO nesta execução.",
+          `  Motivo: ${disponivel.motivo}.`,
+          "  Isto NÃO é um teste passando — é um ataque que não rodou.",
+          "  Para cobrir: definir META_APP_SECRET em Edge Functions > Secrets do",
+          "  projeto de teste, com o mesmo valor do .env da raiz.",
+          "  Congelado por decisão de Max (2026-08-21): tudo que envolve a Meta",
+          "  segue parado até a configuração da API oficial destravar.",
+          "═".repeat(78),
+          "",
+        ].join("\n"),
+      );
+      ctx.skip();
+      return;
+    }
+
     const admin = adminClient();
 
     // Conta B: descartável, criada na hora (alvo contido — decisão de Max).

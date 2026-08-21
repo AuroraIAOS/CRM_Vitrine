@@ -2,6 +2,7 @@ import { config } from "dotenv";
 import path from "node:path";
 import fs from "node:fs";
 import { createClient } from "@supabase/supabase-js";
+import { AMBIENTE_DE_TESTE } from "./ambiente";
 
 /**
  * Autentica os quatro papéis UMA VEZ por execução — Subetapa 02.13.b
@@ -65,11 +66,11 @@ function lerCache(): Partial<Record<Papel, SessaoCacheada>> {
 }
 
 export default async function setup() {
-  const url = process.env.SUPABASE__URL;
-  const anon = process.env.SUPABASE_ANON_KEY;
+  const url = AMBIENTE_DE_TESTE.url;
+  const anon = AMBIENTE_DE_TESTE.anonKey;
   const senha = process.env.TEST_USER_PASSWORD;
   if (!url || !anon || !senha) {
-    throw new Error("globalSetup: SUPABASE__URL, SUPABASE_ANON_KEY e TEST_USER_PASSWORD são obrigatórios (.env da raiz + crm/.env.test).");
+    throw new Error("globalSetup: TEST_USER_PASSWORD e obrigatorio (crm/.env.test). URL e chave do projeto de TESTE vem de ambiente.ts.");
   }
 
   const agora = Math.floor(Date.now() / 1000);

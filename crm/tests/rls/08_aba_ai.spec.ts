@@ -9,6 +9,7 @@ import {
   loadContext,
   type TestContext,
 } from "./helpers";
+import { AMBIENTE_DE_TESTE } from "./ambiente";
 
 describe("aba_ai — configuração bring-your-own-key e RLS (Subetapa 01.5)", () => {
   const admin = adminClient();
@@ -107,7 +108,7 @@ describe("aba_ai — base de conhecimento e isolamento entre contas na busca (Su
     const created = await createThrowawayUser(admin, "rls-ai-cross-account");
     foreignUserId = created.userId;
     const { createClient } = await import("@supabase/supabase-js");
-    foreignClient = createClient(process.env.SUPABASE__URL!, process.env.SUPABASE_ANON_KEY!, {
+    foreignClient = createClient(AMBIENTE_DE_TESTE.url, AMBIENTE_DE_TESTE.anonKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
     const { error: signInErr } = await foreignClient.auth.signInWithPassword({

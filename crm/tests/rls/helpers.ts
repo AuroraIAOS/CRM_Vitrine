@@ -2,6 +2,7 @@ import { config } from "dotenv";
 import path from "node:path";
 import { readFileSync } from "node:fs";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { AMBIENTE_DE_TESTE } from "./ambiente";
 
 // Suíte de RLS (Subetapa 01.2, portão de fase da Etapa 01 — docs/00
 // §01.2). Bate no Supabase real do projeto — nunca em mock — como
@@ -12,9 +13,14 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 config({ path: path.resolve(__dirname, "../../../.env") });
 config({ path: path.resolve(__dirname, "../../.env.test") });
 
-const SUPABASE_URL = process.env.SUPABASE__URL;
-const ANON_KEY = process.env.SUPABASE_ANON_KEY;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Desde a Subetapa 02.15 a suíte fala com o projeto Supabase DE TESTE,
+// nunca com o de produção — `ambiente.ts` para a execução se as
+// variáveis faltarem ou se as duas URLs coincidirem. Antes disso, cada
+// ataque adversarial e cada fixture rodavam no mesmo banco que serve a
+// vitrine pública.
+const SUPABASE_URL = AMBIENTE_DE_TESTE.url;
+const ANON_KEY = AMBIENTE_DE_TESTE.anonKey;
+const SERVICE_ROLE_KEY = AMBIENTE_DE_TESTE.serviceRoleKey;
 const TEST_PASSWORD = process.env.TEST_USER_PASSWORD;
 
 export type Role = "owner" | "admin" | "agent" | "viewer";
@@ -26,10 +32,9 @@ export const TEST_EMAILS: Record<Role, string | undefined> = {
   viewer: process.env.TEST_VIEWER_EMAIL,
 };
 
+// URL e chaves já foram exigidas por `ambiente.ts` (que também recusa
+// apontar para produção). Aqui sobram as credenciais dos usuários de teste.
 for (const [name, value] of Object.entries({
-  SUPABASE__URL: SUPABASE_URL,
-  SUPABASE_ANON_KEY: ANON_KEY,
-  SUPABASE_SERVICE_ROLE_KEY: SERVICE_ROLE_KEY,
   TEST_USER_PASSWORD: TEST_PASSWORD,
   ...TEST_EMAILS,
 })) {

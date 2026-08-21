@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { adminClient, createThrowawayUser, deleteThrowawayUser, clientAs, loadContext, type TestContext } from "./helpers";
+import { AMBIENTE_DE_TESTE } from "./ambiente";
 
 // "Usuário de outra conta não lê nada de nenhum schema" — prova o
 // isolamento por account_id. Só aba_people existe nesta subetapa;
@@ -31,7 +32,7 @@ describe("Isolamento entre contas (Subetapa 01.2)", () => {
     // Reaproveita o mecanismo de clientAs autenticando manualmente,
     // sem cachear (papel "estrangeiro" não é um dos 4 papéis fixos).
     const { createClient } = await import("@supabase/supabase-js");
-    foreignClient = createClient(process.env.SUPABASE__URL!, process.env.SUPABASE_ANON_KEY!, {
+    foreignClient = createClient(AMBIENTE_DE_TESTE.url, AMBIENTE_DE_TESTE.anonKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
     const { error: signInErr } = await foreignClient.auth.signInWithPassword({

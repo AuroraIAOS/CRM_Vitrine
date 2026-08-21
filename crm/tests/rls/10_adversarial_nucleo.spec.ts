@@ -25,6 +25,7 @@ import {
   ehErroRls,
   ehErroConstraintOuTrigger,
 } from "./helpers";
+import { AMBIENTE_DE_TESTE } from "./ambiente";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { config } from "dotenv";
 import path from "node:path";
@@ -32,8 +33,8 @@ import path from "node:path";
 config({ path: path.resolve(__dirname, "../../../.env") });
 config({ path: path.resolve(__dirname, "../../.env.test") });
 
-const SUPABASE_URL = process.env.SUPABASE__URL!;
-const ANON_KEY = process.env.SUPABASE_ANON_KEY!;
+const SUPABASE_URL = AMBIENTE_DE_TESTE.url;
+const ANON_KEY = AMBIENTE_DE_TESTE.anonKey;
 
 /** Sessão autenticada avulsa (usuário descartável, fora do cache de papéis). */
 async function signInAs(email: string, password: string): Promise<SupabaseClient> {

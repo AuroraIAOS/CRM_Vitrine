@@ -24,7 +24,14 @@ function parseEnvFile(filePath) {
   const vars = {};
   for (const line of text.split(/\r?\n/)) {
     const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
-    if (m) vars[m[1]] = m[2].trim();
+    // As aspas envolventes são removidas de propósito: a regra do projeto
+    // manda gravar TODO segredo do `.env` entre aspas simples (§6 de
+    // handoffs/instrucoes.md, nascida da senha truncada por `#` na
+    // 02.13.a). Sem este `replace`, este parser devolvia a aspa como
+    // parte do valor — e a URL virava `'https://...'`, recusada pelo
+    // supabase-js com "Invalid supabaseUrl". As duas regras não podiam
+    // coexistir; quem estava errado era o parser.
+    if (m) vars[m[1]] = m[2].trim().replace(/^'(.*)'$/, "$1").replace(/^"(.*)"$/, "$1");
   }
   return vars;
 }
@@ -32,9 +39,19 @@ function parseEnvFile(filePath) {
 const rootEnv = parseEnvFile(path.resolve(__dirname, "../../.env"));
 const testEnv = parseEnvFile(path.resolve(__dirname, "../.env.test"));
 
-const url = rootEnv.SUPABASE__URL;
-const serviceKey = rootEnv.SUPABASE_SERVICE_ROLE_KEY;
+// Projeto de TESTE, nunca o de produção (Subetapa 02.15). Este script
+// cria usuários e conta de verdade; até a 02.15 ele fazia isso no mesmo
+// banco que serve a vitrine pública, e o portão adversarial encontrou
+// lá 8 contas de teste esquecidas por execuções interrompidas.
+const url = rootEnv.SUPABASE_TEST__URL;
+const serviceKey = rootEnv.SUPABASE_TEST_SERVICE_ROLE_KEY;
 const password = testEnv.TEST_USER_PASSWORD;
+
+if (url && rootEnv.SUPABASE__URL && url === rootEnv.SUPABASE__URL) {
+  throw new Error(
+    "SUPABASE_TEST__URL é igual a SUPABASE__URL — este script cria usuários e conta de verdade, e não pode rodar no banco de produção.",
+  );
+}
 const EMAILS = {
   owner: testEnv.TEST_OWNER_EMAIL,
   admin: testEnv.TEST_ADMIN_EMAIL,
