@@ -400,6 +400,9 @@ Evidência: arquivo publicado + commit.
 Esforço máximo do /goal: 2 tentativas
 Escalonamento de LLM: Sonnet nas duas.
 Se esgotar: parar e emitir relatório curto.
+Status: ✅ CONCLUÍDA — fechada em 1 tentativa. `handoffs/HANDOFF_UPGRADE.md` preenchido (116 linhas), **zero placeholder `<...>` restante** (conferido por `grep`). `CHANGELOG.md` ganhou a entrada **`+1.0` do lançamento do MVP v01**, escrita como nota de versão do produto e não como lista de subetapas. Números do handoff **medidos, não lembrados**: 12 schemas, 80 tabelas, 39 arquivos de migration, 16 rotas, 5 Edge Functions, 5 jobs de `pg_cron` ativos, 19 arquivos de suíte com 186 casos, `main` = `1b66b08` com 58 commits. O handoff documenta a mudança de gesto mais importante que a Etapa 02 deixou para a 03 — **a suíte roda em banco separado do de produção** (02.15) —, lista as dívidas com gatilho declarado, e recomenda prioridade para depois da 03.0 com justificativa de impacto sobre esforço. **Ressalva registrada no próprio handoff:** a superfície da Meta segue congelada por decisão de Max, com o caminho exato para cobrir quando destravar.
+
+**PORTÃO DE SAÍDA DA ETAPA 02: VERDE.** Todos os critérios da linha 176 cumpridos — 16 telas sobre os 9 módulos, seed de demonstração populado, subdomínio no ar, varredura de segredos zerada (02.14), portão adversarial reexecutado com parecer e merge ordenado por Max (02.15), `HANDOFF_UPGRADE.md` preenchido (02.16). A Etapa 03 pode abrir.
 
 (… 02.n conforme necessário. Subetapa nova de escopo entra **antes da 02.14**, para que a varredura de segredos e o portão adversarial continuem sendo os últimos passos antes do HANDOFF_UPGRADE. A 02.13 foi desdobrada em **02.13.a** (seed + deploy) e **02.13.b** (infraestrutura de teste) a pedido de Max em 2026-08-19 — o sufixo de letra é o padrão para inserir subetapa sem renumerar as seguintes, que já estão referenciadas em pendências, entradas de `handoffs/instrucoes.md` e commits.)
 

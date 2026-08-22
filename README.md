@@ -26,11 +26,22 @@ Max precisa vender CRMs configurados por cliente o quanto antes, sem reconstruir
 ```bash
 cd crm
 npm install
-npm run dev
+npm run dev            # aplicação, contra o Supabase de produção
+npm run test:rls       # suíte de segurança, contra o Supabase de TESTE
 ```
 
 O `.env` fica na raiz do repositório (não em `crm/`) — `crm/vite.config.ts` aponta `envDir` para lá.
 
+**A suíte de testes usa um projeto Supabase separado do de produção** (desde a Subetapa 02.15). Ela cria contas de verdade e executa ataques adversariais, então **recusa rodar** se as variáveis `SUPABASE_TEST_*` faltarem ou se apontarem para o mesmo projeto de produção — a mensagem de erro diz exatamente o que preencher. É erro e não aviso de propósito: cair para produção em silêncio seria pior que não separar. Para levantar um banco de teste do zero a partir das migrations: `node scripts/provisionar_banco.mjs`.
+
 ## Status do projeto
 
-**Etapa 01 concluída** — fundação completa aplicada no Supabase: núcleo (`public`/`access`/`licensing`) + 9 schemas de módulo (`aba_people`, `aba_catalog`, `aba_scheduling`, `aba_finance`, `aba_health`, `aba_sales`, `aba_automations`, `aba_ai`, `aba_messaging`), webhook Meta Cloud API no ar, suíte de RLS com 100/100 testes verdes (incluindo o portão de segurança adversarial da Subetapa 01.8, que corrigiu 6 falhas reais), varredura de segredos zerada. Portão de saída da Etapa 01 aberto. **Design do MVP ratificado** (16 wireframes do Claude Design, decisões registradas em `docs/01_ARQUITETURA.md` §7 e `docs/04_DESIGN_E_MARCA.md` §5). Próximo passo: Subetapa 02.0 do Claude CODE (leitura de referências e revisão do plano da Etapa 02) — ver `handoffs/HANDOFF_BUILD.md`. Roteiro completo em `docs/00_PLANO_E_CRITERIOS.md`. Dicas técnicas e armadilhas conhecidas em `handoffs/instrucoes.md`. Histórico de versões em `CHANGELOG.md`.
+**MVP v01 no ar** — https://vitrine.strategicepiphany.com
+
+**Etapa 02 concluída**, portão de saída verde. Os 9 módulos do v01 entregues com UI real em 16 telas, sobre 12 schemas e 80 tabelas com RLS ativa e testada em toda tabela. Motor de rotinas com `pg_cron` (5 jobs ativos), 5 Edge Functions, agente de IA com chave por conta (cifrada, verificada contra o provedor antes de gravar, nunca devolvida), aparência configurável por conta e seed de demonstração cobrindo os 9 módulos.
+
+**Segurança:** duas auditorias adversariais executadas (Subetapas 01.8 e 02.15), que atacaram o sistema de propósito em vez de conferir o caminho feliz. Juntas encontraram **12 falhas reais**, todas corrigidas e transformadas em teste permanente. A da Etapa 02 encontrou uma brecha que atravessava os 9 módulos e que nenhuma política de permissão poderia ter fechado — a verificação de chave estrangeira ignora RLS por especificação do PostgreSQL. Suíte final: **186 casos**, rodando em **banco separado do de produção**. Varredura de segredos zerada; `typecheck` limpo.
+
+**Fora do escopo entregue:** a configuração da API oficial do WhatsApp (Meta) segue congelada por decisão de Max — o produto trata isso com honestidade, registrando no log o passo que não executa em vez de fingir sucesso. Detalhe em `handoffs/HANDOFF_UPGRADE.md`.
+
+Próximo passo: **Subetapa 03.0** (leitura de referências e revisão do plano da Etapa 03) — ver `handoffs/HANDOFF_UPGRADE.md`. Roteiro completo em `docs/00_PLANO_E_CRITERIOS.md`. Dicas técnicas e armadilhas conhecidas em `handoffs/instrucoes.md`. Histórico de versões em `CHANGELOG.md`.

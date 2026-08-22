@@ -2,6 +2,24 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-08-22 — **MVP v01 lançado** (fecha a Etapa 02)
+
+**O CRM Vitrine está no ar e é um produto, não um protótipo.** https://vitrine.strategicepiphany.com
+
+**O que uma clínica consegue fazer nele hoje**, nas 16 telas entregues: cadastrar e acompanhar pessoas — leads, clientes, funcionários e fornecedores na mesma ficha, com tags, notas e histórico; marcar e conduzir a agenda por profissional e por recurso, com lembretes que disparam sozinhos; tocar o funil de vendas; faturar, receber, vender planos e acompanhar o que venceu; manter prontuário clínico com anamnese, evoluções e mapas do corpo; organizar serviços, variações e preços; conversar por WhatsApp; automatizar rotinas com gatilho, condição e ação; e conectar um agente de IA que responde com base no conhecimento da própria clínica.
+
+**Cada conta é uma clínica, e uma não enxerga a outra.** Isso não é promessa de código: é regra do banco, com 186 testes de segurança que atacam de propósito — inclusive os que provam que nem o privilégio máximo do sistema atravessa a fronteira entre contas.
+
+**A equipe entra por convite**, com papel definido na hora: proprietário, administrador, atendente ou visualizador. Cada papel vê e faz exatamente o que lhe cabe, módulo a módulo, e o dono da conta pode ajustar essa matriz.
+
+**O prontuário tem regime próprio, mais rígido que o resto do sistema.** Quem lê fica registrado; quem escreve fica registrado; e o agente de IA **não** lê prontuário — isso é trava de banco, não configuração, e nem o proprietário consegue ligar.
+
+**Cada clínica traz a própria chave de IA.** Ela é conferida com o provedor antes de ser guardada, cifrada, e nunca mais é exibida — nem para quem a colou. O aviso de que perguntas e base de conhecimento saem para um terceiro aparece **antes** da decisão, e precisa ser aceito para o formulário sequer existir.
+
+**A aparência é da conta, não do navegador:** tema, densidade, cor e tipografia ficam salvos e valem para todo mundo da clínica, sem precisar gerar uma versão nova do sistema para cada cliente.
+
+**Como o produto foi fechado:** duas auditorias de segurança adversariais, que atacaram o sistema de propósito em vez de conferir o caminho feliz. Juntas encontraram **12 falhas reais** — todas corrigidas e transformadas em teste permanente, para que não voltem. A última delas encontrou uma brecha que atravessava todos os módulos e que nenhuma configuração de permissão poderia ter fechado.
+
 ## [+0.1] - 2026-08-21 (Subetapa 02.15 — portão de segurança adversarial)
 - **Uma conta conseguia escrever dentro dos dados de outra, e o controle de acesso não tinha como impedir.** A proteção do sistema pergunta "esta linha é sua?" — e essa pergunta é respondida corretamente. Mas ela **nunca é feita** sobre a linha que um registro *aponta*: por regra do próprio banco de dados, a checagem de vínculo entre registros passa por cima do controle de acesso. Na prática, um estranho podia pendurar um pagamento na fatura de outra clínica, uma nota na ficha de um cliente alheio ou uma oportunidade no funil de outro. **73 vínculos estavam nessa condição, em todos os módulos.**
 - **O caso mais silencioso era o pior:** a rotina diária que marca faturas vencidas soma os pagamentos sem conferir de quem eles são. Um pagamento plantado de fora **impedia a fatura de outra conta de vencer** — e o sintoma é um número errado na tela, sem erro nenhum, exatamente o defeito que já custou uma correção na 02.12.
