@@ -66,6 +66,8 @@ node scripts/seed_test_users.mjs      # fixture dos 4 papéis
 
 `provisionar_banco.mjs` (02.15) reconstrói o schema inteiro a partir do repositório — provado com as 39 migrations num banco vazio. É a base natural da CLI de clonagem de CRM-filho quando ela entrar em escopo.
 
+**Capturas de tela para análise de UI/UX** — `node scripts/capturar_telas.mjs` (exige o app em `localhost:3000`). Gera PNG sem perdas de **3360×2100** (1680×1050 @2×) das 16 rotas, no tema claro, autenticado na conta de demonstração por link de acesso (nenhuma senha é digitada nem existe no script). **As imagens NÃO são versionadas:** `screenshots/` é ignorada por regra deliberada (`.gitignore:261`) porque captura de tela pode expor caminho, usuário e dado clínico — decisão de Max, 2026-08-22, de manter a regra como está. Elas vivem na máquina local; quem precisar delas noutra máquina roda o script. Um `screenshots/INDICE.md` é gerado junto, mapeando arquivo → rota → tela.
+
 ## Backlog de versionamento herdado
 
 Lista completa e viva em `docs/00_PLANO_E_CRITERIOS.md` → "Backlog de versionamento". Resumo:
@@ -82,7 +84,7 @@ Lista completa e viva em `docs/00_PLANO_E_CRITERIOS.md` → "Backlog de versiona
 - `whatsapp-configurar` e `whatsapp-enviar` foram auditadas por **leitura**, não por ataque em execução (02.15, §4 do relatório).
 
 **Outras, com gatilho declarado** (detalhe em `docs/00_PLANO_E_CRITERIOS.md` → "Pendências vigiadas"):
-- **Modo escuro conferido em 3 das 16 telas** — a 02.12b mediu e corrigiu 87 de 103 campos, mas a varredura tela a tela não foi completa.
+- **Modo escuro: cobertura visual fechada** (verificação de Max, 2026-08-22 — avaliou todas as telas, não só as três que registrou por screenshot). O que segue em aberto é outra coisa: a paleta escura é **derivação** da paleta clara ratificada, não uma variante fechada em pacote de design (`docs/04` §5.2 — os wireframes são 100% light). Ratificá-la formalmente é decisão de Max, sem urgência.
 - **Busca de conhecimento da IA não faz *stemming*** — "cancelar" não encontra "Cancelamentos". Preço consciente de não prender o produto a um idioma.
 - **Arte e vocabulário dos 4 mapas clínicos vivem em código**, não em tabela de módulo — cada conta usa o mesmo vocabulário e ninguém o ajusta sem deploy.
 - **Consentimento de imagem trava a exibição, não o envio**, e trava para todos, inclusive quem tirou a foto. Decisão mantida, revisão condicionada à prova de fogo.
