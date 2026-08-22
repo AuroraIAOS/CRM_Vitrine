@@ -171,7 +171,11 @@ Do mesmo tipo, e igualmente registrado: na primeira rodada de ataques de chave e
 
 ---
 
-## 7. Divergência entre banco e `main` — **aberta**
+## 7. Divergência entre banco e `main` — **RESOLVIDA no fechamento**
+
+> **Atualização de 2026-08-22.** Max ordenou o merge e ele foi executado em seguida, por ordem dele: *fast-forward* de `30b8864` para `71c5827`, **histórico linear preservado, sem merge commit**. A correção F03 foi implantada em produção junto, como o texto abaixo previa. Estado conferido no banco de produção depois do merge: **0 chaves vulneráveis, 144 protegidas, 0 pendentes de validação, as 5 migrations da 02.15 aplicadas e o gatilho da `038` presente**. Vitrine pública revalidada (`/`, `/pessoas`, `/configuracoes`, `/prontuario` em HTTP 200; leitura anônima da API negada com 401). Suíte revalidada no estado fundido: **19 arquivos, 185 verdes + 1 declarado**; `typecheck` limpo. **Não há divergência pendente.** O texto original fica abaixo como registro do que valia durante o bench.
+
+### Registro do que valia durante o bench
 
 As correções `035`–`039` foram aplicadas **no banco de produção durante o bench** (decisão de Max na abertura), para que cada uma fosse provada ao vivo em vez de teórica. Isso abre uma divergência declarada:
 
@@ -203,8 +207,8 @@ As correções `035`–`039` foram aplicadas **no banco de produção durante o 
 
 ---
 
-## 9. Regra §13 — parada obrigatória
+## 9. Regra §13 — parada obrigatória, e o desfecho
 
-**O CODE não executa este merge.** Nem com todos os testes verdes, nem com parecer favorável. O relatório e o parecer estão entregues; ordenar o merge é atribuição exclusiva de Max (`CLAUDE.md` §13).
+**O CODE não executou este merge por conta própria.** Nem com todos os testes verdes, nem com parecer favorável. O relatório e o parecer foram entregues e a subetapa parou ali, com `main` intocada em `30b8864` — ordenar o merge é atribuição exclusiva de Max (`CLAUDE.md` §13).
 
-`main` segue intocada em `30b8864`.
+**Max ordenou o merge em 2026-08-22**, e ele foi executado em seguida por ordem dele: `git merge --ff-only`, escolhido de propósito para que a operação **falhasse** caso exigisse merge commit em vez de avanço linear. `main` = `71c5827`, publicada em `origin/main`. O bench `bench/02.15-seguranca-adversarial` fica no remoto como registro auditável.
