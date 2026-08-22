@@ -244,7 +244,6 @@ async function responderChatCompletions(
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS_HEADERS });
   if (req.method !== "POST") return json({ error: "Method Not Allowed" }, 405);
-  if (!ENCRYPTION_KEY) return json({ error: "ENCRYPTION_KEY não configurada" }, 500);
 
   const authHeader = req.headers.get("authorization");
   if (!authHeader) return json({ error: "Não autenticado" }, 401);
@@ -261,6 +260,14 @@ Deno.serve(async (req: Request) => {
     .eq("user_id", userData.user.id)
     .maybeSingle();
   if (perfilErr || !perfil) return json({ error: "Perfil não encontrado" }, 403);
+
+  // ORDEM IMPORTA (achado do portão adversarial da Subetapa 02.15): esta
+  // verificação ficava ANTES da autenticação, contando a um chamador sem
+  // sessão nenhuma que o servidor estava mal configurado — e o nome exato
+  // da variável que falta. Estado interno não se conta a quem ainda não
+  // provou quem é. As funções de WhatsApp já autenticavam primeiro; eram
+  // as duas de IA que haviam regredido.
+  if (!ENCRYPTION_KEY) return json({ error: "ENCRYPTION_KEY não configurada" }, 500);
 
   let body: { mensagem?: string; modo?: string; conversa_id?: string };
   try {

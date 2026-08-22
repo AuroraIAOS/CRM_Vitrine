@@ -2,6 +2,18 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+0.1] - 2026-08-21 (Subetapa 02.15 — portão de segurança adversarial)
+- **Uma conta conseguia escrever dentro dos dados de outra, e o controle de acesso não tinha como impedir.** A proteção do sistema pergunta "esta linha é sua?" — e essa pergunta é respondida corretamente. Mas ela **nunca é feita** sobre a linha que um registro *aponta*: por regra do próprio banco de dados, a checagem de vínculo entre registros passa por cima do controle de acesso. Na prática, um estranho podia pendurar um pagamento na fatura de outra clínica, uma nota na ficha de um cliente alheio ou uma oportunidade no funil de outro. **73 vínculos estavam nessa condição, em todos os módulos.**
+- **O caso mais silencioso era o pior:** a rotina diária que marca faturas vencidas soma os pagamentos sem conferir de quem eles são. Um pagamento plantado de fora **impedia a fatura de outra conta de vencer** — e o sintoma é um número errado na tela, sem erro nenhum, exatamente o defeito que já custou uma correção na 02.12.
+- **O prontuário resistiu.** As duas tabelas clínicas recusaram o ataque, pelo regime mais restritivo que o módulo de saúde tem desde o início. É a melhor notícia da auditoria.
+- **Corrigido de forma que não depende de ninguém lembrar:** o banco passou a exigir que todo vínculo carregue a conta, então ele mesmo recusa. Nenhuma tela mudou, nenhuma consulta mudou. **E ficou um teste que falha automaticamente se um vínculo novo nascer desprotegido** — sem ele, o conserto valeria só para hoje.
+- **Nada disso havia sido explorado:** varremos os 73 vínculos procurando registro já cruzado antes de corrigir. Zero.
+- **Convite de equipe agora expira em no máximo 7 dias.** Antes era possível emitir um convite válido por décadas — e um link desses, se vazar, é uma porta aberta que ninguém sabe que existe.
+- **Os testes de segurança deixaram de rodar dentro do banco de produção.** Eles criavam contas de verdade ao lado dos dados reais, e a auditoria encontrou 12 contas de teste esquecidas lá. Agora existe um banco separado só para isso, e a bateria **se recusa a rodar** se apontar para produção — recusa, não aviso.
+- **Ataque de código malicioso nas telas: nenhum funcionou.** Oito armadilhas plantadas em nomes, notas, tags, serviços e automações; abertas as telas reais, todas apareceram como texto comum, nenhuma foi executada.
+- **Duas falhas que a própria correção criou foram pegas antes de sair do laboratório** — uma delas impediria qualquer convite de ser aceito. É o portão funcionando como portão.
+
+
 ## [+0.1] - 2026-08-20 (Subetapa 02.14)
 - **O repositório não compilava, e ninguém tinha como perceber.** A tela de Configurações importa a seção "Chaves de IA"; o arquivo dela existia em todo computador que já rodou o projeto, mas **nunca havia entrado no repositório** — uma regra de proteção contra vazamento de credencial (`*chave*`) o escondia do git desde que foi escrito. `git status` dizia "nada a enviar", o site no ar estava correto (o pacote publicado é montado do disco, não do commit) e um clone limpo quebrava no `build`. Medido com a árvore commitada de verdade, não por dedução.
 - **A mesma mina estava no modelo herdado por todo CRM-filho** (`.gitignore.example`) — corrigida lá também, senão cada clonagem futura nasceria com ela.

@@ -124,12 +124,6 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS_HEADERS });
   if (req.method !== "POST") return json({ error: "Method Not Allowed" }, 405);
 
-  if (!ENCRYPTION_KEY) {
-    // Falha fechada: sem chave de cifra, gravar em texto puro seria pior
-    // que não gravar (CLAUDE.md §4).
-    return json({ error: "ENCRYPTION_KEY não configurada no ambiente da função" }, 500);
-  }
-
   const authHeader = req.headers.get("authorization");
   if (!authHeader) return json({ error: "Não autenticado" }, 401);
 
@@ -147,6 +141,20 @@ Deno.serve(async (req: Request) => {
   if (perfilErr || !perfil) return json({ error: "Perfil não encontrado" }, 403);
   if (!["owner", "admin"].includes(perfil.account_role)) {
     return json({ error: "Só owner/admin pode configurar a chave de IA da conta" }, 403);
+  }
+
+  // ORDEM IMPORTA (achado do portão adversarial da Subetapa 02.15).
+  // Esta verificação ficava ANTES da autenticação, e por isso um chamador
+  // sem sessão nenhuma descobria que o servidor estava mal configurado —
+  // e o nome exato da variável que falta. Não vazava a chave e não dispara
+  // em ambiente configurado, mas estado interno não se conta a quem ainda
+  // não provou quem é. As funções de WhatsApp já autenticavam primeiro;
+  // eram estas duas de IA que haviam regredido.
+  //
+  // Falha fechada: sem chave de cifra, gravar em texto puro seria pior
+  // que não gravar (CLAUDE.md §4).
+  if (!ENCRYPTION_KEY) {
+    return json({ error: "ENCRYPTION_KEY não configurada no ambiente da função" }, 500);
   }
 
   let body: { provedor?: string; modelo?: string; chave_api?: string; prompt_sistema?: string };

@@ -581,6 +581,24 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Evidência:** a primeira rodada dava 2 sucessos e 4 "barrados"; a rodada corrigida deu 3 sucessos, 2 isolamentos reais e 2 inconclusivos.
 - **Fonte:** Subetapa 02.15, sessão de 2026-08-21. Mesma família da regra §11 do `CLAUDE.md` (test-first no diagnóstico).
 
+### Correlação que sobrevive a um teste de controle ainda pode ser causa errada
+- **Gatilho:** Subetapa 02.15, varredura de XSS armazenado. A tela de Pessoas **travou o renderizador do navegador** com os payloads hostis semeados. Removi os payloads: a tela voltou. Reseme: travou de novo. Havia correlação, havia controle, e havia reprodução em aba nova.
+- **Eu estava a um passo de escrever "negação de serviço por dado hostil" no relatório de auditoria** — um achado grave, com evidência aparentemente sólida.
+- **A bissecção derrubou tudo.** Testando um payload por vez — `img/onerror`, `<script>`, `svg/onload`, quebra de atributo —, **nenhum** trava a tela; todos são escapados corretamente e aparecem como texto. A causa era minha: um `await` de 2,5 s que injetei na página estourou o tempo do CDP e travou o processo de renderização. E o Chrome **compartilha o processo de renderização entre abas do mesmo domínio**, então a "aba nova" que abri para confirmar herdou o travamento e fabricou a reprodução que me convenceu.
+- **Por que o controle não salvou:** ele isolou a variável errada. Eu variei *o payload* e observei *a tela*, mas a variável que de fato mudava era *o estado do renderizador* — que ia se recuperando com o tempo entre as tentativas.
+- **Regra que fica:** quando um controle confirmar a hipótese, perguntar **o que mais mudou junto**. Tempo decorrido, processo reiniciado, cache esvaziado e aba nova não são "nada" — são variáveis. E, em automação de navegador: **nunca injetar espera longa dentro do script avaliado**; usar a espera do próprio harness, senão você trava o alvo e passa a medir o seu próprio estrago.
+- **Do mesmo tipo, na mesma subetapa:** três ataques de chave estrangeira foram contados como "barrado" quando a recusa era **incidental** (trigger de anamnese completa, expediente do profissional, `CHECK` de enum — todos disparados por payload inválido meu). Contá-las teria **subnotificado** a falha. Daí a regra irmã: **ler o SQLSTATE, nunca só o fato de ter falhado** — `23514`/`23502`/`42703` significam "seu payload estava errado"; só `42501` (RLS) e `23503` (chave estrangeira) provam isolamento.
+- **Fonte:** Subetapa 02.15, sessão de 2026-08-21. Mesma família da §11 do `CLAUDE.md`, por um ângulo que ela ainda não cobria: não o de aceitar hipótese sem teste, mas o de aceitar teste sem isolar variável.
+
+### Verificação de configuração antes da autenticação conta estado interno a quem não provou quem é
+- **Gatilho:** Subetapa 02.15, ataque às Edge Functions. `ia-configurar` e `ia-responder` respondiam `ENCRYPTION_KEY não configurada` a um chamador **sem sessão nenhuma** — a checagem de ambiente vinha antes da checagem de autenticação.
+- **Severidade honesta: baixa.** Não vaza a chave, e em ambiente configurado o ramo nunca dispara. Mas entrega a um anônimo o nome exato de uma variável de ambiente e o fato de o servidor estar quebrado — que é reconhecimento gratuito.
+- **O que torna o achado interessante:** as duas funções de **WhatsApp** já autenticavam primeiro. Não é um padrão que ninguém aplicou — é um padrão bom que **regrediu** no código escrito depois. É o inverso do achado A03–A07 da 01.8 (onde o padrão novo é que não fora aplicado ao código antigo).
+- **Ação:** verificação de configuração movida para depois da resolução de papel. Ordem correta em toda função: método → autenticação → papel → configuração → validação de corpo → efeito.
+- **Efeito colateral bom:** com a ordem certa, os testes de papel passaram a ser exercitáveis num ambiente sem `ENCRYPTION_KEY` — o conserto tornou a própria falha testável.
+- **Regra que fica:** ao auditar um conjunto de funções escritas em épocas diferentes, **comparar a ordem das guardas entre elas**. A divergência entre irmãs é um sinal mais barato de achar que a leitura de cada uma isolada.
+- **Fonte:** Subetapa 02.15, sessão de 2026-08-21.
+
 ---
 
 ## 6. Armadilhas conhecidas (não repetir)
@@ -618,6 +636,8 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **`ON DELETE SET NULL` em chave composta anula TODAS as colunas**, inclusive `account_id`, que é `NOT NULL` — e a exclusão do pai passa a falhar em produção. Usar `ON DELETE SET NULL (coluna)` (PG 15+). Fonte: Subetapa 02.15.
 - **Em teste adversarial, ler o SQLSTATE e não só a falha.** `23514`/`23502`/`42703` significam "seu payload estava errado", não "o sistema barrou". Só `42501` (RLS) e `23503` (chave estrangeira) provam isolamento; o resto é inconclusivo e deve ser declarado assim. Fonte: Subetapa 02.15.
 - **Suíte de teste nunca aponta para o banco de produção**, e a proteção é **erro**, não aviso — fallback silencioso para produção é pior que não separar. Fonte: Subetapa 02.15.
+- **Em automação de navegador, nunca injetar espera longa dentro do script avaliado** — estoura o tempo do CDP e trava o processo de renderização, que o Chrome compartilha entre abas do mesmo domínio. A "aba nova" que você abre para confirmar herda o travamento e fabrica uma reprodução falsa. Usar a espera do próprio harness. Fonte: Subetapa 02.15.
+- **Ordem das guardas em Edge Function:** método → autenticação → papel → configuração → corpo → efeito. Conferir configuração antes de autenticar entrega estado interno a anônimo. Ao auditar funções escritas em épocas diferentes, comparar a ordem **entre elas** — a divergência entre irmãs acha o defeito mais barato que ler cada uma. Fonte: Subetapa 02.15.
 
 ---
 
