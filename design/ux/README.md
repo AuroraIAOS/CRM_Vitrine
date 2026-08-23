@@ -33,6 +33,7 @@ Três fontes, nesta ordem de peso:
 | 7 | [`07_ROTEIRO.md`](07_ROTEIRO.md) | Sequenciamento em 4 ondas, com esforço e o que cada onda desbloqueia. |
 | — | [`referencias/CATALOGO.md`](referencias/CATALOGO.md) | Os produtos e design systems consultados, e o que copiar de cada um. |
 | — | [`prototipo.html`](prototipo.html) | Protótipo autocontido (abrir no navegador). Renderiza as propostas em claro e escuro. |
+| ★ | [`versoes/`](versoes/) | **Três versões completas para escolha de Max** — 19 capturas em `versoes/telas/`, comparação e parecer em `versoes/README.md`. |
 
 ## As três conclusões, se você só ler esta página
 

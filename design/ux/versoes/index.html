@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR" data-v="03" data-tela="inicio">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRM Vitrine — três versões de UX/UI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<div class="app">
+  <aside class="barra-lateral" id="lateral"></aside>
+  <div class="principal">
+    <header class="topo" id="topo"></header>
+    <main class="conteudo" id="conteudo"></main>
+  </div>
+</div>
+
+<!-- Barra de comparação. Não faz parte de nenhuma das versões — é o
+     instrumento para olhar as três. Some nas capturas ([data-capturar]). -->
+<div class="trocador" role="group" aria-label="Comparar versões">
+  <button data-versao="01">01 · Padrão de mercado</button>
+  <button data-versao="02">02 · Estado da arte</button>
+  <button data-versao="03" aria-pressed="true">03 · Recomendado</button>
+  <span style="width:1px;height:1.25rem;background:#4a5a66;margin:0 .25rem"></span>
+  <button data-tela="inicio" aria-pressed="true">Início</button>
+  <button data-tela="pessoas">Pessoas</button>
+  <button data-tela="ficha">Ficha</button>
+  <button data-tela="agenda">Agenda</button>
+  <button data-tela="funil">Funil</button>
+  <button data-tela="mensagens">Mensagens</button>
+</div>
+
+<script type="module">
+import { pintar, ligarInteracao } from "./app.js";
+
+// Estado inicial pela URL, para o script de captura poder pedir uma
+// combinação exata: index.html?v=02&tela=agenda
+const q = new URLSearchParams(location.search);
+if (q.get("v")) document.documentElement.dataset.v = q.get("v");
+if (q.get("capturar")) document.documentElement.dataset.capturar = "1";
+
+const telaInicial = q.get("tela") || "inicio";
+pintar(telaInicial, q.get("extra"));
+ligarInteracao();
+
+// Superfície usada pelo capturar.mjs — evita recarregar a página a cada tela.
+window.pintarPara = (v, tela, extra) => {
+  document.documentElement.dataset.v = v;
+  pintar(tela, extra);
+};
+
+// Sincroniza os botões da barra com o estado inicial
+for (const b of document.querySelectorAll("[data-versao]"))
+  b.setAttribute("aria-pressed", String(b.dataset.versao === document.documentElement.dataset.v));
+for (const b of document.querySelectorAll("[data-tela]"))
+  b.setAttribute("aria-pressed", String(b.dataset.tela === telaInicial));
+</script>
+</body>
+</html>
