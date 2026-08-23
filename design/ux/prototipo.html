@@ -1,0 +1,1264 @@
+<!doctype html>
+<html lang="pt-BR" data-tema="claro" data-densidade="confortavel">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRM Vitrine — Protótipo de UX/UI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOKENS — a proposta de design/ux/02_FUNDACAO_VISUAL.md
+   Nenhuma cor aparece fora deste bloco (docs/04 §4).
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* ── Tipografia: 7 degraus em rem, contra os 17 valores em px de hoje (F01) */
+  --fs-eyebrow: .6875rem;  /* 11px */
+  --fs-xs:      .75rem;    /* 12px */
+  --fs-sm:      .8125rem;  /* 13px */
+  --fs-md:      .875rem;   /* 14px — corpo padrão */
+  --fs-lg:      1rem;      /* 16px */
+  --fs-xl:      1.25rem;   /* 20px */
+  --fs-display: 1.75rem;   /* 28px */
+  --lh-tight: 1.25; --lh-normal: 1.45; --lh-relaxed: 1.6;
+
+  --ui:   "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* ── Cor: paleta ratificada docs/04 §5.2, com os 7 papéis corrigidos (F03/F04/F05) */
+  --canvas:      #eef1f2;
+  --card:        #ffffff;
+  --content:     #f4f6f7;
+  --borda:       #e4eaee;   /* decorativa — isenta de 1.4.11 */
+  --hairline:    #eef2f4;   /* decorativa */
+  --borda-input: #7a95a5;   /* componente — 3,15:1 ✓ (era #dde4e8, 1,29:1) */
+
+  --txt:         #26313a;   /* 13,27:1 ✓ */
+  --txt-2:       #41535f;   /* 7,99:1 ✓ */
+  --txt-muted:   #63717b;   /* 5,03:1 ✓ (era #7c8b95, 3,51:1) */
+  --txt-faint:   #60717c;   /* 5,06:1 ✓ (era #9aa8b1, 2,44:1) */
+  --txt-place:   #627885;   /* 4,62:1 ✓ (era #a8b6bf, 2,08:1) */
+
+  --azul:        #3d7396;   /* 5,13:1 ✓ */
+  --azul-tint:   #e8eff4;
+  --azul-txt:    #2b5f80;
+
+  --ok:      #8fb4a6;  --ok-tint:   #eef4f1;  --ok-txt:   #497664;  /* 4,64:1 ✓ */
+  --aviso:   #c8b79a;  --aviso-tint:#faf6ef;  --aviso-txt:#806d4a;  /* 4,64:1 ✓ */
+  --perigo:  #a8827a;  --perigo-tint:#f8f0ee; --perigo-txt:#8e6156; /* 4,68:1 ✓ */
+
+  --grafico-1:#5b87a8; --grafico-2:#8fb4a6; --grafico-3:#c8b79a; --grafico-4:#cfdde6;
+
+  /* ── Densidade: multiplicador de ESPAÇO, o tipo não se mexe (F02) */
+  --d: 1;
+  --alt-linha: calc(2.5rem * var(--d));
+  --alt-item:  calc(3rem   * var(--d));
+  --alt-hora:  calc(3.5rem * var(--d));
+  --pad-card:  calc(1rem   * var(--d));
+  --gap-card:  calc(.75rem * var(--d));
+
+  --r-sm: 4px; --r-md: 6px; --r-lg: 8px; --r-full: 999px;
+
+  --sombra-flutuante: 0 4px 12px rgb(0 0 0 / .08);
+  --sombra-overlay:   0 16px 48px rgb(0 0 0 / .16);
+
+  --dur-instant: 80ms; --dur-fast: 150ms; --dur-normal: 220ms;
+  --ease: cubic-bezier(.2,0,.2,1);
+}
+:root[data-densidade="compacto"]  { --d: .8;   }
+:root[data-densidade="espacoso"]  { --d: 1.15; }
+
+:root[data-tema="escuro"] {
+  --canvas:#0d1216; --card:#161d23; --content:#11171c;
+  --borda:#242e36; --hairline:#1c242a; --borda-input:#5b7385;
+  --txt:#e2e8ec; --txt-2:#b8c4cc; --txt-muted:#93a2ac; --txt-faint:#8fa0ab; --txt-place:#8395a1;
+  --azul:#79a6c4; --azul-tint:#1b2a35; --azul-txt:#a9cbe2;
+  --ok:#7ea595; --ok-tint:#18241f; --ok-txt:#9fc9b8;
+  --aviso:#c4b393; --aviso-tint:#241f16; --aviso-txt:#d9c9a8;
+  --perigo:#b08c83; --perigo-tint:#241a17; --perigo-txt:#d3a99e;
+  --grafico-4:#2c3d49;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE
+   ═══════════════════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; }
+/* `display:flex` numa classe vence a regra de agente de usuário para [hidden];
+   sem isto, a barra de ações em massa e o toast aparecem mesmo escondidos. */
+[hidden] { display: none !important; }
+body {
+  margin: 0; background: var(--canvas); color: var(--txt);
+  font-family: var(--ui); font-size: var(--fs-md); line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+}
+h1,h2,h3,p,ul,ol { margin: 0; }
+button { font: inherit; color: inherit; }
+
+/* Anel de foco — SC 2.4.13 (02_FUNDACAO_VISUAL.md §6) */
+:where(a,button,input,select,textarea,[tabindex]):focus-visible {
+  outline: 2px solid var(--azul); outline-offset: 2px; border-radius: inherit;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration:.01ms!important; transition-duration:.01ms!important; }
+}
+
+.eyebrow {
+  font-family: var(--mono); font-size: var(--fs-eyebrow); font-weight: 500;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--txt-muted);
+}
+.num { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CASCA DA PÁGINA DE DEMONSTRAÇÃO
+   ═══════════════════════════════════════════════════════════════════════════ */
+.topo {
+  position: sticky; top: 0; z-index: 40;
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  padding: .875rem 1.5rem; background: var(--card);
+  border-bottom: 1px solid var(--borda);
+}
+.topo h1 { font-size: var(--fs-lg); font-weight: 600; letter-spacing: -.01em; }
+.topo .sub { font-size: var(--fs-xs); color: var(--txt-muted); }
+.controles { margin-left: auto; display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+
+.pagina { max-width: 1180px; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
+
+.secao { margin-top: 3.5rem; }
+.secao > header { margin-bottom: 1.25rem; }
+.secao h2 {
+  font-size: var(--fs-xl); font-weight: 600; letter-spacing: -.015em;
+  text-wrap: balance; line-height: var(--lh-tight);
+}
+.secao .resolve {
+  display: inline-block; margin-top: .5rem;
+  font-family: var(--mono); font-size: var(--fs-eyebrow); font-weight: 500;
+  color: var(--azul-txt); background: var(--azul-tint);
+  padding: .125rem .5rem; border-radius: var(--r-full);
+}
+.secao > header p { margin-top: .625rem; color: var(--txt-2); max-width: 68ch; }
+
+/* Comparação antes/depois */
+.comparar { display: grid; gap: 1rem; grid-template-columns: 1fr 1fr; margin-top: 1.25rem; }
+@media (max-width: 860px) { .comparar { grid-template-columns: 1fr; } }
+.painel { background: var(--card); border: 1px solid var(--borda); border-radius: var(--r-lg); overflow: hidden; }
+.painel > .rotulo {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .5rem .875rem; border-bottom: 1px solid var(--hairline);
+  font-family: var(--mono); font-size: var(--fs-eyebrow); font-weight: 500;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+.rotulo.antes  { color: var(--perigo-txt); background: var(--perigo-tint); }
+.rotulo.depois { color: var(--ok-txt);     background: var(--ok-tint); }
+.painel > .corpo { padding: var(--pad-card); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPONENTES PROPOSTOS
+   ═══════════════════════════════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex; align-items: center; gap: .375rem;
+  min-height: 2rem; padding: .375rem .75rem;
+  border: 1px solid transparent; border-radius: var(--r-sm);
+  font-size: var(--fs-sm); font-weight: 500; cursor: pointer;
+  background: transparent; transition: background var(--dur-instant) var(--ease);
+}
+.btn-primario { background: var(--azul); color: #fff; }
+.btn-primario:hover { filter: brightness(1.08); }
+.btn-contorno { border-color: var(--borda-input); color: var(--txt-2); }
+.btn-contorno:hover { background: var(--content); }
+.btn-texto { color: var(--txt-muted); }
+.btn-texto:hover { background: var(--content); color: var(--txt); }
+.btn[aria-pressed="true"] { background: var(--azul-tint); color: var(--azul-txt); }
+
+/* alvo mínimo 24×24 — SC 2.5.8 */
+.btn-icone {
+  display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem;
+  border: 0; border-radius: var(--r-sm); background: transparent; cursor: pointer;
+  color: var(--txt-muted);
+}
+.btn-icone:hover { background: var(--content); color: var(--txt); }
+
+.badge {
+  display: inline-flex; align-items: center; gap: .25rem;
+  padding: .0625rem .5rem; border-radius: var(--r-full);
+  font-size: var(--fs-xs); font-weight: 500; white-space: nowrap;
+}
+.badge-neutro { background: var(--content); color: var(--txt-2); }
+.badge-ok     { background: var(--ok-tint);     color: var(--ok-txt); }
+.badge-aviso  { background: var(--aviso-tint);  color: var(--aviso-txt); }
+.badge-perigo { background: var(--perigo-tint); color: var(--perigo-txt); }
+.badge-azul   { background: var(--azul-tint);   color: var(--azul-txt); }
+
+.campo {
+  width: 100%; min-height: 2.25rem; padding: .375rem .625rem;
+  border: 1px solid var(--borda-input); border-radius: var(--r-sm);
+  background: var(--card); color: var(--txt); font-size: var(--fs-md);
+}
+.campo::placeholder { color: var(--txt-place); }
+
+kbd {
+  font-family: var(--mono); font-size: var(--fs-eyebrow);
+  padding: .0625rem .3125rem; border: 1px solid var(--borda-input);
+  border-bottom-width: 2px; border-radius: var(--r-sm);
+  color: var(--txt-muted); background: var(--card);
+}
+
+/* Avatar com iniciais e matiz derivada do nome */
+.avatar {
+  display: inline-grid; place-items: center; flex: none;
+  width: 1.75rem; height: 1.75rem; border-radius: var(--r-full);
+  font-size: var(--fs-eyebrow); font-weight: 600; letter-spacing: .02em;
+}
+
+/* Skeleton */
+.skeleton {
+  background: linear-gradient(90deg, var(--content) 25%, var(--hairline) 37%, var(--content) 63%);
+  background-size: 400% 100%; animation: brilho 1.4s ease infinite;
+  border-radius: var(--r-sm);
+}
+@keyframes brilho { from { background-position: 100% 50% } to { background-position: 0 50% } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none } }
+
+/* Estado vazio */
+.vazio { text-align: center; padding: 2.5rem 1.5rem; }
+.vazio .icone {
+  width: 2.5rem; height: 2.5rem; margin: 0 auto .75rem; border-radius: var(--r-md);
+  background: var(--content); display: grid; place-items: center; color: var(--txt-muted);
+}
+.vazio h4 { margin: 0 0 .25rem; font-size: var(--fs-md); font-weight: 600; }
+.vazio p  { font-size: var(--fs-sm); color: var(--txt-muted); max-width: 34ch; margin: 0 auto 1rem; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SIDEBAR (comparação N01)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.nav { padding: .5rem; }
+.nav .grupo { font-family: var(--mono); font-size: var(--fs-eyebrow); font-weight: 500;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--txt-faint);
+  padding: .5rem .5rem .25rem; }
+.nav .grupo-bom { font-family: var(--ui); font-size: var(--fs-xs); letter-spacing: .02em;
+  text-transform: none; font-weight: 600; color: var(--txt-muted); }
+.nav a {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .375rem .5rem; border-radius: var(--r-sm);
+  color: var(--txt-2); text-decoration: none; font-weight: 500;
+}
+.nav a.pequeno { font-size: var(--fs-eyebrow); }
+.nav a.normal  { font-size: var(--fs-sm); }
+.nav a:hover   { background: var(--content); color: var(--txt); }
+.nav a.ativo   { background: var(--azul-tint); color: var(--azul-txt); }
+.pt { width: .5rem; height: .5rem; border-radius: var(--r-full); flex: none; background: currentColor; opacity: .55; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TABELA
+   ═══════════════════════════════════════════════════════════════════════════ */
+.tabela-casca { border: 1px solid var(--borda); border-radius: var(--r-lg); overflow: hidden; background: var(--card); }
+.tabela-rolagem { max-height: 21rem; overflow: auto; }
+/* `table-layout: fixed` + colgroup: sem isto, esconder o cabeçalho para dar
+   lugar à barra de ações em massa recalcula a largura automática das colunas
+   e o conteúdo dança. Largura de coluna é decisão, não consequência. */
+table.dados { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); table-layout: fixed; }
+table.dados td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+table.dados thead th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--card); border-bottom: 1px solid var(--borda);
+  font-family: var(--mono); font-size: var(--fs-eyebrow); font-weight: 500;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--txt-muted);
+  text-align: left; padding: 0 .75rem; height: 2.25rem; white-space: nowrap;
+}
+table.dados th.n, table.dados td.n { text-align: right; font-variant-numeric: tabular-nums; }
+table.dados tbody td { height: var(--alt-linha); padding: 0 .75rem; border-bottom: 1px solid var(--hairline); }
+table.dados tbody tr:last-child td { border-bottom: 0; }
+table.dados tbody tr:hover { background: var(--content); }
+table.dados tbody tr[data-sel="1"] { background: var(--azul-tint); }
+table.dados th.sort { cursor: pointer; user-select: none; }
+table.dados th.sort[aria-sort]:not([aria-sort="none"]) { color: var(--txt); }
+.celula-nome { display: flex; align-items: center; gap: .5rem; font-weight: 500; color: var(--txt); }
+
+.barra-massa {
+  display: flex; align-items: center; gap: .75rem;
+  height: 2.25rem; padding: 0 .75rem;
+  background: var(--azul-tint); color: var(--azul-txt);
+  border-bottom: 1px solid var(--borda); font-size: var(--fs-sm); font-weight: 500;
+}
+.rodape-tabela {
+  display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+  padding: .5rem .75rem; border-top: 1px solid var(--hairline);
+  font-size: var(--fs-xs); color: var(--txt-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CABEÇALHO DE PÁGINA / KPI / KANBAN
+   ═══════════════════════════════════════════════════════════════════════════ */
+.cab-pagina { display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap; padding-bottom: .875rem; }
+.cab-pagina h3 { font-size: var(--fs-xl); font-weight: 600; letter-spacing: -.015em; line-height: var(--lh-tight); }
+.cab-pagina .contexto { margin-top: .1875rem; font-size: var(--fs-sm); color: var(--txt-muted); }
+.cab-pagina .acoes { margin-left: auto; display: flex; gap: .5rem; }
+.abas { display: flex; gap: .25rem; border-bottom: 1px solid var(--borda); padding-top: .25rem; }
+.abas button {
+  border: 0; background: transparent; cursor: pointer;
+  padding: .5rem .625rem; margin-bottom: -1px;
+  font-size: var(--fs-sm); font-weight: 500; color: var(--txt-muted);
+  border-bottom: 2px solid transparent;
+}
+.abas button[aria-selected="true"] { color: var(--txt); border-bottom-color: var(--azul); }
+.abas .cont { color: var(--txt-faint); font-variant-numeric: tabular-nums; }
+
+.kpi { display: block; width: 100%; text-align: left; cursor: pointer;
+  background: var(--card); border: 1px solid var(--borda); border-radius: var(--r-lg);
+  padding: var(--pad-card); text-decoration: none; color: inherit;
+  transition: border-color var(--dur-instant) var(--ease); }
+.kpi:hover { border-color: var(--borda-input); }
+.kpi .valor { font-size: var(--fs-display); font-weight: 600; line-height: var(--lh-tight);
+  letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin-top: .25rem; }
+.kpi .delta { font-size: var(--fs-xs); font-weight: 500; margin-top: .25rem; }
+.kpi .delta.pos { color: var(--ok-txt); } .kpi .delta.neg { color: var(--perigo-txt); }
+.kpi .base { font-size: var(--fs-xs); color: var(--txt-muted); margin-top: .125rem; }
+.kpi .seta { float: right; color: var(--txt-faint); }
+
+.grade-kpi { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+
+.card-negocio {
+  background: var(--card); border: 1px solid var(--borda); border-radius: var(--r-md);
+  padding: .625rem .75rem; display: grid; gap: .3125rem;
+  border-left: 3px solid transparent; cursor: grab;
+}
+.card-negocio:hover { border-color: var(--borda-input); }
+.card-negocio.travado { border-left-color: var(--perigo); }
+.card-negocio .topo-c { display: flex; align-items: center; gap: .5rem; }
+.card-negocio .nome { font-size: var(--fs-md); font-weight: 600; }
+.card-negocio .valor { font-size: var(--fs-md); font-variant-numeric: tabular-nums; color: var(--txt-2); }
+.card-negocio .prox { font-size: var(--fs-xs); color: var(--txt-muted); display: flex; align-items: center; gap: .375rem; }
+.card-negocio .rodape { display: flex; align-items: center; gap: .5rem; margin-top: .125rem; }
+.idade { margin-left: auto; font-family: var(--mono); font-size: var(--fs-eyebrow); font-weight: 500; }
+.idade.ok { color: var(--txt-faint); } .idade.aviso { color: var(--aviso-txt); } .idade.perigo { color: var(--perigo-txt); }
+
+.coluna-vazia {
+  border: 1px dashed var(--borda-input); border-radius: var(--r-md);
+  padding: 1.25rem .75rem; text-align: center; font-size: var(--fs-xs); color: var(--txt-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AGENDA
+   ═══════════════════════════════════════════════════════════════════════════ */
+.agenda { display: grid; grid-template-columns: 3.25rem repeat(3, 1fr); border: 1px solid var(--borda);
+  border-radius: var(--r-lg); overflow: hidden; background: var(--card); }
+.agenda .cab { height: 2.5rem; display: grid; place-items: center; border-bottom: 1px solid var(--borda);
+  font-size: var(--fs-sm); font-weight: 600; }
+.agenda .cab.reg { border-right: 1px solid var(--hairline); }
+.regua { border-right: 1px solid var(--hairline); }
+.regua .hora { height: var(--alt-hora); position: relative; }
+.regua .hora span { position: absolute; top: -.5em; right: .5rem;
+  font-family: var(--mono); font-size: var(--fs-eyebrow); color: var(--txt-muted); }
+.dia { position: relative; border-right: 1px solid var(--hairline); }
+.dia:last-child { border-right: 0; }
+.dia .faixa { height: var(--alt-hora); border-bottom: 1px solid var(--hairline); }
+.compromisso {
+  position: absolute; overflow: hidden;
+  padding: .25rem .375rem; border-radius: var(--r-sm);
+  border-left: 3px solid var(--prof, var(--grafico-1));
+  background: color-mix(in srgb, var(--prof, var(--grafico-1)) 12%, var(--card));
+  font-size: var(--fs-xs); line-height: 1.3;
+}
+.compromisso b { display: block; font-size: var(--fs-sm); font-weight: 600; color: var(--txt);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.compromisso i { font-style: normal; color: var(--txt-muted); display: block;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Reprodução fiel do defeito A01: todo bloco em 100% da largura, no mesmo lugar.
+   O fundo translúcido faz os dois textos aparecerem um sobre o outro — que é
+   exatamente o borrão ilegível de screenshots/05_agenda.png. */
+.compromisso.quebrado {
+  position: absolute; left: 0; width: 100%;
+  border-left-color: var(--perigo);
+  background: color-mix(in srgb, var(--content) 55%, transparent);
+}
+.linha-agora { position: absolute; left: 0; right: 0; height: 2px; background: var(--perigo); z-index: 3; }
+.linha-agora::before { content: ""; position: absolute; left: -4px; top: -3px;
+  width: 8px; height: 8px; border-radius: var(--r-full); background: var(--perigo); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PALETA DE COMANDOS / TOAST / CONVERSA
+   ═══════════════════════════════════════════════════════════════════════════ */
+.paleta { border: 1px solid var(--borda); border-radius: var(--r-lg); background: var(--card);
+  box-shadow: var(--sombra-overlay); overflow: hidden; max-width: 30rem; }
+.paleta .busca { display: flex; align-items: center; gap: .5rem; padding: .625rem .875rem;
+  border-bottom: 1px solid var(--hairline); }
+.paleta .busca input { flex: 1; border: 0; background: transparent; outline: 0;
+  font-size: var(--fs-md); color: var(--txt); }
+.paleta .grupo { padding: .5rem .875rem .1875rem; }
+.paleta .item { display: flex; align-items: center; gap: .625rem; padding: .375rem .875rem;
+  font-size: var(--fs-sm); cursor: pointer; }
+.paleta .item:hover, .paleta .item.foco { background: var(--azul-tint); color: var(--azul-txt); }
+.paleta .item .tipo { margin-left: auto; font-size: var(--fs-xs); color: var(--txt-faint); }
+
+.toast { display: flex; align-items: center; gap: .875rem;
+  background: var(--txt); color: var(--card); padding: .625rem .875rem;
+  border-radius: var(--r-md); box-shadow: var(--sombra-overlay); font-size: var(--fs-sm);
+  max-width: 26rem; }
+.toast button { border: 0; background: transparent; color: inherit; font-weight: 600;
+  text-decoration: underline; cursor: pointer; margin-left: auto; }
+
+.conversa { display: flex; gap: .625rem; align-items: flex-start; padding: .625rem .75rem;
+  border-bottom: 1px solid var(--hairline); cursor: pointer; }
+.conversa:hover { background: var(--content); }
+.conversa .txt { min-width: 0; flex: 1; }
+.conversa .nome { font-size: var(--fs-md); font-weight: 600; display: flex; align-items: center; gap: .375rem; }
+.conversa .previa { font-size: var(--fs-sm); color: var(--txt-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conversa .janela { flex: none; text-align: right; }
+.nao-lida { width: .4375rem; height: .4375rem; border-radius: var(--r-full); background: var(--azul); flex: none; }
+
+.compositor { padding: .75rem; border-top: 1px solid var(--borda); }
+.aviso-janela { display: flex; gap: .625rem; align-items: flex-start;
+  background: var(--aviso-tint); border: 1px solid color-mix(in srgb, var(--aviso) 45%, transparent);
+  border-radius: var(--r-md); padding: .625rem .75rem; font-size: var(--fs-sm); color: var(--aviso-txt); }
+
+/* utilidades */
+.linha { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.pilha { display: grid; gap: .75rem; }
+.nota { font-size: var(--fs-xs); color: var(--txt-muted); margin-top: .625rem; }
+.nota code { font-family: var(--mono); }
+.medida { font-family: var(--mono); font-size: var(--fs-eyebrow); color: var(--txt-faint); }
+hr.div { border: 0; border-top: 1px solid var(--borda); margin: 0; }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div>
+    <h1>CRM Vitrine — protótipo de UX/UI</h1>
+    <div class="sub">Acompanha <span class="mono">design/ux/</span> · bench <span class="mono">bench/pesquisa-ux</span> · 2026-08-23</div>
+  </div>
+  <div class="controles">
+    <span class="eyebrow">Densidade</span>
+    <button class="btn btn-contorno" data-dens="compacto">Compacto</button>
+    <button class="btn btn-contorno" data-dens="confortavel" aria-pressed="true">Confortável</button>
+    <button class="btn btn-contorno" data-dens="espacoso">Espaçoso</button>
+    <button class="btn btn-primario" id="tema">Tema escuro</button>
+  </div>
+</header>
+
+<main class="pagina">
+
+  <p style="color:var(--txt-2);max-width:70ch">
+    Cada seção mostra <strong>o que está no ar hoje</strong> ao lado da <strong>proposta</strong>.
+    Os dois lados usam os mesmos dados da conta de demonstração. Os controles do topo funcionam de
+    verdade — a densidade muda o espaço sem mexer no tamanho do texto, que é exatamente o achado
+    <span class="mono">F02</span>.
+  </p>
+
+  <!-- ══════════════════════════════ 1. TIPOGRAFIA ══════════════════════════ -->
+  <section class="secao">
+    <header>
+      <h2>1. A escala tipográfica</h2>
+      <span class="resolve">F01 · F02 · E05</span>
+      <p>637 tamanhos cravados em pixel, em 17 valores, com o grosso da interface entre 9 e 11px.
+      À direita, sete degraus em <code class="mono">rem</code>. É a mudança de maior efeito visual
+      do dossiê e a mais mecânica de aplicar.</p>
+    </header>
+    <div class="comparar">
+      <div class="painel">
+        <div class="rotulo antes">Hoje — 17 tamanhos em px</div>
+        <div class="corpo">
+          <div style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#9aa8b1">Atendimentos hoje</div>
+          <div style="font-size:26px;font-weight:600;line-height:1.2;margin-top:2px">0</div>
+          <div style="font-size:10.5px;color:#7c8b95;margin-top:2px">sem base de comparação</div>
+          <div style="font-size:9.5px;font-family:var(--mono);color:#9aa8b1;margin-top:3px">vs. mesmo dia da semana passada</div>
+          <hr class="div" style="margin:.875rem 0">
+          <div style="font-size:11.5px;font-weight:600">Helena Marques</div>
+          <div style="font-size:11px;color:#7c8b95">proprietaria@vitrinedemo.local · sem telefone</div>
+          <div style="font-size:10px;color:#9aa8b1;margin-top:2px">Cadastrada em 19 de agosto de 2026</div>
+          <p class="nota">8 · 8,5 · 9 · 9,5 · 10 · 10,5 · 11 · 11,5 · 12 · 12,5 · 13 · 14 · 15 · 17 · 20 · 24 · 26 px</p>
+        </div>
+      </div>
+      <div class="painel">
+        <div class="rotulo depois">Proposta — 7 degraus em rem</div>
+        <div class="corpo">
+          <div class="eyebrow">Atendimentos hoje</div>
+          <div style="font-size:var(--fs-display);font-weight:600;line-height:var(--lh-tight);letter-spacing:-.02em;margin-top:.25rem" class="num">0</div>
+          <div style="font-size:var(--fs-xs);color:var(--txt-muted);margin-top:.25rem">0 de 6 agendados hoje</div>
+          <hr class="div" style="margin:.875rem 0">
+          <div style="font-size:var(--fs-lg);font-weight:600">Helena Marques</div>
+          <div style="font-size:var(--fs-md);color:var(--txt-2)">proprietaria@vitrinedemo.local</div>
+          <div style="font-size:var(--fs-sm);color:var(--txt-muted);margin-top:.125rem">
+            <button class="btn btn-texto" style="padding:0 .25rem;min-height:auto">+ Adicionar telefone</button>
+          </div>
+          <p class="nota">11 · 12 · 13 · 14 · 16 · 20 · 28 px — sempre em <code>rem</code></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="painel" style="margin-top:1rem">
+      <div class="rotulo">A escala completa</div>
+      <div class="corpo pilha">
+        <div class="linha"><span class="medida" style="width:8.5rem">--fs-eyebrow · 11px</span><span class="eyebrow">Metadado, cabeçalho de tabela, hora</span></div>
+        <div class="linha"><span class="medida" style="width:8.5rem">--fs-xs · 12px</span><span style="font-size:var(--fs-xs);color:var(--txt-muted)">Legenda, timestamp, texto de apoio</span></div>
+        <div class="linha"><span class="medida" style="width:8.5rem">--fs-sm · 13px</span><span style="font-size:var(--fs-sm)">Célula de tabela densa, item de navegação</span></div>
+        <div class="linha"><span class="medida" style="width:8.5rem">--fs-md · 14px</span><span style="font-size:var(--fs-md)">Corpo padrão — input, rótulo, leitura corrida</span></div>
+        <div class="linha"><span class="medida" style="width:8.5rem">--fs-lg · 16px</span><span style="font-size:var(--fs-lg);font-weight:600">Título de card e de seção</span></div>
+        <div class="linha"><span class="medida" style="width:8.5rem">--fs-xl · 20px</span><span style="font-size:var(--fs-xl);font-weight:600;letter-spacing:-.015em">Título de página</span></div>
+        <div class="linha"><span class="medida" style="width:8.5rem">--fs-display · 28px</span><span style="font-size:var(--fs-display);font-weight:600;letter-spacing:-.02em" class="num">R$ 2.210</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ 2. CONTRASTE ═══════════════════════════ -->
+  <section class="secao">
+    <header>
+      <h2>2. Contraste — os seis papéis que reprovam</h2>
+      <span class="resolve">F03 · F04 · F05</span>
+      <p>Medido com <code class="mono">referencias/medir_contraste.mjs</code>. Os substitutos
+      mantêm matiz e saturação e só descem a luminosidade — não há cor nova na paleta.
+      Compare a legibilidade das duas colunas, sobretudo no eyebrow.</p>
+    </header>
+    <div class="comparar">
+      <div class="painel">
+        <div class="rotulo antes">Hoje</div>
+        <div class="corpo pilha">
+          <div><span style="color:#7c8b95;font-size:var(--fs-md)">Texto de apoio e legenda</span> <span class="medida">3,51:1 ✗</span></div>
+          <div><span style="color:#8b98a2;font-size:var(--fs-md)">Texto muted secundário</span> <span class="medida">2,95:1 ✗</span></div>
+          <div><span style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#9aa8b1">Eyebrow em 9px</span> <span class="medida">2,44:1 ✗</span></div>
+          <div><input class="campo" style="border-color:#dde4e8" placeholder="Buscar pessoa…" aria-label="exemplo antes"><span class="medida">placeholder 2,08:1 ✗ · borda 1,29:1 ✗</span></div>
+          <div class="linha">
+            <span class="badge" style="background:#eef4f1;color:#4d7c69">Ativo</span>
+            <span class="badge" style="background:#faf6ef;color:#8a7550">Aguarda</span>
+            <span class="badge" style="background:#f8f0ee;color:#9c6b5e">Vencido</span>
+            <span class="medida">4,28 · 4,11 · 4,00 ✗</span>
+          </div>
+        </div>
+      </div>
+      <div class="painel">
+        <div class="rotulo depois">Proposta</div>
+        <div class="corpo pilha">
+          <div><span style="color:var(--txt-muted);font-size:var(--fs-md)">Texto de apoio e legenda</span> <span class="medida">5,03:1 ✓</span></div>
+          <div><span style="color:var(--txt-muted);font-size:var(--fs-md)">Texto muted secundário</span> <span class="medida">5,03:1 ✓</span></div>
+          <div><span class="eyebrow">Eyebrow em 11px</span> <span class="medida">5,06:1 ✓</span></div>
+          <div><input class="campo" placeholder="Buscar pessoa…" aria-label="exemplo depois"><span class="medida">placeholder 4,62:1 ✓ · borda 3,15:1 ✓</span></div>
+          <div class="linha">
+            <span class="badge badge-ok">Ativo</span>
+            <span class="badge badge-aviso">Aguarda</span>
+            <span class="badge badge-perigo">Vencido</span>
+            <span class="medida">4,64 · 4,64 · 4,68 ✓</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="nota">Foco (SC 2.4.13): navegue por <kbd>Tab</kbd> nesta página — o anel de 2px com
+    2px de folga é o mesmo que a proposta usa no produto.</p>
+  </section>
+
+  <!-- ══════════════════════════════ 3. NAVEGAÇÃO ═══════════════════════════ -->
+  <section class="secao">
+    <header>
+      <h2>3. Navegação — o fim do <code class="mono">aba_</code></h2>
+      <span class="resolve">N01 · N05</span>
+      <p>Nove cabeçalhos com nome de schema viram quatro grupos por tipo de trabalho.
+      O usuário do CRM-filho nunca precisou saber que existe um schema chamado
+      <code class="mono">aba_health</code>.</p>
+    </header>
+    <div class="comparar">
+      <div class="painel">
+        <div class="rotulo antes">Hoje — 9 nomes de schema</div>
+        <nav class="nav">
+          <a href="#" class="pequeno ativo"><span class="pt"></span>Dashboard</a>
+          <div class="grupo">aba_people</div><a href="#" class="pequeno"><span class="pt"></span>Pessoas</a>
+          <div class="grupo">aba_scheduling</div><a href="#" class="pequeno"><span class="pt"></span>Agenda</a>
+          <div class="grupo">aba_sales</div><a href="#" class="pequeno"><span class="pt"></span>Vendas</a>
+          <div class="grupo">aba_finance</div><a href="#" class="pequeno"><span class="pt"></span>Financeiro</a>
+          <div class="grupo">aba_health</div><a href="#" class="pequeno"><span class="pt"></span>Prontuário</a>
+          <div class="grupo">aba_catalog</div><a href="#" class="pequeno"><span class="pt"></span>Catálogo</a>
+          <div class="grupo">aba_messaging</div><a href="#" class="pequeno"><span class="pt"></span>Mensagens</a>
+        </nav>
+      </div>
+      <div class="painel">
+        <div class="rotulo depois">Proposta — 4 grupos por trabalho</div>
+        <nav class="nav">
+          <a href="#" class="normal ativo"><span class="pt"></span>Início</a>
+          <div class="grupo grupo-bom">Atendimento</div>
+          <a href="#" class="normal"><span class="pt"></span>Agenda</a>
+          <a href="#" class="normal"><span class="pt"></span>Prontuário</a>
+          <div class="grupo grupo-bom">Relacionamento</div>
+          <a href="#" class="normal"><span class="pt"></span>Pessoas</a>
+          <a href="#" class="normal"><span class="pt"></span>Mensagens</a>
+          <div class="grupo grupo-bom">Comercial</div>
+          <a href="#" class="normal"><span class="pt"></span>Funil</a>
+          <a href="#" class="normal"><span class="pt"></span>Catálogo</a>
+          <a href="#" class="normal"><span class="pt"></span>Financeiro</a>
+          <div class="grupo grupo-bom">Automação</div>
+          <a href="#" class="normal"><span class="pt"></span>Fluxos</a>
+          <a href="#" class="normal"><span class="pt"></span>Agente de IA</a>
+        </nav>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ 4. LISTA ═══════════════════════════════ -->
+  <section class="secao">
+    <header>
+      <h2>4. Tela de lista completa</h2>
+      <span class="resolve">N04 · T01 · T02 · T04 · T05</span>
+      <p>Cabeçalho de página com ação primária, cabeçalho de tabela fixo, ordenação, avatar com
+      iniciais, e a barra de ações em massa que aparece ao selecionar.
+      <strong>Marque as caixas</strong> para ver a barra substituir o cabeçalho.</p>
+    </header>
+
+    <div class="painel"><div class="corpo">
+      <div class="cab-pagina">
+        <div>
+          <h3>Pessoas</h3>
+          <div class="contexto">31 cadastradas · 12 leads · 10 clientes</div>
+        </div>
+        <div class="acoes">
+          <button class="btn btn-contorno">Importar</button>
+          <button class="btn btn-primario">+ Nova pessoa</button>
+        </div>
+      </div>
+      <div class="abas">
+        <button aria-selected="true">Todas <span class="cont">31</span></button>
+        <button aria-selected="false">Leads <span class="cont">12</span></button>
+        <button aria-selected="false">Clientes <span class="cont">10</span></button>
+        <button aria-selected="false">Equipe <span class="cont">7</span></button>
+        <button aria-selected="false">Fornecedores <span class="cont">2</span></button>
+      </div>
+      <div class="linha" style="margin:.875rem 0">
+        <input class="campo" style="max-width:16rem" placeholder="Buscar por nome, telefone ou e-mail…" aria-label="Buscar pessoas">
+        <button class="btn btn-contorno">Vínculo ▾</button>
+        <button class="btn btn-contorno">Tag ▾</button>
+        <button class="btn btn-texto">+ Filtro</button>
+      </div>
+
+      <div class="tabela-casca">
+        <div id="barra-massa" hidden class="barra-massa">
+          <span id="qtd-sel">0 selecionadas</span>
+          <button class="btn btn-texto" style="color:inherit">Etiquetar</button>
+          <button class="btn btn-texto" style="color:inherit">Atribuir</button>
+          <button class="btn btn-texto" style="color:inherit">Exportar</button>
+          <button class="btn btn-texto" style="color:inherit;margin-left:auto" id="limpar-sel">Limpar</button>
+        </div>
+        <div class="tabela-rolagem">
+          <table class="dados" id="tab-pessoas">
+            <colgroup>
+              <col style="width:2.5rem"><col style="width:32%"><col style="width:7rem">
+              <col><col style="width:9rem"><col style="width:2.75rem">
+            </colgroup>
+            <thead><tr id="cab-tab">
+              <th><input type="checkbox" id="sel-todos" aria-label="Selecionar todas"></th>
+              <th class="sort" aria-sort="ascending" data-col="nome">Nome ↑</th>
+              <th class="sort" aria-sort="none" data-col="vinculo">Vínculo</th>
+              <th>Contato</th>
+              <th class="sort n" aria-sort="none" data-col="dias">Último contato</th>
+              <th></th>
+            </tr></thead>
+            <tbody id="corpo-pessoas"></tbody>
+          </table>
+        </div>
+        <div class="rodape-tabela">
+          <span>1–8 de 31</span>
+          <select class="campo" style="width:auto;min-height:1.75rem;padding:.125rem .375rem;font-size:var(--fs-xs)" aria-label="Itens por página">
+            <option>25 por página</option><option>50 por página</option><option>100 por página</option>
+          </select>
+          <div style="margin-left:auto" class="linha">
+            <button class="btn btn-contorno" style="min-height:1.75rem">‹</button>
+            <span class="mono">1</span> <span style="color:var(--txt-faint)">/ 2</span>
+            <button class="btn btn-contorno" style="min-height:1.75rem">›</button>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- ══════════════════════════════ 5. AGENDA ══════════════════════════════ -->
+  <section class="secao">
+    <header>
+      <h2>5. Agenda — a colisão que hoje vira borrão</h2>
+      <span class="resolve">A01 · A02 · A03</span>
+      <p>À esquerda, o que a captura <code class="mono">05_agenda.png</code> mostra: dois
+      compromissos no mesmo horário, um impresso por cima do outro. À direita, o mesmo dado com
+      alocação de colunas — <strong>o algoritmo está rodando nesta página</strong>, é o mesmo de
+      <code class="mono">referencias/alocar_colunas.mjs</code>. Clique nos profissionais para filtrar.</p>
+    </header>
+
+    <div class="linha" style="margin-bottom:.75rem">
+      <span class="eyebrow">Profissionais</span>
+      <button class="btn btn-contorno filtro-prof" data-prof="0" aria-pressed="true"><span class="pt" style="color:var(--grafico-1);opacity:1"></span>Aline Prado</button>
+      <button class="btn btn-contorno filtro-prof" data-prof="1" aria-pressed="true"><span class="pt" style="color:var(--grafico-2);opacity:1"></span>Marcos Dias</button>
+      <button class="btn btn-contorno filtro-prof" data-prof="2" aria-pressed="true"><span class="pt" style="color:var(--grafico-3);opacity:1"></span>Tiago Rocha</button>
+    </div>
+
+    <div class="comparar">
+      <div class="painel">
+        <div class="rotulo antes">Hoje — blocos sobrepostos</div>
+        <div class="corpo" style="padding:0">
+          <div class="agenda" style="grid-template-columns:3.25rem 1fr;border:0;border-radius:0">
+            <div class="cab reg"></div><div class="cab">Terça 18</div>
+            <div class="regua" id="regua-ruim"></div>
+            <div class="dia" id="dia-ruim"></div>
+          </div>
+        </div>
+      </div>
+      <div class="painel">
+        <div class="rotulo depois">Proposta — colunas por colisão</div>
+        <div class="corpo" style="padding:0">
+          <div class="agenda" style="grid-template-columns:3.25rem 1fr;border:0;border-radius:0">
+            <div class="cab reg"></div><div class="cab">Terça 18</div>
+            <div class="regua" id="regua-bom"></div>
+            <div class="dia" id="dia-bom"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="nota">A linha vermelha é o "agora" (A02) — ela se move sozinha. O bloco de 4 horas
+    é um bloqueio de agenda atravessando três atendimentos curtos: o caso que mais quebra
+    implementação ingênua.</p>
+  </section>
+
+  <!-- ══════════════════════════════ 6. FUNIL ═══════════════════════════════ -->
+  <section class="secao">
+    <header>
+      <h2>6. Card de negócio — tempo na etapa</h2>
+      <span class="resolve">K01 · K02 · K03 · K04</span>
+      <p>O card de hoje gasta três linhas repetindo o nome da coluna. O da direita responde a
+      pergunta que o funil existe para responder: <em>o que está travado?</em></p>
+    </header>
+    <div class="comparar">
+      <div class="painel">
+        <div class="rotulo antes">Hoje</div>
+        <div class="corpo pilha">
+          <div style="border:1px solid var(--borda);border-radius:var(--r-md);padding:.625rem .75rem">
+            <div style="font-size:11.5px;font-weight:600">Patrícia Lima</div>
+            <div style="font-size:10.5px;color:#7c8b95;margin-top:3px">Negociação — oportunidade 1 · R$ 1.150,00</div>
+            <div style="margin-top:6px;font-size:10.5px">
+              <span style="color:#3d7396">Ganha</span> &nbsp; <span style="color:#a8827a">Perdida</span>
+            </div>
+          </div>
+          <div style="border:1px solid var(--borda);border-radius:var(--r-md);padding:.625rem .75rem">
+            <div style="font-size:11.5px;font-weight:600">Sérgio Bastos</div>
+            <div style="font-size:10.5px;color:#7c8b95;margin-top:3px">Negociação — oportunidade 2 · R$ 1.240,00</div>
+            <div style="margin-top:6px;font-size:10.5px">
+              <span style="color:#3d7396">Ganha</span> &nbsp; <span style="color:#a8827a">Perdida</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="painel">
+        <div class="rotulo depois">Proposta</div>
+        <div class="corpo pilha">
+          <article class="card-negocio">
+            <div class="topo-c"><span class="nome">Patrícia Lima</span><button class="btn-icone" style="margin-left:auto" aria-label="Ações do negócio de Patrícia Lima">⋯</button></div>
+            <div class="valor num">R$ 1.150,00</div>
+            <div class="prox"><span class="pt" style="color:var(--azul);opacity:1"></span>Retorno agendado · ter 26/08</div>
+            <div class="rodape">
+              <span class="avatar" style="background:hsl(190 32% 88%);color:hsl(190 38% 28%)">AP</span>
+              <span class="idade ok">4 dias na etapa</span>
+            </div>
+          </article>
+          <article class="card-negocio travado">
+            <div class="topo-c"><span class="nome">Sérgio Bastos</span><button class="btn-icone" style="margin-left:auto" aria-label="Ações do negócio de Sérgio Bastos">⋯</button></div>
+            <div class="valor num">R$ 1.240,00</div>
+            <div class="prox"><span class="pt" style="color:var(--perigo);opacity:1"></span>Sem próxima ação definida</div>
+            <div class="rodape">
+              <span class="avatar" style="background:hsl(35 32% 88%);color:hsl(35 38% 28%)">MD</span>
+              <span class="idade perigo">31 dias na etapa</span>
+            </div>
+          </article>
+          <div class="coluna-vazia">Arraste um negócio para cá</div>
+        </div>
+      </div>
+    </div>
+    <p class="nota">A cor do tempo na etapa é relativa à média daquela etapa: cinza até a metade
+    da média, âmbar acima da média, terracota acima do dobro — e aí o card ganha a barra na
+    borda esquerda.</p>
+  </section>
+
+  <!-- ══════════════════════════════ 7. MENSAGENS ═══════════════════════════ -->
+  <section class="secao">
+    <header>
+      <h2>7. A janela de 24 horas do WhatsApp</h2>
+      <span class="resolve">M02 · M04</span>
+      <p>O achado mais caro em dinheiro do diagnóstico: a lista mostra "3 dias", "5 dias",
+      "12 dias" — todas fora da janela da Meta — e nada avisa. O atendente digita, envia, e a
+      API recusa.</p>
+    </header>
+    <div class="comparar">
+      <div class="painel">
+        <div class="rotulo antes">Hoje</div>
+        <div class="corpo" style="padding:0">
+          <div style="padding:.625rem .75rem;border-bottom:1px solid var(--hairline)">
+            <div style="font-size:11.5px;font-weight:600">Ana Beatriz <span style="float:right;font-family:var(--mono);font-size:10px;color:#9aa8b1">3 dias</span></div>
+            <div style="font-size:11px;color:#7c8b95">Bom dia! Gostaria de remarcar.</div>
+          </div>
+          <div style="padding:.625rem .75rem;border-bottom:1px solid var(--hairline)">
+            <div style="font-size:11.5px;font-weight:600">Carlos Eduardo <span style="float:right;font-family:var(--mono);font-size:10px;color:#9aa8b1">3 dias</span></div>
+            <div style="font-size:11px;color:#7c8b95">Qual o valor da limpeza de pele?</div>
+          </div>
+          <div style="padding:.75rem;border-top:1px solid var(--borda)">
+            <input class="campo" style="border-color:#dde4e8" placeholder="Escreva uma mensagem…" aria-label="compositor antes">
+          </div>
+        </div>
+      </div>
+      <div class="painel">
+        <div class="rotulo depois">Proposta</div>
+        <div class="corpo" style="padding:0">
+          <div class="linha" style="padding:.5rem .75rem;border-bottom:1px solid var(--hairline)">
+            <button class="btn btn-contorno" aria-pressed="true" style="min-height:1.75rem">Não lidas</button>
+            <button class="btn btn-texto" style="min-height:1.75rem">Minhas</button>
+            <button class="btn btn-texto" style="min-height:1.75rem">Janela aberta</button>
+          </div>
+          <div class="conversa">
+            <span class="nao-lida" aria-label="não lida"></span>
+            <span class="avatar" style="background:hsl(150 32% 88%);color:hsl(150 38% 28%)">AB</span>
+            <div class="txt">
+              <div class="nome">Ana Beatriz</div>
+              <div class="previa">Bom dia! Gostaria de remarcar.</div>
+            </div>
+            <div class="janela"><span class="badge badge-ok">18 h restantes</span></div>
+          </div>
+          <div class="conversa">
+            <span style="width:.4375rem;flex:none"></span>
+            <span class="avatar" style="background:hsl(260 32% 88%);color:hsl(260 38% 28%)">CE</span>
+            <div class="txt">
+              <div class="nome">Carlos Eduardo</div>
+              <div class="previa">Qual o valor da limpeza de pele?</div>
+            </div>
+            <div class="janela"><span class="badge badge-aviso">2 h restantes</span></div>
+          </div>
+          <div class="conversa">
+            <span style="width:.4375rem;flex:none"></span>
+            <span class="avatar" style="background:hsl(20 32% 88%);color:hsl(20 38% 28%)">DA</span>
+            <div class="txt">
+              <div class="nome">Daniela</div>
+              <div class="previa">Vou confirmar e retorno.</div>
+            </div>
+            <div class="janela"><span class="badge badge-neutro">janela fechada</span></div>
+          </div>
+          <div class="compositor">
+            <div class="aviso-janela">
+              <span aria-hidden="true">⏱</span>
+              <div>
+                <strong>A janela de 24 h fechou.</strong> Só é possível enviar um template
+                aprovado pela Meta.
+                <div style="margin-top:.5rem"><button class="btn btn-contorno">Escolher template ▾</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ 8. ESTADOS ═════════════════════════════ -->
+  <section class="secao">
+    <header>
+      <h2>8. Estados: carregando, vazio, e desfazer</h2>
+      <span class="resolve">E01 · E02 · E03</span>
+      <p>Hoje o produto tem 24 ocorrências da palavra "Carregando…" como texto solto, nenhum
+      skeleton, nenhum toast e nenhum desfazer.</p>
+    </header>
+    <div class="comparar">
+      <div class="painel">
+        <div class="rotulo antes">Hoje</div>
+        <div class="corpo" style="min-height:11rem;display:grid;place-items:center">
+          <span style="font-size:11px;color:#7c8b95">Carregando…</span>
+        </div>
+      </div>
+      <div class="painel">
+        <div class="rotulo depois">Skeleton com a forma do conteúdo</div>
+        <div class="corpo pilha" style="min-height:11rem">
+          <div class="linha" style="gap:.5rem"><div class="skeleton" style="width:1.75rem;height:1.75rem;border-radius:var(--r-full)"></div><div class="skeleton" style="height:.875rem;flex:1"></div><div class="skeleton" style="height:.875rem;width:4rem"></div></div>
+          <div class="linha" style="gap:.5rem"><div class="skeleton" style="width:1.75rem;height:1.75rem;border-radius:var(--r-full)"></div><div class="skeleton" style="height:.875rem;flex:1"></div><div class="skeleton" style="height:.875rem;width:4rem"></div></div>
+          <div class="linha" style="gap:.5rem"><div class="skeleton" style="width:1.75rem;height:1.75rem;border-radius:var(--r-full)"></div><div class="skeleton" style="height:.875rem;flex:1"></div><div class="skeleton" style="height:.875rem;width:4rem"></div></div>
+          <div class="linha" style="gap:.5rem"><div class="skeleton" style="width:1.75rem;height:1.75rem;border-radius:var(--r-full)"></div><div class="skeleton" style="height:.875rem;flex:1"></div><div class="skeleton" style="height:.875rem;width:4rem"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="comparar" style="margin-top:1rem">
+      <div class="painel">
+        <div class="rotulo antes">Estado vazio — hoje</div>
+        <div class="corpo" style="min-height:10rem;display:grid;place-items:center">
+          <div style="border:1px dashed #dde4e8;border-radius:var(--r-md);padding:1.5rem 2rem;font-size:11px;color:#7c8b95">Nenhuma nota ainda.</div>
+        </div>
+      </div>
+      <div class="painel">
+        <div class="rotulo depois">Estado vazio em 3 partes</div>
+        <div class="corpo">
+          <div class="vazio">
+            <div class="icone" aria-hidden="true">📅</div>
+            <h4>Nenhum atendimento registrado</h4>
+            <p>Os atendimentos de Helena aparecem aqui assim que forem agendados.</p>
+            <button class="btn btn-primario">Agendar atendimento</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="painel" style="margin-top:1rem">
+      <div class="rotulo depois">Toast com desfazer</div>
+      <div class="corpo pilha">
+        <button class="btn btn-contorno" id="btn-toast" style="justify-self:start">Simular "arquivar 12 pessoas"</button>
+        <div class="toast" id="toast" hidden>
+          <span>12 pessoas arquivadas.</span>
+          <button id="btn-desfazer">Desfazer</button>
+        </div>
+        <p class="nota">Aplica na hora, mostra o toast por 8 segundos, e só então consolida.
+        Para o usuário tudo é instantâneo; para o dado existe uma janela de arrependimento.
+        <strong>Exceção deliberada:</strong> <code>aba_health</code> não usa este padrão —
+        registro clínico se corrige com nova evolução, não se apaga.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ 9. BUSCA ═══════════════════════════════ -->
+  <section class="secao">
+    <header>
+      <h2>9. Busca global e paleta de comandos</h2>
+      <span class="resolve">N03</span>
+      <p>O item de maior retorno do dossiê. Hoje, abrir a ficha de uma cliente custa de três a
+      oito interações; com <kbd>⌘</kbd><kbd>K</kbd>, custa duas.
+      <strong>Digite abaixo — a busca funciona.</strong></p>
+    </header>
+    <div class="linha" style="align-items:flex-start;gap:1.5rem;flex-wrap:wrap">
+      <div class="paleta" style="flex:1;min-width:19rem">
+        <div class="busca">
+          <span aria-hidden="true" style="color:var(--txt-muted)">⌕</span>
+          <input id="busca" placeholder="Buscar pessoa, negócio, atendimento…" aria-label="Busca global" autocomplete="off">
+          <kbd>esc</kbd>
+        </div>
+        <div id="resultados"></div>
+      </div>
+      <div style="flex:1;min-width:17rem">
+        <p style="font-size:var(--fs-sm);color:var(--txt-2)">
+          Experimente <strong>99988</strong> — telefone digitado sem formatação encontra
+          <span class="mono">(11) 99988-7766</span>. É o detalhe que decide se a busca é boa ou
+          frustrante: metade das buscas numa clínica é por telefone, e
+          <code class="mono">ILIKE '%9988%'</code> contra um número formatado não acha nada.
+        </p>
+        <p style="font-size:var(--fs-sm);color:var(--txt-2);margin-top:.75rem">
+          Experimente também <strong>jose</strong> — sem acento, encontra <em>José</em>.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ 10. KPI ════════════════════════════════ -->
+  <section class="secao">
+    <header>
+      <h2>10. KPI que leva a algum lugar</h2>
+      <span class="resolve">D01 · D02</span>
+      <p>Todo número do painel é um link para a lista que o produziu, já filtrada. Isso muda o
+      que o painel é: de relatório para fila de trabalho.</p>
+    </header>
+    <div class="grade-kpi">
+      <a class="kpi" href="#">
+        <span class="seta" aria-hidden="true">→</span>
+        <div class="eyebrow">Atendimentos hoje</div>
+        <div class="valor">6</div>
+        <div class="delta pos">+2 vs. mesmo dia da semana passada</div>
+      </a>
+      <a class="kpi" href="#">
+        <span class="seta" aria-hidden="true">→</span>
+        <div class="eyebrow">Novos leads</div>
+        <div class="valor">7</div>
+        <div class="delta pos">+40%</div>
+        <div class="base">últimos 30 dias</div>
+      </a>
+      <a class="kpi" href="#">
+        <span class="seta" aria-hidden="true">→</span>
+        <div class="eyebrow">Cobranças vencidas</div>
+        <div class="valor">2</div>
+        <div class="delta neg">R$ 1.340,00 em atraso</div>
+      </a>
+      <a class="kpi" href="#">
+        <span class="seta" aria-hidden="true">→</span>
+        <div class="eyebrow">Receita do mês</div>
+        <div class="valor">R$ 2.210</div>
+        <div class="base">17 de 24 dias úteis decorridos</div>
+      </a>
+    </div>
+    <p class="nota">Repare no terceiro e no quarto: onde não há base de comparação, a linha
+    carrega o dado bruto que sustenta o número — em vez de "sem base de comparação" repetido.</p>
+  </section>
+
+  <footer style="margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--borda);font-size:var(--fs-sm);color:var(--txt-muted)">
+    <p>Protótipo de referência do dossiê <span class="mono">design/ux/</span>.
+    Nenhum código deste arquivo foi aplicado ao produto — ele existe para que a proposta possa
+    ser vista antes de ser decidida.</p>
+    <p style="margin-top:.5rem">Diagnóstico completo em <span class="mono">01_DIAGNOSTICO.md</span> ·
+    tokens em <span class="mono">02_FUNDACAO_VISUAL.md</span> ·
+    roteiro em <span class="mono">07_ROTEIRO.md</span>.</p>
+  </footer>
+</main>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   Controles de tema e densidade
+   ═══════════════════════════════════════════════════════════════════════════ */
+const raiz = document.documentElement;
+document.getElementById("tema").addEventListener("click", (e) => {
+  const escuro = raiz.dataset.tema === "escuro";
+  raiz.dataset.tema = escuro ? "claro" : "escuro";
+  e.currentTarget.textContent = escuro ? "Tema escuro" : "Tema claro";
+});
+document.querySelectorAll("[data-dens]").forEach((b) =>
+  b.addEventListener("click", () => {
+    raiz.dataset.densidade = b.dataset.dens;
+    document.querySelectorAll("[data-dens]").forEach((o) =>
+      o.setAttribute("aria-pressed", String(o === b)));
+  }));
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Avatar com iniciais e matiz derivada do nome (03_COMPONENTES.md §4)
+   Saturação e luminosidade FIXAS — é isso que garante contraste em todos os casos.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const iniciais = (n) => n.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
+const matiz = (n) => [...n].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
+function avatarHTML(nome) {
+  const m = matiz(nome);
+  return `<span class="avatar" style="background:hsl(${m} 32% 88%);color:hsl(${m} 38% 28%)">${iniciais(nome)}</span>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Tabela: ordenação, seleção e barra de ações em massa
+   ═══════════════════════════════════════════════════════════════════════════ */
+const PESSOAS = [
+  { nome: "Helena Marques",  vinculo: "Equipe",  contato: "proprietaria@vitrinedemo.local", tel: "(11) 99988-7766", dias: 0 },
+  { nome: "Ana Beatriz Moreira", vinculo: "Cliente", contato: "ana@vitrinedemo.local",      tel: "(11) 98812-3344", dias: 1 },
+  { nome: "Bianca Duarte",   vinculo: "Equipe",  contato: "recepcao@vitrinedemo.local",     tel: "(11) 97711-2233", dias: 2 },
+  { nome: "Camila Nogueira", vinculo: "Lead",    contato: "camila@vitrinedemo.local",       tel: "(11) 96655-4433", dias: 5 },
+  { nome: "José Ricardo Alves", vinculo: "Cliente", contato: "jose@vitrinedemo.local",      tel: "(21) 95544-3322", dias: 9 },
+  { nome: "Marina Lopes",    vinculo: "Lead",    contato: "marina@vitrinedemo.local",       tel: "(11) 94433-2211", dias: 14 },
+  { nome: "Rafael Souza",    vinculo: "Lead",    contato: "rafael@vitrinedemo.local",       tel: "(11) 93322-1100", dias: 28 },
+  { nome: "Tiago Rocha",     vinculo: "Equipe",  contato: "esteticista@vitrinedemo.local",  tel: "(11) 92211-0099", dias: 41 },
+];
+const CLASSE_VINCULO = { Equipe: "badge-azul", Cliente: "badge-ok", Lead: "badge-neutro" };
+let ordem = { col: "nome", dir: 1 };
+const selecionadas = new Set();
+
+const humanizarDias = (d) =>
+  d === 0 ? "hoje" : d === 1 ? "ontem" : d < 30 ? `há ${d} dias` : `há ${Math.round(d / 30)} mês`;
+
+function pintarTabela() {
+  const linhas = [...PESSOAS].sort((a, b) => {
+    const v = ordem.col === "dias" ? a.dias - b.dias
+            : String(a[ordem.col]).localeCompare(String(b[ordem.col]), "pt-BR");
+    return v * ordem.dir;
+  });
+  document.getElementById("corpo-pessoas").innerHTML = linhas.map((p) => `
+    <tr data-sel="${selecionadas.has(p.nome) ? 1 : 0}">
+      <td><input type="checkbox" data-nome="${p.nome}" ${selecionadas.has(p.nome) ? "checked" : ""}
+           aria-label="Selecionar ${p.nome}"></td>
+      <td><span class="celula-nome">${avatarHTML(p.nome)}${p.nome}</span></td>
+      <td><span class="badge ${CLASSE_VINCULO[p.vinculo]}">${p.vinculo}</span></td>
+      <td style="color:var(--txt-muted)">${p.contato}</td>
+      <td class="n" style="color:var(--txt-muted)">${humanizarDias(p.dias)}</td>
+      <td><button class="btn-icone" aria-label="Ações de ${p.nome}">⋯</button></td>
+    </tr>`).join("");
+
+  document.querySelectorAll("#corpo-pessoas input[type=checkbox]").forEach((c) =>
+    c.addEventListener("change", () => {
+      c.checked ? selecionadas.add(c.dataset.nome) : selecionadas.delete(c.dataset.nome);
+      pintarTabela();
+    }));
+
+  const n = selecionadas.size;
+  const barra = document.getElementById("barra-massa");
+  barra.hidden = n === 0;
+  document.getElementById("cab-tab").style.visibility = n ? "hidden" : "";
+  document.getElementById("cab-tab").style.position = n ? "absolute" : "";
+  document.getElementById("qtd-sel").textContent =
+    `${n} selecionada${n > 1 ? "s" : ""}` + (n === PESSOAS.length ? " · Selecionar todas as 31" : "");
+}
+
+document.querySelectorAll("th.sort").forEach((th) =>
+  th.addEventListener("click", () => {
+    const col = th.dataset.col;
+    ordem = { col, dir: ordem.col === col ? -ordem.dir : 1 };
+    document.querySelectorAll("th.sort").forEach((o) => {
+      const ativo = o.dataset.col === col;
+      o.setAttribute("aria-sort", ativo ? (ordem.dir === 1 ? "ascending" : "descending") : "none");
+      o.textContent = o.textContent.replace(/ [↑↓]$/, "") + (ativo ? (ordem.dir === 1 ? " ↑" : " ↓") : "");
+    });
+    pintarTabela();
+  }));
+document.getElementById("sel-todos").addEventListener("change", (e) => {
+  e.target.checked ? PESSOAS.forEach((p) => selecionadas.add(p.nome)) : selecionadas.clear();
+  pintarTabela();
+});
+document.getElementById("limpar-sel").addEventListener("click", () => {
+  selecionadas.clear();
+  document.getElementById("sel-todos").checked = false;
+  pintarTabela();
+});
+pintarTabela();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AGENDA — alocação de colunas por colisão (04_PADROES_DE_TELA.md §4)
+   Idêntico a referencias/alocar_colunas.mjs, que tem a suíte de testes.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function alocarColunas(blocos) {
+  const ordenados = [...blocos].sort((a, b) => a.inicio - b.inicio || b.fim - a.fim);
+  const saida = []; let grupo = []; let fimDoGrupo = -Infinity;
+  const fecharGrupo = () => {
+    const largura = Math.max(...grupo.map((b) => b.coluna)) + 1;
+    for (const b of grupo) b.total = largura;      // invariante 2
+    saida.push(...grupo); grupo = [];
+  };
+  for (const bloco of ordenados) {
+    if (grupo.length && bloco.inicio >= fimDoGrupo) fecharGrupo();
+    let coluna = 0;
+    while (grupo.some((b) => b.coluna === coluna && b.fim > bloco.inicio)) coluna++;
+    grupo.push({ ...bloco, coluna, total: 0 });
+    fimDoGrupo = Math.max(fimDoGrupo, bloco.fim);
+  }
+  if (grupo.length) fecharGrupo();
+  return saida;
+}
+
+const H_INI = 8, H_FIM = 18;                      // horário de funcionamento (A04)
+const hm = (s) => { const [h, m] = s.split(":").map(Number); return h * 60 + m; };
+const COMPROMISSOS = [
+  { pessoa: "Helena Ribeiro",  servico: "Limpeza de pele profunda", inicio: hm("09:00"), fim: hm("10:00"), prof: 0 },
+  { pessoa: "Daniela Vasques", servico: "Massagem relaxante",       inicio: hm("09:00"), fim: hm("10:00"), prof: 1 },
+  { pessoa: "Karina Duarte",   servico: "Drenagem linfática",       inicio: hm("10:00"), fim: hm("11:00"), prof: 0 },
+  { pessoa: "Eduardo Tavares", servico: "Peeling de diamante",      inicio: hm("11:00"), fim: hm("12:00"), prof: 2 },
+  { pessoa: "Bloqueio",        servico: "Manutenção da sala 2",     inicio: hm("13:00"), fim: hm("17:00"), prof: 1 },
+  { pessoa: "Gustavo Amaral",  servico: "Peeling de diamante",      inicio: hm("14:00"), fim: hm("15:00"), prof: 0 },
+  { pessoa: "Fernanda Quirino",servico: "Massagem relaxante",       inicio: hm("15:00"), fim: hm("16:00"), prof: 2 },
+  { pessoa: "Carlos E. Pinto", servico: "Drenagem linfática",       inicio: hm("16:00"), fim: hm("17:00"), prof: 0 },
+];
+const COR_PROF = ["var(--grafico-1)", "var(--grafico-2)", "var(--grafico-3)"];
+const ativos = new Set([0, 1, 2]);
+
+function pintarRegua(el) {
+  el.innerHTML = Array.from({ length: H_FIM - H_INI }, (_, i) =>
+    `<div class="hora"><span>${String(H_INI + i).padStart(2, "0")}:00</span></div>`).join("");
+}
+const topoPct  = (min) => ((min - H_INI * 60) / ((H_FIM - H_INI) * 60)) * 100;
+const alturaPct = (a, b) => ((b - a) / ((H_FIM - H_INI) * 60)) * 100;
+
+function pintarAgenda() {
+  const visiveis = COMPROMISSOS.filter((c) => ativos.has(c.prof));
+  const faixas = Array.from({ length: H_FIM - H_INI }, () => '<div class="faixa"></div>').join("");
+
+  // ── esquerda: o bug de hoje — todo bloco em 100% da largura, sobrepondo
+  document.getElementById("dia-ruim").innerHTML = faixas + visiveis.map((c) => `
+    <div class="compromisso quebrado" style="top:${topoPct(c.inicio)}%;height:${alturaPct(c.inicio, c.fim)}%">
+      <b>${c.pessoa}</b><i>${c.servico}</i>
+    </div>`).join("");
+
+  // ── direita: a proposta — coluna alocada por colisão
+  document.getElementById("dia-bom").innerHTML = faixas + alocarColunas(visiveis).map((c) => `
+    <div class="compromisso" style="
+      top:${topoPct(c.inicio)}%; height:${alturaPct(c.inicio, c.fim)}%;
+      left:calc(${c.coluna} / ${c.total} * 100%); width:calc(100% / ${c.total} - 3px);
+      --prof:${COR_PROF[c.prof]}">
+      <b>${c.pessoa}</b><i>${c.servico}</i>
+    </div>`).join("");
+
+  // ── linha do "agora" (A02)
+  const agora = new Date();
+  let min = agora.getHours() * 60 + agora.getMinutes();
+  if (min < H_INI * 60 || min > H_FIM * 60) min = hm("11:20");   // fora do expediente: posição ilustrativa
+  document.getElementById("dia-bom").insertAdjacentHTML("beforeend",
+    `<div class="linha-agora" style="top:${topoPct(min)}%" aria-hidden="true"></div>`);
+}
+pintarRegua(document.getElementById("regua-ruim"));
+pintarRegua(document.getElementById("regua-bom"));
+pintarAgenda();
+
+document.querySelectorAll(".filtro-prof").forEach((b) =>
+  b.addEventListener("click", () => {
+    const p = Number(b.dataset.prof);
+    ativos.has(p) ? ativos.delete(p) : ativos.add(p);
+    b.setAttribute("aria-pressed", String(ativos.has(p)));
+    pintarAgenda();
+  }));
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BUSCA GLOBAL — com as duas armadilhas resolvidas (05_CAMINHOS.md §1)
+   ═══════════════════════════════════════════════════════════════════════════ */
+const semAcento = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const soDigitos  = (s) => s.replace(/\D/g, "");
+
+const MODULOS = ["Início", "Agenda", "Prontuário", "Pessoas", "Mensagens", "Funil", "Catálogo", "Financeiro", "Fluxos", "Agente de IA"];
+const ACOES = ["Nova pessoa", "Novo agendamento", "Novo negócio", "Nova cobrança"];
+
+function buscar(termo) {
+  const t = semAcento(termo.trim());
+  const d = soDigitos(termo);
+  if (!t) return null;
+  return {
+    pessoas: PESSOAS.filter((p) =>
+      semAcento(p.nome).includes(t) ||
+      semAcento(p.contato).includes(t) ||
+      (d.length >= 3 && soDigitos(p.tel).includes(d))),
+    modulos: MODULOS.filter((m) => semAcento(m).includes(t)),
+    acoes:   ACOES.filter((a) => semAcento(a).includes(t)),
+  };
+}
+
+function pintarBusca() {
+  const termo = document.getElementById("busca").value;
+  const alvo = document.getElementById("resultados");
+  const r = buscar(termo);
+
+  if (!r) {
+    alvo.innerHTML = `
+      <div class="grupo eyebrow">Recentes</div>
+      ${PESSOAS.slice(0, 3).map((p) => `
+        <div class="item">${avatarHTML(p.nome)}${p.nome}<span class="tipo">Pessoa</span></div>`).join("")}
+      <div class="grupo eyebrow">Ações</div>
+      ${ACOES.slice(0, 2).map((a) => `
+        <div class="item"><span aria-hidden="true">+</span>${a}<span class="tipo">Ação</span></div>`).join("")}`;
+    return;
+  }
+
+  const total = r.pessoas.length + r.modulos.length + r.acoes.length;
+  if (!total) {
+    alvo.innerHTML = `<div style="padding:1.5rem;text-align:center;font-size:var(--fs-sm);color:var(--txt-muted)">
+      Nada encontrado para <strong>${termo}</strong>.</div>`;
+    return;
+  }
+
+  alvo.innerHTML = [
+    r.pessoas.length ? `<div class="grupo eyebrow">Pessoas</div>` + r.pessoas.map((p, i) => `
+      <div class="item ${i === 0 ? "foco" : ""}">${avatarHTML(p.nome)}
+        <span>${p.nome}<span style="color:var(--txt-faint)"> · ${p.tel}</span></span>
+        <span class="tipo">Pessoa</span></div>`).join("") : "",
+    r.modulos.length ? `<div class="grupo eyebrow">Ir para</div>` + r.modulos.map((m) => `
+      <div class="item"><span class="pt"></span>${m}<span class="tipo">Módulo</span></div>`).join("") : "",
+    r.acoes.length ? `<div class="grupo eyebrow">Ações</div>` + r.acoes.map((a) => `
+      <div class="item"><span aria-hidden="true">+</span>${a}<span class="tipo">Ação</span></div>`).join("") : "",
+  ].join("");
+}
+document.getElementById("busca").addEventListener("input", pintarBusca);
+pintarBusca();
+
+// ⌘K / Ctrl+K foca a busca — o atalho de 05_CAMINHOS.md §5
+addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+    e.preventDefault();
+    const b = document.getElementById("busca");
+    b.scrollIntoView({ block: "center", behavior: "smooth" });
+    b.focus();
+  }
+  if (e.key === "Escape") document.getElementById("busca").blur();
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOAST com desfazer
+   ═══════════════════════════════════════════════════════════════════════════ */
+let timerToast;
+const toast = document.getElementById("toast");
+document.getElementById("btn-toast").addEventListener("click", () => {
+  toast.hidden = false;
+  clearTimeout(timerToast);
+  timerToast = setTimeout(() => (toast.hidden = true), 8000);
+});
+document.getElementById("btn-desfazer").addEventListener("click", () => {
+  clearTimeout(timerToast);
+  toast.hidden = true;
+});
+</script>
+</body>
+</html>
