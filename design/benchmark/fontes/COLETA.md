@@ -450,3 +450,135 @@ processo e falha com `Failed to launch the browser process: Code: 0`. **Hipótes
 medição antes de virar diagnóstico** (`CLAUDE.md` §11): o mesmo binário, subido à mão com
 `--remote-debugging-port=9222`, respondeu `/json/version` normalmente. Logo o defeito é do
 handshake por stderr, não do navegador. O script sobe o processo e usa `connect()`.
+
+---
+
+# C1 — Recursos colhidos nos sites dos concorrentes
+
+Rodada 2 do benchmark, **2026-09-01**. Os 6 temas que Max colheu no site do Simples Dental,
+recurso a recurso, com as quatro perguntas do plano: do que se trata · **o Vitrine já tem?** ·
+MVP ou futuro · onde encosta.
+
+**Como a coluna "já temos" foi respondida:** conferida nas **39 migrations reais** de
+`db/migrations/` e na árvore de `crm/src/features/` — nunca de memória (`CLAUDE.md` §11). Cada
+"tem" abaixo aponta a tabela ou o módulo que o sustenta; cada "não tem" resistiu a uma busca por
+nome no schema inteiro.
+
+**Marcação de proveniência desta seção:** todo recurso é **[declarado]** — é o que o fornecedor
+afirma vender na própria página. Página de produto prova que a empresa *promete* aquilo, não que
+funciona como descrito. Os vídeos (C2) são o que permite verificar parte disso na tela.
+
+## Legenda
+
+`✅ TEM` — existe no schema e/ou no front · `🟡 PARCIAL` — a fundação existe, falta a peça
+citada · `❌ NÃO TEM` — ausente do schema inteiro
+
+---
+
+## Tema 1 — Agenda online
+
+| Recurso [declarado] | Vitrine hoje | Onde encosta | Veredito |
+|---|---|---|---|
+| Link de agendamento público 24/7 | ❌ NÃO TEM | `aba_scheduling` | **MVP** — é o item que os 5 concorrentes têm sem exceção |
+| Bloqueio de horários | ✅ TEM | `aba_scheduling.ausencias` | — |
+| **Gestão de encaixe / lista de espera** | ❌ NÃO TEM | `aba_scheduling` | **MVP** — resolve o buraco de agenda, que é receita perdida direta |
+| **Compromissos recorrentes** | ❌ NÃO TEM | `aba_scheduling.agendamentos` | futuro — ortodontia depende disso |
+| Status de agendamento | 🟡 PARCIAL | `status` tem `agendado/confirmado/concluido/cancelado` | **MVP** — faltam **`faltou`** e **`sala_de_espera`**; sem `faltou` não há taxa de falta, que é o KPI nº 1 do setor |
+| **Controle de cadeiras** | ✅ TEM | `aba_scheduling.recursos` + `horarios_recursos` + `agendamentos.recurso_id` | já modelado com agenda própria por recurso — **falta expor na UI** |
+| Atualização em tempo real | 🟡 PARCIAL | Supabase Realtime disponível, não usado na agenda | futuro |
+| Oportunidades de agendamento (cancelados, retornos, inativos) | ❌ NÃO TEM | `aba_automations` | futuro — é o "controle de retorno" que o SD diz faltar em 80% das clínicas |
+| **Rótulos personalizados por consulta** | ❌ NÃO TEM | `agendamentos` — `cor` existe em `profissionais` e `recursos`, **não no agendamento** | **MVP** — barato e muda a leitura da agenda |
+| Alertas de retorno com lembrete automático | 🟡 PARCIAL | `aba_scheduling.lembretes` existe | **MVP** — a fundação está pronta, falta a regra de retorno |
+
+## Tema 2 — Prontuário digital
+
+| Recurso [declarado] | Vitrine hoje | Onde encosta | Veredito |
+|---|---|---|---|
+| **Orçamento que gera tratamento + contrato + débito** | ❌ NÃO TEM | `aba_finance` tem `contratos`/`faturas`/`parcelas`, **não tem orçamento** | **MVP — a maior lacuna encontrada.** No fluxo odontológico a venda começa no orçamento; hoje o Vitrine só sabe registrar o contrato já fechado |
+| Armazenamento ilimitado de imagem (RX, tomografia, STL) | 🟡 PARCIAL | bucket `anexos-clinicos` com `pode_acessar_anexo()` | futuro (STL e comparação lado a lado) |
+| **Controle de prótese** (etapas, prazos, alertas) | ❌ NÃO TEM | — | futuro — o EasyDental tem "controle de protéticos" no plano de R$ 219 |
+| **Controle de ortodontia** (manutenções, faltosos, débito) | ❌ NÃO TEM | — | futuro — especialidade de receita recorrente |
+| HOF — harmonização orofacial | ❌ NÃO TEM | — | futuro; ver `REPOS.md` §2 (o repositório de HOF **não tem licença**) |
+| **Controle de convênio** (tabelas, guias, glosa) | ❌ NÃO TEM | — | futuro — é o diferencial do EasyDental/OdontoPrev |
+| Anamnese personalizável | ✅ TEM | `aba_health.formularios_anamnese` + `respostas_anamnese` | — |
+| Termo de consentimento na ficha | ✅ TEM | `aba_health.consentimentos` | **falta expor na UI** (Art. 14, III do CFO) |
+| Assinatura eletrônica com validade jurídica | ❌ NÃO TEM | `aba_health` | **MVP** — Lei 13.787/2018 Art. 2º §2º pede ICP-Brasil; sem isso o prontuário é frágil |
+| Transcrição automática da consulta por IA | ❌ NÃO TEM | `aba_ai` | futuro — virou padrão de mercado (4 dos 8 concorrentes) |
+| Receituário eletrônico | ❌ NÃO TEM | — | futuro |
+| **Odontograma que preenche orçamento** | ❌ NÃO TEM | `aba_health` | **MVP** — ver `REPOS.md` §1. Note o encadeamento: o odontograma do SD **alimenta o orçamento** — os dois itens são um só fluxo |
+
+## Tema 3 — Gestão e financeiro
+
+| Recurso [declarado] | Vitrine hoje | Onde encosta | Veredito |
+|---|---|---|---|
+| Comissão configurável | ✅ TEM | `aba_finance.regras_comissao` + `lancamentos_comissao` | — |
+| Indicadores de desempenho (falta, conversão, ticket) | 🟡 PARCIAL | dados existem, painel não | **MVP** — depende do status `faltou` (Tema 1) |
+| Maquininha integrada | ❌ NÃO TEM | `aba_finance.pagamentos` | futuro |
+| Faturamento por profissional/plano/especialidade | 🟡 PARCIAL | dados existem, relatório não | **MVP** |
+| Controle de despesas | ❌ NÃO TEM | `aba_finance` só modela receita | futuro |
+| Exportação para Excel | ❌ NÃO TEM | — | **MVP** — barato, e é o que o contador pede |
+| Consulta de crédito e cobrança automática | ❌ NÃO TEM | — | futuro (o SD e o EasyDental cobram à parte) |
+| **Nota fiscal (NFS-e)** | ❌ NÃO TEM | — | futuro — todos os 5 brasileiros têm |
+| Fluxo de caixa com projeção | 🟡 PARCIAL | `parcelas_contrato` dá a base | **MVP** |
+
+## Tema 4 — Marketing e vendas
+
+| Recurso [declarado] | Vitrine hoje | Onde encosta | Veredito |
+|---|---|---|---|
+| Link de agendamento | ❌ NÃO TEM | — | **MVP** (mesmo do Tema 1) |
+| Site/landing do dentista | ❌ NÃO TEM | — | fora de escopo — e cuidado: o termo do SD diz que **o domínio é propriedade dele** e não acompanha o cliente na saída |
+| Meta de vendas com acompanhamento | ❌ NÃO TEM | `aba_sales` | futuro |
+| **Pesquisa de satisfação (NPS)** | ❌ NÃO TEM | — | futuro — o SD usa como munição de marketing |
+| Orçamento rápido com odontograma | ❌ NÃO TEM | — | **MVP** (ver Tema 2) |
+| **Orçamento parcial com histórico do não aprovado** | ❌ NÃO TEM | — | **MVP** — é o que transforma orçamento recusado em pipeline; encaixa direto em `aba_sales.oportunidades` |
+| **Programa de indicação rastreado** | ❌ NÃO TEM | `aba_people.leads.origem` aceita o valor `'indicacao'`, mas **não registra quem indicou quem**, nem recompensa | futuro — a fundação é meia; falta a aresta pessoa→pessoa |
+| Campanhas segmentadas por WhatsApp/SMS | 🟡 PARCIAL | `aba_automations` + `aba_messaging` | **MVP** |
+| App para o paciente | ❌ NÃO TEM | — | futuro |
+
+## Tema 5 — IA para dentistas
+
+| Recurso [declarado] | Vitrine hoje | Onde encosta | Veredito |
+|---|---|---|---|
+| Secretária IA que agenda 24/7 pelo WhatsApp | ❌ NÃO TEM | `aba_ai` + `aba_messaging` | futuro — **colide com `CLAUDE.md` §15**, reportado, não planejado |
+| Transcrição de consulta com IA | ❌ NÃO TEM | `aba_ai` | futuro |
+| Criptografia e conformidade LGPD declaradas | ✅ TEM, e mais forte | `aba_health` com IBAC, `log_acesso` obrigatório, `concessoes_prontuario` | **é argumento comercial não usado** |
+
+**Número que vale registrar** [declarado pelo Simples Dental, atribuído ao estudo *Lead
+Response*]: responder em até 5 minutos converteria **até 21×** mais. Não verifiquei o estudo —
+fica como afirmação do fornecedor, não como fato. Mas é a tese comercial que sustenta o preço
+da IA no mercado inteiro.
+
+**Preço declarado da Secretária IA: "a partir de R$ 6 por dia"** — ou seja, ~R$ 180/mês. É o
+primeiro preço de IA que um concorrente publica, ainda que em forma diária. Muda o §6 do
+relatório: a faixa de IA do mercado vai de **~R$ 180 (SD) a R$ 437 (Santé)**.
+
+## Tema 6 — WhatsApp
+
+| Recurso [declarado] | Vitrine hoje | Onde encosta | Veredito |
+|---|---|---|---|
+| **API oficial + templates fora da janela de 24 h** | ✅ TEM | `aba_messaging` + `whatsapp-webhook` (Meta Cloud API, HMAC) | **é a nossa fundação mais madura** |
+| Templates com campos variáveis | 🟡 PARCIAL | `aba_messaging` | **MVP** |
+| Confirmação de consulta com botão e atualização da agenda | 🟡 PARCIAL | `lembretes` existe | **MVP** |
+| Campanhas pré-definidas (aniversário, pós-cirúrgico, retorno) | 🟡 PARCIAL | `aba_automations` | **MVP** |
+| **Copiloto dentro do WhatsApp Web** (extensão de navegador) | ❌ NÃO TEM | — | futuro — é o recurso que ninguém copiou do SD, e exige extensão de navegador, projeto próprio |
+| Captação por anúncio e QR code com fluxo de qualificação | ❌ NÃO TEM | `aba_sales` | futuro |
+
+---
+
+## O que esta seção mudou na leitura do mercado
+
+**1. A maior lacuna do Vitrine não é o odontograma — é o orçamento.** O odontograma era o item
+nº 1 da rodada 1. Mas o site do líder mostra que ele não é uma tela isolada: o odontograma
+**preenche o orçamento**, o orçamento **gera o tratamento e o contrato**, e o contrato **alimenta
+o fluxo de caixa**. O Vitrine tem a ponta final dessa corrente (`contratos`, `parcelas`,
+`faturas`) e não tem o começo. Sem orçamento, o odontograma não tem para onde escrever.
+
+**2. Três coisas que julgávamos faltar já estão no banco.** Controle de cadeiras (`recursos` +
+`horarios_recursos` + `agendamentos.recurso_id`), consentimento (`aba_health.consentimentos`) e
+comissão (`regras_comissao`) existem e estão sem UI. São as melhorias mais baratas do MVP —
+custo de tela, não de schema.
+
+**3. Falta um valor no enum de status, e ele custa caro.** `agendamentos.status` não tem
+`faltou`. Sem esse valor não há taxa de falta; sem taxa de falta não há o indicador que todo
+concorrente põe em destaque e que justifica metade do valor da confirmação automática por
+WhatsApp. É uma linha de migration com efeito desproporcional.
