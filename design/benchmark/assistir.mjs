@@ -188,8 +188,18 @@ for (const fonte of FONTES) {
   });
 }
 
+// O índice é reconstruído a partir do disco, não do que esta execução processou.
+// Sem isso, rodar com filtro (`node assistir.mjs clinicorp`) sobrescreveria o
+// índice completo por um parcial — defeito real, encontrado ao gerar a passada 2.
+const todos = fs.readdirSync(SAIDA, { withFileTypes: true })
+  .filter((d) => d.isDirectory())
+  .map((d) => path.join(SAIDA, d.name, "meta.json"))
+  .filter(fs.existsSync)
+  .map((p) => JSON.parse(fs.readFileSync(p, "utf-8")))
+  .sort((a, b) => a.slug.localeCompare(b.slug));
+
 fs.writeFileSync(path.join(SAIDA, "_indice.json"),
-  JSON.stringify({ indice, falhas, coletadoEm: new Date().toISOString() }, null, 2), "utf-8");
+  JSON.stringify({ indice: todos, falhas, coletadoEm: new Date().toISOString() }, null, 2), "utf-8");
 
 const semLegenda = indice.filter((m) => !m.temTranscricao);
 console.log(`\n${indice.length} vídeos processados, ${falhas.length} falha(s).`);

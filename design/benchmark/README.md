@@ -15,8 +15,11 @@ UX adotar continua sendo escolha de Max (`CLAUDE.md` §13).
 | ★ | [`RELATORIO.md`](RELATORIO.md) | **A entrega.** Quem são os 8, o que cada um tem, o diferencial de venda de cada um, o que importar agora e no futuro, a faixa de preço praticável e o parecer sobre as três versões de UX. |
 | | [`00_PLANO_DE_ACAO.md`](00_PLANO_DE_ACAO.md) | O `[Goal]` que regeu o trabalho: objetivo, critérios de qualidade e de finalização, teto de tentativas, escalonamento de LLM. |
 | | [`capturas/concorrentes/INDICE.md`](capturas/concorrentes/INDICE.md) | As **34 referências visuais**, cada uma creditada com URL de origem e data. |
-| | [`fontes/COLETA.md`](fontes/COLETA.md) | A matéria-prima: os 5 sinais do ranking, as tabelas de preço completas, os trechos citados de termo de uso e de lei, e o que ficou de fora e por quê. |
-| | [`capturar.mjs`](capturar.mjs) | O coletor. `node design/benchmark/capturar.mjs` refaz as 34 capturas. |
+| | [`fontes/COLETA.md`](fontes/COLETA.md) | A matéria-prima: os 5 sinais do ranking, as tabelas de preço, os trechos de termo de uso e de lei, e **§C1** — os ~60 recursos dos sites, com a coluna "o Vitrine já tem?" conferida no schema real. |
+| | [`fontes/VIDEOS.md`](fontes/VIDEOS.md) | **56 vídeos** dos concorrentes assistidos: a mecânica do produto por dentro, e as quatro conclusões da rodada 1 que os vídeos corrigiram. |
+| | [`fontes/REPOS.md`](fontes/REPOS.md) | Os 4 repositórios, com **licença lida** e **peso medido**. |
+| | [`fontes/IDEIAS.md`](fontes/IDEIAS.md) | As 14 imagens de Max — inclusive o modelo de permissão do Clinicorp. |
+| | [`capturar.mjs`](capturar.mjs) · [`assistir.mjs`](assistir.mjs) · [`frames_video.mjs`](frames_video.mjs) | Os coletores: sites, vídeos e quadros em alta resolução. |
 
 ## Como esta pesquisa foi construída
 
@@ -68,3 +71,32 @@ não vem do HubSpot, vem do Simples Dental e do Santé. O que falta acrescentar 
 - **Não funde este bench em `main`** — ordenar o merge é atribuição exclusiva de Max.
 - **Não propõe implementar nada de `CLAUDE.md` §15.** Onde o mercado apontou para um item fora do
   escopo v01, ele foi **reportado como achado**, não planejado.
+
+---
+
+## Rodada 2 — o que ela acrescentou (2026-09-01)
+
+A rodada 1 foi construída só com página de marketing, que mostra a promessa. A rodada 2 abriu o
+produto por dentro: **56 vídeos** dos concorrentes, os ~60 recursos que Max colheu nos sites,
+**4 repositórios** e **14 capturas** dele. Três resultados mudam decisão:
+
+**1. A maior lacuna do Vitrine não é o odontograma — é o orçamento.** Os vídeos mostram uma
+corrente de quatro elos: *catálogo* (procedimento marcado como "aceita faces") → *odontograma*
+(seleciona dente e faces) → *orçamento* (linha com dente, faces e o preço daquele convênio) →
+*contrato e financeiro*. Temos o primeiro e o quarto. Sem o orçamento, o odontograma não tem
+onde escrever.
+
+**2. O odontograma pronto é adotável, mas pesa 1,5× o app inteiro.** `react-advanced-odontogram`
+é MIT, React 18/19, 191 testes, com FHIR R4 de brinde — e **426 KB gzip medidos**, contra os
+284 KB do nosso bundle inteiro. Só atrás de rota preguiçosa. Já o repositório de HOF **não tem
+licença nenhuma**, e o mercado nem usa 3D para isso.
+
+**3. Três coisas que julgávamos faltar já estão no banco** — controle de cadeiras
+(`aba_scheduling.recursos`), consentimento de imagem e comissão. E o nosso `log_acesso`, que
+grava mais que o do concorrente, não é mostrado a ninguém: o relatório de auditoria é a tela mais
+barata de maior valor comercial da rodada.
+
+**Correções que os vídeos fizeram na rodada 1:** o Simples Dental tem estoque e não anuncia (são
+3 de 5, não 2); assinatura eletrônica são dois produtos distintos, não um; o líder **opera
+custódia do dinheiro do cliente**; e os dois líderes têm receita secundária — marketplace de um
+lado, **anúncio de terceiro dentro do modal de evolução clínica** do outro.

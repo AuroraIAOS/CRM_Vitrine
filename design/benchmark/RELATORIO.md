@@ -1,15 +1,17 @@
 # Benchmark de concorrentes — software odontológico
 
-Oito concorrentes reais investigados em **2026-08-31**, no bench `bench/benchmark-odonto`.
+Oito concorrentes reais investigados no bench `bench/benchmark-odonto`, em duas rodadas: as
+páginas públicas em **2026-08-31**, e em **2026-09-01** a mecânica por dentro — **56 vídeos**
+dos concorrentes, os recursos que Max colheu nos sites, 4 repositórios e 14 capturas dele.
 Cinco brasileiros — contendo os três mais vendidos do país — e três internacionais.
 
 **Nada aqui foi implantado.** O produto em `crm/`, o Supabase e o subdomínio no ar seguem
 intactos. Isto é matéria-prima de decisão de Max (`CLAUDE.md` §13).
 
-**[verificado]** = lido em fonte pública nesta sessão · **[a conferir]** = não confirmado na
-fonte primária. Todo preço, número e artigo de lei abaixo tem link e data em
-[`fontes/COLETA.md`](fontes/COLETA.md); as 34 referências visuais, em
-[`capturas/`](capturas/concorrentes/INDICE.md).
+**[verificado]** = visto em fonte pública ou funcionando na tela do vídeo · **[declarado]** = o
+fornecedor afirma, sem prova na tela · **[a conferir]** = não confirmado na fonte primária. Todo
+preço, número e artigo de lei tem link e data em [`fontes/COLETA.md`](fontes/COLETA.md); as
+**61 referências visuais** em [`capturas/`](capturas/), com índice por pasta.
 
 **Três limites, declarados antes do resultado.** (1) Não existe auditoria pública de market
 share deste nicho no Brasil — todo número de base é **autodeclarado pelo fornecedor**. (2) Preço
@@ -34,16 +36,14 @@ Todos **[verificado]**. Os números de base não são comparáveis entre si — 
 cadastrados* (inclui teste grátis) e um conta *clínicas pagantes*. Por isso o ranking usa a
 convergência dos cinco sinais, não o número maior.
 
-Mais dois brasileiros entram por **diferencial estrutural**, não por volume: **EasyDental**
-(Easy Software, no mercado desde 1994, **controlada pela OdontoPrev desde 2008** — o único
-integrado a uma operadora de convênio) e **Santé Odonto** (+12 mil dentistas, o mais IA-first do
-país, e a proposta mais próxima da do Vitrine). Ficaram de fora, com motivo registrado: Codental,
-BlueDental, Odontosys, Dentalis, ClinicaSysPro, iClinic, Ninsaúde, Amplimed.
+Mais dois brasileiros entram por **diferencial estrutural**: **EasyDental** (desde 1994,
+**controlada pela OdontoPrev** — o único integrado a uma operadora de convênio) e **Santé
+Odonto** (o mais IA-first do país, e a proposta mais próxima da nossa). Ficaram de fora, com
+motivo registrado: Codental, BlueDental, Odontosys, Dentalis, ClinicaSysPro, iClinic, Ninsaúde.
 
 Os três internacionais entram por instrutividade: **Dentrix Ascend** (líder do PMS americano),
-**Curve Dental** (a referência de UX *cloud-native* da categoria) e **Weave** — que **não é um
-PMS**, é a camada de comunicação e CRM vendida *por cima* do PMS, e portanto o análogo mais
-direto do que o Vitrine é.
+**Curve Dental** (referência de UX *cloud-native*) e **Weave** — que **não é um PMS**, é a camada
+de comunicação e CRM vendida *por cima* dele, e portanto o análogo mais direto do Vitrine.
 
 ---
 
@@ -115,32 +115,93 @@ IA** — os dois que a vendem separada cobram sob consulta (Clinicorp) ou 3,7× 
 
 ## 5. (c) O que importar para o Vitrine
 
-### Agora — cabe no MVP e no orçamento de peso
+Reescrito na **rodada 2** (2026-09-01) com quatro fontes que a rodada 1 não tinha: os recursos que
+Max colheu nos sites, **58 vídeos** dos concorrentes, **4 repositórios** e **14 capturas** dele.
+Detalhe em [`fontes/COLETA.md`](fontes/COLETA.md) §C1, [`fontes/VIDEOS.md`](fontes/VIDEOS.md),
+[`fontes/REPOS.md`](fontes/REPOS.md) e [`fontes/IDEIAS.md`](fontes/IDEIAS.md).
 
-| # | O que | De quem | Onde encosta no Vitrine |
-|---|---|---|---|
-| 1 | **Odontograma** — o vocabulário visual da categoria; 4 dos 5 brasileiros têm, e o EasyDental põe no plano de R$ 89 | todos | `aba_health`; sem ele o produto não é odontológico |
-| 2 | **Exportação completa do prontuário pelo dono da conta**, a qualquer momento, sem pedir ao suporte | ninguém faz bem — **é oportunidade** | Art. 18, I do CFO + Art. 6º da Lei 13.787 (ver §6) |
-| 3 | **Cota de mensagem visível no plano** em vez de "créditos" opacos | Weave (1.500/3.000/15.000) | `aba_messaging`; resolve a precificação da janela de 24 h |
-| 4 | **Estoque de materiais e insumos** com controle de validade | Clinicorp, EasyDental | módulo ainda inexistente; só 2 de 5 têm |
-| 5 | **Prova social medida na primeira dobra** (nota, nº de avaliações, tempo de resposta) | Simples Dental | página de venda do CRM-filho |
-| 6 | **Ação rápida a partir da conversa** — cadastrar e agendar sem sair do WhatsApp | Simples Dental (Copiloto) | já previsto no achado M03 e na Versão 03 |
-| 7 | **Consentimento de imagem como campo de primeira classe**, travando a publicação | ninguém — exigido pelo Art. 14, III do CFO | `aba_health` **já tem** — falta expor na UI |
+**A coluna "temos?" foi conferida nas 39 migrations e em `crm/src/`** — nunca de memória.
+`✅` existe · `🟡` fundação existe, falta a peça · `❌` ausente do schema inteiro.
+
+### O achado que reordena a lista
+
+A rodada 1 pôs o **odontograma** como item nº 1. Os vídeos mostram que ele não é uma tela isolada:
+é o meio de uma corrente de quatro elos —
+
+> **catálogo** (procedimento marcado como "aceita faces") → **odontograma** (seleciona dente e
+> faces) → **orçamento** (linha com dente, faces e o preço *daquele convênio*) → **contrato e
+> financeiro** (aprovar o orçamento gera o lançamento).
+
+O Vitrine tem o **primeiro** elo (`aba_catalog` com planos e variantes) e o **quarto**
+(`aba_finance` com contratos, parcelas, faturas). Faltam os dois do meio — e **o orçamento é o
+mais crítico dos dois**, porque sem ele o odontograma não tem onde escrever. Em cinco das
+quatorze capturas de Max o orçamento aparece; ele é o substantivo central do produto
+odontológico, e hoje não existe no nosso modelo de dados.
+
+### Agora — cabe no MVP
+
+| # | O que | Temos? | Origem | Onde encosta |
+|---|---|---|---|---|
+| 1 | **Orçamento** como entidade: cabeçalho + linhas (`plano · procedimento · dente · faces · valor`), estados rascunho→aprovado, PDF "Plano de Tratamento" com duas assinaturas, e aprovar gera lançamento | ❌ | vídeo SD06, CT09 | schema novo, entre `aba_catalog` e `aba_finance` |
+| 2 | **Odontograma** com dentição permanente/decídua/**mista** e estados *a realizar / executado / existente* | ❌ | todos | `aba_health`; ver §5.1 sobre o peso |
+| 3 | **"Aceita faces"** no procedimento do catálogo — o elo que liga catálogo e odontograma | ❌ | vídeo SD12 | `aba_catalog.servicos` |
+| 4 | **`faltou` e `sala_de_espera`** no enum de status do agendamento | 🟡 | vídeo CT10 | `aba_scheduling` — uma linha de migration; sem `faltou` não existe taxa de falta, o KPI nº 1 do setor |
+| 5 | **Alertas clínicos derivados da anamnese**, fixos no cabeçalho da ficha ("Hipertenso", "Risco de hemorragia") | ❌ | vídeo SD15 | `aba_health.respostas_anamnese` — **é segurança do paciente, não conveniência** |
+| 6 | **Consentimento de imagem visível** na ficha, travando publicação | ✅ no banco | Art. 14, III do CFO | `aba_health.consentimentos` — só falta a tela |
+| 7 | **Exportação do prontuário pelo dono da conta**, a qualquer momento | ❌ | ninguém faz bem — **oportunidade** | Art. 18, I do CFO + Art. 6º da Lei 13.787 (§6) |
+| 8 | **Relatório "Ações dos usuários"** sobre o log que já gravamos | ✅ no banco | vídeo CT04 | `aba_health.log_acesso` — **a tela mais barata de maior valor comercial desta rodada** |
+| 9 | **Marcadores coloridos no agendamento** + relatório por marcador | ❌ | vídeo CF19 | `aba_scheduling.agendamentos` (a cor existe em `profissionais` e `recursos`, não no agendamento) |
+| 10 | **Link público de agendamento** — entrando como *solicitação a confirmar*, não direto na agenda | ❌ | vídeo CF04; os 5 concorrentes têm | `aba_scheduling` |
+| 11 | **Expor o controle de cadeiras** e a ocupação da agenda | ✅ no banco | vídeo CT10 | `aba_scheduling.recursos` + `horarios_recursos` já existem, sem UI |
+| 12 | **Painel como lista de tarefas acionáveis** (confirmar / reagendar / receber), não de gráficos | 🟡 | vídeo SD02 | valida a Versão 03 do dossiê de UX |
+| 13 | **Régua de cobrança como linha do tempo** (verde antes → amarelo no vencimento → vermelho depois), cada ponto pendurando uma regra | 🟡 | vídeo CF07 — **a melhor peça de UX do corpus** | `aba_automations` + `aba_finance` |
+| 14 | **Editor de template** com variáveis como fichas coloridas no texto, prévia ao vivo e contador | 🟡 | imagem `whatsapp_01` | `aba_messaging` |
+| 15 | **Cota de mensagem declarada no plano** em vez de créditos opacos | ❌ | Weave (1.500/3.000/15.000) | `aba_messaging`; resolve a precificação da janela de 24 h |
+| 16 | **Campanhas por receita pronta** (aniversário, retorno, pós-operatório…) com **contagem de alcance antes do envio** | 🟡 | vídeo SD09 | `aba_automations` |
+| 17 | **Assinatura eletrônica simples** — link por WhatsApp, desenho no celular, estado pendente→assinado | ❌ | vídeo CF10 | `aba_health`; ver §5.2 |
+| 18 | **Estados vazios instrutivos** e exportação para Excel | ❌ | vídeos SD02, SD18 | camada de apresentação |
 
 ### Futuro (`+1.0`)
 
-| # | O que | De quem | Observação |
+| # | O que | Origem | Observação |
 |---|---|---|---|
-| 8 | **Transcrição de áudio no prontuário** | EasyDental, Santé, Dentrix, Curve | virou padrão de mercado em 2026, não diferencial |
-| 9 | **Agente de IA 24 h no WhatsApp/Instagram** | Santé `Conversas`, Clinicorp `Agentes` | **é o item de maior margem do mercado** — ver §6 |
-| 10 | **TISS / TUSS / CID-10 e elegibilidade de convênio** | EasyDental | abre o segmento que hoje é cativo da OdontoPrev; esforço alto |
-| 11 | **Multiunidade com consolidação** | Clinicorp, Curve, Denticon | encaixa no modelo de CRM-filho |
-| 12 | **Agenda espelhada no Google Calendar** e **app com uso offline** | EasyDental (único, nos dois) | ambos autodeclarados como exclusividade |
-| 13 | **Certificação SBIS/CFM (NGS2)** | nenhum dos cinco exibe | selo não é obrigatório, mas seria **argumento de venda exclusivo** |
+| 19 | **Assinatura ICP-Brasil** com certificado A1 do profissional, QR code e verificação pública no ITI | vídeo CF21 | é o que a Lei 13.787 Art. 2º §2º prefere; o item 17 é a etapa barata antes desta |
+| 20 | **Estoque de materiais** com **lote e validade** | Clinicorp, EasyDental, e o SD tem sem anunciar | exigência sanitária para injetável, não só gestão |
+| 21 | **Controle protético como kanban** de 5 etapas com cor de atraso | vídeo CF18 | **reusa o componente de `aba_sales.etapas_funil`** — a mesma peça serve aos dois |
+| 22 | **Plano recorrente** com "liberar procedimento a cada N pagamentos" | vídeos CF03/CF17 | fundação **já existe** (`aba_catalog.planos`, `aba_finance.planos_cliente`, `saldos_plano`); falta a regra |
+| 23 | **Programa de indicação medido em receita** ("18 indicações · R$ 5.124 aprovados") | imagem `marketing_01` | `leads.origem` já aceita `'indicacao'`, mas não registra **quem** indicou |
+| 24 | **Ditado clínico que preenche o odontograma**, com tabela de revisão e confirmação humana antes de aplicar | vídeo CT07 | o desenho ético correto: a IA propõe, o profissional aplica |
+| 25 | **IA como consulta em linguagem natural sobre o próprio dado** da conta | vídeo CT07 | `aba_ai`; **colide com `CLAUDE.md` §15 — reportado, não planejado** |
+| 26 | **NFS-e** | vídeo CF08 | o vídeo mostra o custo real: exige configuração tributária municipal |
+| 27 | **Faceograma 2D para HOF** — pontos sobre a foto do paciente, antes/depois por região | vídeos CF05/CF09/CF11 | **o mercado não usa 3D**; ver §5.1 |
+| 28 | **Multiunidade e franquia** com isolamento por unidade e metas consolidadas | vídeos CF12/CF13/CF15/CF23 | é a forma-produto do nosso modelo de CRM-filho |
+| 29 | **TISS/TUSS/CID-10 e elegibilidade de convênio** · **certificação SBIS/CFM** | EasyDental; ausente em todos | esforço alto, mas nenhum concorrente exibe o selo SBIS |
 
-**Colisões com `CLAUDE.md` §15, reportadas e não implementadas:** os itens 9 e 13 tocam,
-respectivamente, IA conversacional em escala e RAG versionado. Ficam registrados como achado de
-mercado; entrar ou não no escopo é decisão de Max.
+### 5.1 Sobre os repositórios — o que muda com a medição
+
+**`TOOL_Odontogram01` é adotável, com uma condição.** MIT, React 18/19, `jspdf` em import
+dinâmico, 191 testes, ativo, e traz periodontograma e **HL7 FHIR R4** de graça — o vocabulário
+que a certificação SBIS/CFM pede. **Mas o núcleo pesa 426 KB gzip, medido: 1,5× o bundle inteiro
+do Vitrine (284 KB).** Só **atrás de rota preguiçosa**, e depois da divisão por rota de
+`06_ORCAMENTO_DE_PESO.md`. Não tem português entre os 11 idiomas.
+
+**`TOOL_HOF_drarayssa` não é adotável, por três motivos independentes:** **não tem licença** —
+bloqueio jurídico, não preferência; `three`+`fiber`+`drei` estoura o orçamento; e **o mercado não
+resolve HOF com 3D**, e sim com diagrama 2D sobre a foto do paciente.
+
+**`TOOL_Text_Orally` e `TOOL_MuscleMap` são iOS**, não web. Do primeiro aproveita-se o
+**instrumento** (questionário de dor orofacial como modelo de anamnese, com a ressalva de que
+triagem nunca é diagnóstico); do segundo, só a técnica — que o item 2 já entrega em SVG.
+
+Fichas completas em [`fontes/REPOS.md`](fontes/REPOS.md).
+
+### 5.2 O que os vídeos corrigiram da rodada 1
+
+Quatro conclusões da rodada 1 não sobreviveram ao vídeo: **estoque são 3 de 5, não 2** (o Simples
+Dental tem e não anuncia); **assinatura eletrônica são dois produtos**, não um; o líder **opera
+custódia do dinheiro do cliente**; e os dois líderes têm **receita secundária** — marketplace de
+um lado, anúncio de terceiro dentro do modal de evolução clínica do outro. Detalhe em
+[`fontes/VIDEOS.md`](fontes/VIDEOS.md).
 
 ---
 
@@ -157,12 +218,17 @@ modelo do Clinicorp — e o Clinicorp paga por isso com 3,5× mais reclamações
 |---|---|---|
 | **Essencial** | **R$ 119–139/mês** | pessoas, agenda, prontuário com odontograma, financeiro, WhatsApp com cota declarada |
 | **Completo** | **R$ 279–319/mês** | + funil/CRM, automações, comissões, assinatura eletrônica, estoque |
-| **IA** (complemento) | **R$ 249–349/mês** | agente de atendimento e triagem — **abaixo dos R$ 437 do Santé**, e com preço publicado, que ninguém faz |
+| **IA** (complemento) | **R$ 199–299/mês** | agente de atendimento e triagem — dentro da faixa observada (ver abaixo) e **com preço publicado**, que ninguém faz |
 
-**Quatro decisões de precificação que o benchmark sustenta:**
+**A faixa da IA, agora com os dois extremos conhecidos.** A rodada 2 achou o preço que faltava:
+o Simples Dental anuncia a Secretária IA **"a partir de R$ 6 por dia"** — ~R$ 180/mês. Com os
+R$ 437 do Santé no topo e o Clinicorp em "sob consulta", a faixa observada é **R$ 180–437**.
 
-1. **Publicar o preço da IA.** É o único item caro que o mercado inteiro esconde. Publicar é
-   diferencial de posicionamento de custo zero.
+**Cinco decisões de precificação que o benchmark sustenta:**
+
+1. **Publicar o preço da IA.** É o único item caro que o mercado inteiro esconde — e o único que
+   um deles publica apenas em forma diária, o que já diz algo. Publicar é diferencial de
+   posicionamento com custo zero.
 2. **Não cobrar o WhatsApp à parte.** EasyDental e Simples Dental cobram; é a queixa natural de
    quem compra um CRM cuja premissa é o WhatsApp. Cota declarada no plano, no modelo Weave.
 3. **Não cobrar implantação obrigatória.** É o que separa o Clinicorp (13 dias de resposta,
@@ -170,6 +236,11 @@ modelo do Clinicorp — e o Clinicorp paga por isso com 3,5× mais reclamações
 4. **Considerar cobrança por agenda, não por usuário** (modelo Santé). Alinha o preço ao valor —
    uma clínica com 3 cadeiras paga mais que um consultório de 1 —, e evita a fricção do modelo
    por usuário, que pune a clínica por cadastrar a recepcionista.
+5. **Decidir conscientemente sobre receita secundária.** Os dois líderes têm uma, e são opostas:
+   o Clinicorp opera um **marketplace** de contadores e agências; o Simples Dental **exibe
+   anúncio de terceiro dentro do modal de evolução clínica** e **retém o dinheiro do boleto em
+   conta própria** antes do saque. A primeira é defensável; a segunda coloca publicidade na tela
+   do ato clínico, e a terceira transforma o fornecedor em custodiante do caixa do cliente.
 
 **Teste grátis de 7 dias sem cartão** é obrigatório: é o padrão convergente dos cinco brasileiros.
 
@@ -213,8 +284,10 @@ não compra familiaridade nenhuma aqui — só custa a identidade, que era o pre
 
 - **Sidebar por tipo de trabalho** é o que o único produto da amostra com tela real exposta
   (Santé) também faz. A navegação por abas do Simples Dental não escala para nove módulos.
-- **O painel como "o dia"** bate com o que o Santé mostra primeiro: agendamentos de hoje, no
-  lugar de honra. É o que a recepção abre de manhã.
+- **O painel como "o dia"** bate com o que o Santé mostra primeiro. E a rodada 2 fechou a prova:
+  o painel do **líder de mercado** (`SD02_simplesdental.jpg`) não tem um único gráfico na aba
+  principal — são *consultas a confirmar*, *a reagendar*, *contas a receber*, cada linha com o
+  seu botão. Chegamos ao mesmo desenho por caminho independente.
 - **A janela de 24 h como elemento organizador** não tem equivalente em nenhum dos oito — Weave
   chega perto pela cota de mensagem, mas ninguém trata a janela do WhatsApp como estado visível
   da conversa. É o item mais distintivo do Vitrine, e já está na 03.
@@ -224,10 +297,13 @@ não compra familiaridade nenhuma aqui — só custa a identidade, que era o pre
 
 **O que o benchmark recomenda acrescentar à 03 antes de implementar:**
 
-1. **Odontograma** como padrão de tela novo — não estava no dossiê, e é indispensável (§5, item 1).
-2. **Um lugar visível para o consentimento de imagem** na ficha — o Art. 14, III do CFO
-   transforma isso em requisito, não em recurso.
-3. **Indicador de cota de mensagem** ao lado do estado da conexão do WhatsApp que a 03 já prevê.
+1. **A tela de orçamento** — o arquétipo que faltava, e o mais importante dos cinco (§5).
+2. **Odontograma** como padrão de tela novo — não estava no dossiê, e é indispensável.
+3. **Alertas clínicos no cabeçalho da ficha**, derivados da anamnese. É segurança do paciente, e
+   nenhuma das três versões previa esse elemento.
+4. **Um lugar visível para o consentimento de imagem** — o Art. 14, III do CFO transforma isso em
+   requisito, não em recurso.
+5. **Indicador de cota de mensagem** ao lado do estado da conexão do WhatsApp que a 03 já prevê.
 
 **A paleta de comandos da Versão 02 continua backlog, não caminho descartado** — e o benchmark
 reforça: nenhum concorrente odontológico tem `⌘K`, então ela é diferencial futuro, não paridade.
