@@ -34,7 +34,12 @@ Regras permanentes lidas pelo Claude CODE em toda sessão deste projeto. Não re
 - Sessões separadas por etapa e por bloco — evita contaminação de contexto. Nunca contexto de conversa carregado de uma sessão para outra.
 
 ## 8. Registro de conclusão
-- Marcar conclusão em `docs/00_PLANO_E_CRITERIOS.md`. Sempre que uma ETAPA ou Subetapa for concluída com sucesso (código, testes e — quando aplicável — deploy/verificação em produção), editar `docs/00_PLANO_E_CRITERIOS.md` e acrescentar **"Status: ✅ CONCLUÍDA"** logo após o título da etapa/subetapa correspondente. Isso não é opcional, faz parte do fechamento de qualquer subetapa.
+Marcar o status de conclusão em `docs/00_PLANO_E_CRITERIOS.md` sempre que uma ETAPA ou Subetapa for concluída usando os dizeres e símbolos:
+
+-- "Status: ✅ CONCLUÍDA" (QUANDO = Etapa ou subetapa com código, testes, deploy, verificação em produção etc. forem 100% verdes)
+-- "Status: ⏸️ ADIADA" (QUANDO = Etapa ou subetapa pulada por completo e deixada para momento futuro)
+-- "Status: ⚠️ PENDENTE" (QUANDO = Etapa ou subetapa com código, testes, deploy, verificação ainda em aberto e sem estar 100% verdes mas sem ser um bloqueio para seguir a diante)
+-- "Status: 🛑 ABANDONADA" (QUANDO = Etapa ou subetapa é abandonda por completo - segue registrada para fins de memória, consulta, auditoria e possibilidade de retroagir)
 
 ## 9. CHANGELOG
 - Toda subetapa que gera mudança relevante para quem usa o produto registra uma linha em `CHANGELOG.md` (`+0.1` correção/melhoria, `+1.0` nova funcionalidade).
