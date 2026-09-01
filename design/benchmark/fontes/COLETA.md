@@ -424,7 +424,7 @@ A tabela comparativa está em `../RELATORIO.md`. O que não coube lá:
 
 ## Fontes acrescentadas na passada de navegador
 
-Todas visitadas em **2026-08-31**; ver `../capturas/INDICE.md` para a lista completa com captura.
+Todas visitadas em **2026-08-31**; ver `../capturas/concorrentes/INDICE.md` para a lista completa com captura.
 
 - https://www.reclameaqui.com.br/empresa/simples-dental/ (e `/clinicorp/`, `/dental-office/`)
 - https://play.google.com/store/apps/details?id=br.com.dentaloffice.dentists

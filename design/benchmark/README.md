@@ -14,7 +14,7 @@ UX adotar continua sendo escolha de Max (`CLAUDE.md` §13).
 |---|---|---|
 | ★ | [`RELATORIO.md`](RELATORIO.md) | **A entrega.** Quem são os 8, o que cada um tem, o diferencial de venda de cada um, o que importar agora e no futuro, a faixa de preço praticável e o parecer sobre as três versões de UX. |
 | | [`00_PLANO_DE_ACAO.md`](00_PLANO_DE_ACAO.md) | O `[Goal]` que regeu o trabalho: objetivo, critérios de qualidade e de finalização, teto de tentativas, escalonamento de LLM. |
-| | [`capturas/INDICE.md`](capturas/INDICE.md) | As **34 referências visuais**, cada uma creditada com URL de origem e data. |
+| | [`capturas/concorrentes/INDICE.md`](capturas/concorrentes/INDICE.md) | As **34 referências visuais**, cada uma creditada com URL de origem e data. |
 | | [`fontes/COLETA.md`](fontes/COLETA.md) | A matéria-prima: os 5 sinais do ranking, as tabelas de preço completas, os trechos citados de termo de uso e de lei, e o que ficou de fora e por quê. |
 | | [`capturar.mjs`](capturar.mjs) | O coletor. `node design/benchmark/capturar.mjs` refaz as 34 capturas. |
 

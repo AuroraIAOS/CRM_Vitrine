@@ -9,7 +9,7 @@ intactos. Isto é matéria-prima de decisão de Max (`CLAUDE.md` §13).
 **[verificado]** = lido em fonte pública nesta sessão · **[a conferir]** = não confirmado na
 fonte primária. Todo preço, número e artigo de lei abaixo tem link e data em
 [`fontes/COLETA.md`](fontes/COLETA.md); as 34 referências visuais, em
-[`capturas/`](capturas/INDICE.md).
+[`capturas/`](capturas/concorrentes/INDICE.md).
 
 **Três limites, declarados antes do resultado.** (1) Não existe auditoria pública de market
 share deste nicho no Brasil — todo número de base é **autodeclarado pelo fornecedor**. (2) Preço

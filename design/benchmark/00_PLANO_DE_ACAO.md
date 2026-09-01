@@ -179,7 +179,7 @@ lacuna com estimativa para "fechar" o entregável.
 git status --short                          # só design/benchmark/ deve aparecer
 git diff --stat main...bench/benchmark-odonto -- . ':!design/benchmark'   # deve sair vazio
 ls design/benchmark/capturas/*.png | wc -l  # ≥ 24
-grep -c "^| " design/benchmark/capturas/INDICE.md        # linhas = nº de capturas
+grep -c "^| " design/benchmark/capturas/concorrentes/INDICE.md        # linhas = nº de capturas
 grep -o "\[verificado\]\|\[conhecido\]\|\[a conferir\]" design/benchmark/RELATORIO.md | sort | uniq -c
 wc -w design/benchmark/RELATORIO.md         # ≤ ~2.500 palavras
 grep -n "R\$" design/benchmark/RELATORIO.md # todo valor deve ter fonte no COLETA.md

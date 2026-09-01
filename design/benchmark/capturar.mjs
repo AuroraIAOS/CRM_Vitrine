@@ -18,7 +18,7 @@
  *   node design/benchmark/capturar.mjs            # tudo
  *   node design/benchmark/capturar.mjs simples    # só os alvos que casam com o filtro
  *
- * Os PNGs vão para `capturas/`; o texto extraído vai para fora do repositório
+ * Os PNGs vão para `capturas/concorrentes/`; o texto extraído vai para fora do repositório
  * (pasta temporária impressa no fim), porque é matéria-prima de leitura, não
  * entrega.
  */
@@ -32,7 +32,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.resolve(AQUI, "../..");
-const DESTINO = path.join(AQUI, "capturas");
+const DESTINO = path.join(AQUI, "capturas", "concorrentes");
 const TEXTOS = fs.mkdtempSync(path.join(os.tmpdir(), "bench-odonto-"));
 
 const req = createRequire(path.join(RAIZ, "crm", "package.json"));
