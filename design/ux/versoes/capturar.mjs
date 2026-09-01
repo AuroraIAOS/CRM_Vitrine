@@ -2,7 +2,7 @@
 /**
  * Captura das três versões de UX/UI em alta resolução
  * ===================================================
- * Gera `telas/vNN_N_<tela>.png` para as três versões, nas mesmas seis telas,
+ * Gera `telas/NN_<tela>_vNN.png` para as três versões, nas mesmas seis telas,
  * para que a comparação seja de DESENHO e não de conteúdo — os dados são
  * idênticos nos três casos (`dados.js`).
  *
@@ -99,7 +99,7 @@ async function capturar({ v, nome, tela, extra, n, rotulo }) {
   await pagina.evaluate((v, tela, extra) => window.pintarPara(v, tela, extra), v, tela, extra ?? null);
   await pagina.evaluate(() => document.fonts.ready);
   await new Promise((r) => setTimeout(r, 220));      // deixa o layout assentar
-  const arquivo = `v${v}_${n}_${extra ?? tela}.png`;
+  const arquivo = `${String(n).padStart(2, "0")}_${extra ?? tela}_v${v}.png`;
   await pagina.screenshot({ path: path.join(DESTINO, arquivo), type: "png" });
   feitas.push({ arquivo, v, nome, tela: extra ?? tela, rotulo });
   console.log(`  ✓ ${arquivo.padEnd(28)} ${rotulo}`);
@@ -116,7 +116,7 @@ await browser.close();
 servidor.close();
 
 /* ─────────────────────── índice ─────────────────────── */
-const linhas = feitas.map((f) =>
+const linhas = [...feitas].sort((a, b) => a.arquivo.localeCompare(b.arquivo)).map((f) =>
   `| \`${f.arquivo}\` | ${f.v} | ${f.rotulo} |`).join("\n");
 
 fs.writeFileSync(path.join(DESTINO, "INDICE.md"), `# Capturas das três versões

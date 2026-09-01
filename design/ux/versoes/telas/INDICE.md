@@ -6,26 +6,29 @@ nas três versões — a diferença entre as imagens é só de desenho.
 
 Mesmo formato de `screenshots/` (o produto como está hoje), para comparação direta.
 
+O nome ordena por **tela** primeiro e por **versão** depois (`NN_<tela>_vNN.png`), para que as
+três variantes da mesma tela fiquem lado a lado em qualquer listador de arquivos.
+
 | Arquivo | Versão | Tela |
 |---|---|---|
-| `v01_1_inicio.png` | 01 | Início / painel |
-| `v01_2_pessoas.png` | 01 | Pessoas — lista |
-| `v01_3_ficha.png` | 01 | Ficha da pessoa |
-| `v01_4_agenda.png` | 01 | Agenda semanal |
-| `v01_5_funil.png` | 01 | Funil comercial |
-| `v01_6_mensagens.png` | 01 | Mensagens |
-| `v02_1_inicio.png` | 02 | Início / painel |
-| `v02_2_pessoas.png` | 02 | Pessoas — lista |
-| `v02_3_ficha.png` | 02 | Ficha da pessoa |
-| `v02_4_agenda.png` | 02 | Agenda semanal |
-| `v02_5_funil.png` | 02 | Funil comercial |
-| `v02_6_mensagens.png` | 02 | Mensagens |
-| `v02_7_paleta.png` | 02 | Paleta de comandos (⌘K) |
-| `v03_1_inicio.png` | 03 | Início / painel |
-| `v03_2_pessoas.png` | 03 | Pessoas — lista |
-| `v03_3_ficha.png` | 03 | Ficha da pessoa |
-| `v03_4_agenda.png` | 03 | Agenda semanal |
-| `v03_5_funil.png` | 03 | Funil comercial |
-| `v03_6_mensagens.png` | 03 | Mensagens |
+| `01_inicio_v01.png` | 01 | Início / painel |
+| `01_inicio_v02.png` | 02 | Início / painel |
+| `01_inicio_v03.png` | 03 | Início / painel |
+| `02_pessoas_v01.png` | 01 | Pessoas — lista |
+| `02_pessoas_v02.png` | 02 | Pessoas — lista |
+| `02_pessoas_v03.png` | 03 | Pessoas — lista |
+| `03_ficha_v01.png` | 01 | Ficha da pessoa |
+| `03_ficha_v02.png` | 02 | Ficha da pessoa |
+| `03_ficha_v03.png` | 03 | Ficha da pessoa |
+| `04_agenda_v01.png` | 01 | Agenda semanal |
+| `04_agenda_v02.png` | 02 | Agenda semanal |
+| `04_agenda_v03.png` | 03 | Agenda semanal |
+| `05_funil_v01.png` | 01 | Funil comercial |
+| `05_funil_v02.png` | 02 | Funil comercial |
+| `05_funil_v03.png` | 03 | Funil comercial |
+| `06_mensagens_v01.png` | 01 | Mensagens |
+| `06_mensagens_v02.png` | 02 | Mensagens |
+| `06_mensagens_v03.png` | 03 | Mensagens |
+| `07_paleta_v02.png` | 02 | Paleta de comandos (⌘K) |
 
 Comparação e parecer em [`../README.md`](../README.md).

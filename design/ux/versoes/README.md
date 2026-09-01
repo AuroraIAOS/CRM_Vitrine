@@ -41,7 +41,7 @@ manter. É uma decisão de negócio, não de gosto — e por isso é de Max.
 
 ## Versão 01 — Padrão de mercado
 
-> `telas/v01_*.png` · O desenho para o qual HubSpot, Zoho, RD Station e Pipedrive convergiram.
+> `telas/*_v01.png` · O desenho para o qual HubSpot, Zoho, RD Station e Pipedrive convergiram.
 
 **A aposta:** o cliente que compra o CRM-filho já viu esta tela antes, em outro produto, e
 sabe usar sem treinamento. Familiaridade acima de tudo.
@@ -70,7 +70,7 @@ além da tabela.
 
 ## Versão 02 — Estado da arte
 
-> `telas/v02_*.png` · O que Attio e Linear fazem hoje. Inclui `v02_7_paleta.png`, a assinatura da versão.
+> `telas/*_v02.png` · O que Attio e Linear fazem hoje. Inclui `07_paleta_v02.png`, a assinatura da versão.
 
 **A aposta:** potência máxima por pixel, para quem usa a ferramenta o dia inteiro e vale a
 pena treinar.
@@ -83,9 +83,9 @@ pena treinar.
 - **Chips de filtro componíveis** (`Vínculo é Cliente ✕`, `Último contato > 7 dias ✕`).
 - Tabela densa (34px de linha), telefone em mono, barra de ações em massa ativa,
   dica de teclado no canto (`J K navegar · X marcar · ⏎ abrir`).
-- **A ficha não é uma página: é um painel lateral** sobre a lista (`v02_3_ficha.png`), com
+- **A ficha não é uma página: é um painel lateral** sobre a lista (`03_ficha_v02.png`), com
   `↑ ↓ 1 de 31` para percorrer registros sem perder o contexto.
-- **Paleta de comandos** (`v02_7_paleta.png`): digitar "karina" devolve a pessoa, os dois
+- **Paleta de comandos** (`07_paleta_v02.png`): digitar "karina" devolve a pessoa, os dois
   atendimentos dela e a ação "Novo atendimento para Karina Duarte".
 - Painel que é fila de trabalho ("Precisa de você · 7 itens"), não relatório.
 
@@ -105,7 +105,7 @@ contexto clínico, onde o erro de digitação vira dado de saúde errado, é ris
 
 ## Versão 03 — Recomendado para o CRM Vitrine
 
-> `telas/v03_*.png` · O wireframe ratificado, terminado.
+> `telas/*_v03.png` · O wireframe ratificado, terminado.
 
 **A aposta:** honrar as decisões que Max já tomou e completar o que faltava, escolhendo caso a
 caso o que vale importar do estado da arte e o que não vale.
@@ -124,7 +124,7 @@ caso o que vale importar do estado da arte e o que não vale.
 - **Busca global visível** com o atalho `Ctrl K` à mostra — não escondida atrás de um atalho
   que ninguém descobre.
 - **Estado da conexão do WhatsApp** no topo, como indicador, não como link solto (achado M03).
-- **O painel é "o dia"** (`v03_1_inicio.png`): a agenda de hoje ocupa o lugar de honra, porque
+- **O painel é "o dia"** (`01_inicio_v03.png`): a agenda de hoje ocupa o lugar de honra, porque
   é o que a recepção abre de manhã. Pendências ao lado, todas clicáveis. KPIs com seta,
   levando à lista que os produziu.
 - **Agenda com expediente da conta** (08h–18h em vez de 07h–19h), colisão resolvida, linha do
@@ -133,7 +133,7 @@ caso o que vale importar do estado da arte e o que não vale.
   aparecem marcados sozinhos (Sérgio Bastos 31 d, Diego Ferraz 16 d).
 - **Ficha com ações rápidas** (WhatsApp · Agendar · Cobrar · Anamnese) e a coluna direita
   começando pelo que é urgente — o próximo atendimento —, não pelo campo de nota vazio.
-- **Janela de 24 h como elemento organizador** (`v03_6_mensagens.png`): badge por conversa
+- **Janela de 24 h como elemento organizador** (`06_mensagens_v03.png`): badge por conversa
   (`18 h`, `2 h`, `fechada`), filtro "Janela aberta · 3", e o compositor **substituído** pelo
   seletor de template quando a janela fecha, com a explicação em uma linha.
 - **Seletor de densidade que funciona**, exposto onde importa (a tabela).
@@ -213,7 +213,7 @@ Registro para a decisão ficar informada, não para defender a recomendação:
 A 03 e a 02 não são exclusivas no tempo. A 03 pode ser construída agora e a **paleta de
 comandos da 02 pode entrar depois** como camada opcional, sem redesenhar nada — ela é um
 `Dialog` sobre a busca global que a 03 já tem. Se a escolha for a 03, sugiro tratar
-`v02_7_paleta.png` como backlog, não como caminho descartado.
+`07_paleta_v02.png` como backlog, não como caminho descartado.
 
 ---
 
@@ -223,13 +223,13 @@ comandos da 02 pode entrar depois** como camada opcional, sem redesenhar nada �
 
 | Tela | 01 Padrão | 02 Estado da arte | 03 Recomendado |
 |---|---|---|---|
-| Início / painel | `v01_1_inicio.png` | `v02_1_inicio.png` | `v03_1_inicio.png` |
-| Pessoas — lista | `v01_2_pessoas.png` | `v02_2_pessoas.png` | `v03_2_pessoas.png` |
-| Ficha da pessoa | `v01_3_ficha.png` | `v02_3_ficha.png` | `v03_3_ficha.png` |
-| Agenda semanal | `v01_4_agenda.png` | `v02_4_agenda.png` | `v03_4_agenda.png` |
-| Funil comercial | `v01_5_funil.png` | `v02_5_funil.png` | `v03_5_funil.png` |
-| Mensagens | `v01_6_mensagens.png` | `v02_6_mensagens.png` | `v03_6_mensagens.png` |
-| Paleta de comandos | — | `v02_7_paleta.png` | — |
+| Início / painel | `01_inicio_v01.png` | `01_inicio_v02.png` | `01_inicio_v03.png` |
+| Pessoas — lista | `02_pessoas_v01.png` | `02_pessoas_v02.png` | `02_pessoas_v03.png` |
+| Ficha da pessoa | `03_ficha_v01.png` | `03_ficha_v02.png` | `03_ficha_v03.png` |
+| Agenda semanal | `04_agenda_v01.png` | `04_agenda_v02.png` | `04_agenda_v03.png` |
+| Funil comercial | `05_funil_v01.png` | `05_funil_v02.png` | `05_funil_v03.png` |
+| Mensagens | `06_mensagens_v01.png` | `06_mensagens_v02.png` | `06_mensagens_v03.png` |
+| Paleta de comandos | — | `07_paleta_v02.png` | — |
 
 ## Arquivos-fonte
 
