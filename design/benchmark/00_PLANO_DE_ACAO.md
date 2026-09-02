@@ -293,7 +293,7 @@ Três ressalvas técnicas, medidas no schema real e registradas em `RELATORIO.md
 
 ## 10.3 Entregas de fechamento
 
-- [`../benchmark/HANDOFF_PLANO_MVP.md`](HANDOFF_PLANO_MVP.md) — abertura da sessão do Plano de Ação.
+- [`../../handoffs/HANDOFF_PLANO_MVP.md`](../../handoffs/HANDOFF_PLANO_MVP.md) — abertura da sessão do Plano de Ação (movido para o diretório oficial de handoffs em 2026-09-02).
 - [`../benchmark/FECHAMENTO.md`](FECHAMENTO.md) — análise final, checklist e parecer de merge.
 
 **Status: ✅ CONCLUÍDA** — 3 rodadas, 8 concorrentes, 56 vídeos, 4 repositórios, 61 referências

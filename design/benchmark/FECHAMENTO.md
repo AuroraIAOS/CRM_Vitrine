@@ -146,7 +146,7 @@ gitleaks detect --source . --report-format json -v --redact
 **Depois do merge, três coisas ficam pendentes de decisão de Max:**
 
 1. **A sessão do Plano de Ação do MVP** — o handoff está pronto em
-   [`HANDOFF_PLANO_MVP.md`](HANDOFF_PLANO_MVP.md).
+   [`../../handoffs/HANDOFF_PLANO_MVP.md`](../../handoffs/HANDOFF_PLANO_MVP.md).
 2. **Distribuir as 30 diretrizes** de `DIRETRIZES_FORA_DO_BENCHMARK.md` para seus destinos.
 3. **Registrar o benchmark em `docs/00_PLANO_E_CRITERIOS.md`** com o status apropriado
    (`CLAUDE.md` §8) e uma linha em `CHANGELOG.md` se Max julgar que muda algo para quem usa o
