@@ -164,7 +164,8 @@ odontológico, e hoje não existe no nosso modelo de dados.
 | 20 | **Assinatura do paciente por link multicanal** (WhatsApp **+ e-mail + SMS**), com o mesmo token do item 19 | ❌ | ideia de Max; o concorrente faz só por WhatsApp e cobra R$ 0,15/doc | `aba_health.consentimentos` (já existe, sem tela) |
 | 21 | **Alertas de estoque e de vencimento** — validade de insumo, estoque mínimo, calibragem e contrato de terceiro vencendo | ❌ | ideia de Max | **é conformidade sanitária, não gestão**: é o que evita a autuação no dia da fiscalização |
 | 22 | **Tabela de métricas** por CRM-filho, agregando na origem (só contagem e categoria) | ❌ | ideia de Max | **a única que não dá para adiar** — retroajustar coleta em N instâncias vendidas é migração em N bancos |
-| 23 | **Semente do catálogo** com os 84 procedimentos da Atenção Básica | ❌ | `fontes/procedimentos.txt` | `aba_catalog`; troca a tela vazia inicial por uma base real |
+| 23 | **Semente do catálogo** com os procedimentos da Atenção Básica **e o código SIGTAP de cada um**, mais o campo **unidade de lançamento** (`dente`/`sextante`/`arcada`/`sessão`) | ❌ | `fontes/procedimentos.txt` + acervo de gestão pública de Max | `aba_catalog`; troca a tela vazia inicial por uma base real, e prepara TISS/TUSS sem retrabalho |
+| 24 | **Encaminhamento com contrarreferência** — estado (`encaminhado → aceito → em atendimento → contrarreferenciado`), formulário nas duas pontas e pré-requisito clínico declarado | ❌ | protocolo público do CEO — **nenhum dos 8 modela isso** | `aba_health` + `aba_scheduling`; reusa o token do item 19 quando o especialista é externo |
 
 ### Futuro (`+1.0`)
 

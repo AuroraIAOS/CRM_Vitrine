@@ -248,8 +248,29 @@ recurso técnico.
 
 ---
 
-## O que ainda depende de aprovação de Max
+## O acervo de gestão pública — aprovado e transcrito
 
-A pasta `Odonto_CEO` foi **lida, e nada dela foi copiado**. A lista do que é aproveitável, com a
-proposta de uso de cada item, está na resposta de Max nesta sessão e será registrada aqui **só
-depois da decisão dele** — conforme ele determinou.
+A pasta `Odonto_CEO` (620 arquivos) foi **lida integralmente**. Max aprovou seis itens em
+**2026-09-01**, com a instrução *"transcreva só as estruturas"*.
+
+**Nenhum arquivo do acervo entrou neste repositório.** O que existe é a transcrição das
+estruturas em [`REFERENCIA_ODONTO_CEO.md`](REFERENCIA_ODONTO_CEO.md):
+
+| # | Estrutura | Onde reforça |
+|---|---|---|
+| 1 | **Códigos SIGTAP** por procedimento, e a pactuação por grupo com meta mensal | itens 3, 22 e 23 do §5 (c) — e revela o campo irmão de "aceita faces": **unidade de lançamento** (`dente`/`sextante`/`arcada`/`sessão`) |
+| 2 | **Esquema da tabela de estoque** (`Código · Princípio · Fabricante · Lote · Validade · Alerta`) | item 21 — e sugere separar *item de catálogo* de *lote em estoque* |
+| 3 | **Taxonomia de serviços de terceiros** em 4 categorias, com os equipamentos de ciclo de vida | item 21 — a metade que **nenhum dos 8 concorrentes tem** |
+| 4 | **23 POPs + as 14 seções do PGRSS** | item 21 — converte "estoque" em **conformidade sanitária**, que é a tese de Max |
+| 5 | **Fluxo de referência e contrarreferência** com máquina de estados | **lacuna de mercado nova** — ver abaixo |
+| 6 | **AMAQ**, molde do instrumento de autoavaliação | os questionários do programa da universidade |
+
+### O que o acervo acrescentou que o benchmark não tinha
+
+**Um recurso novo, que nenhum dos oito concorrentes modela: o encaminhamento com
+contrarreferência.** Clínica privada que trabalha com especialistas tem o mesmo ciclo do CEO —
+clínico geral encaminha, especialista atende, o caso volta para conclusão e manutenção. O que
+existe no mercado é encaminhamento como texto livre na evolução clínica. Um encaminhamento com
+**estado** (`encaminhado → aceito → em atendimento → contrarreferenciado`), formulário nas duas
+pontas e pré-requisito clínico declarado (*"só encaminha com dor eliminada e infecção sob
+controle"*) é lacuna inteira — e reusa o token do item 19 quando o especialista for externo.

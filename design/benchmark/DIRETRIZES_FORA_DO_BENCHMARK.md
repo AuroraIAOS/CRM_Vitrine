@@ -70,5 +70,17 @@ Max decide o que sobe, para onde e quando.
 | Fonte | Onde está | Situação |
 |---|---|---|
 | **CRM Sindcom** | `github.com/AuroraIAOS/CRM-Sindcom` | **Estudado** nesta sessão para o padrão de token/remessa. Nada copiado. As peças a portar estão em A2, A5, A6 e P4. |
-| **Pasta `Odonto_CEO`** | disco local de Max | **Lida** nesta sessão. **Nada copiado** — Max determinou que a lista do que é aproveitável seja apresentada e aprovada antes. A lista está na resposta desta sessão; o registro entra em `fontes/IDEIAS_MAX.md` só depois da decisão dele. |
+| **Pasta `Odonto_CEO`** | disco local de Max | **Lida** (620 arquivos). Max aprovou 6 itens em 2026-09-01 com a instrução "transcreva só as estruturas". **Nenhum arquivo copiado, nenhum dado pessoal transcrito** — ver [`fontes/REFERENCIA_ODONTO_CEO.md`](fontes/REFERENCIA_ODONTO_CEO.md). |
 | **`fontes/procedimentos.txt`** | já no repo | 84 procedimentos da Atenção Básica, postos por Max. Semente do catálogo (item 4 de `IDEIAS_MAX.md`). |
+
+---
+
+## 6. Acrescentado pelo acervo de gestão pública (2026-09-01)
+
+| # | Diretriz | Destino sugerido |
+|---|---|---|
+| A8 | **Separar item de catálogo de lote em estoque** (um para muitos). A planilha de referência achata os dois e por isso repete o mesmo produto por fabricante. | `docs/02_MODELO_DE_DADOS.md` |
+| A9 | **`unidade_lancamento` no procedimento** (`dente` / `sextante` / `arcada` / `sessão` / `elemento`) — a unidade está no nome do procedimento na tabela nacional, e é irmã da marca "aceita faces". | `docs/02` — `aba_catalog.servicos` |
+| A10 | **Encaminhamento com contrarreferência** como entidade com estado, não texto livre na evolução. Lacuna que nenhum dos 8 concorrentes cobre. | `docs/02` — entre `aba_health` e `aba_scheduling` |
+| C10 | **POP e PGRSS têm vigência, responsável e periodicidade.** "Abortamento de ciclo de esterilização" é evento datado (o material daquele ciclo não está estéril) e "controle de manutenção da autoclave" é vencimento. Conformidade sanitária, não gestão. | `docs/05_COMPLIANCE_E_ETICA.md` |
+| E6 | **AMAQ como molde do questionário de validação**: subdimensão com peso declarado, escala 0–10 **sem rótulo** (rotular influencia o respondente) e ciclo autoavaliação → planejamento → intervenção. | plano de validação (E1) |
