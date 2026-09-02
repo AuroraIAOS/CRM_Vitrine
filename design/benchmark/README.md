@@ -19,6 +19,8 @@ UX adotar continua sendo escolha de Max (`CLAUDE.md` §13).
 | | [`fontes/VIDEOS.md`](fontes/VIDEOS.md) | **56 vídeos** dos concorrentes assistidos: a mecânica do produto por dentro, e as quatro conclusões da rodada 1 que os vídeos corrigiram. |
 | | [`fontes/REPOS.md`](fontes/REPOS.md) | Os 4 repositórios, com **licença lida** e **peso medido**. |
 | | [`fontes/IDEIAS.md`](fontes/IDEIAS.md) | As 14 imagens de Max — inclusive o modelo de permissão do Clinicorp. |
+| | [`fontes/IDEIAS_MAX.md`](fontes/IDEIAS_MAX.md) | As **6 ideias de desenvolvimento** de Max avaliadas para MVP ou futuro — trazidas de quem foi diretor de Saúde Bucal, não de hipótese de produto. |
+| | [`DIRETRIZES_FORA_DO_BENCHMARK.md`](DIRETRIZES_FORA_DO_BENCHMARK.md) | O que nasceu aqui e **pertence a outro lugar** em `main`: arquitetura, compliance, plano e estratégia — com destino sugerido. |
 | | [`capturar.mjs`](capturar.mjs) · [`assistir.mjs`](assistir.mjs) · [`frames_video.mjs`](frames_video.mjs) | Os coletores: sites, vídeos e quadros em alta resolução. |
 
 ## Como esta pesquisa foi construída

@@ -160,6 +160,11 @@ odontológico, e hoje não existe no nosso modelo de dados.
 | 16 | **Campanhas por receita pronta** (aniversário, retorno, pós-operatório…) com **contagem de alcance antes do envio** | 🟡 | vídeo SD09 | `aba_automations` |
 | 17 | **Assinatura eletrônica simples** — link por WhatsApp, desenho no celular, estado pendente→assinado | ❌ | vídeo CF10 | `aba_health`; ver §5.2 |
 | 18 | **Estados vazios instrutivos** e exportação para Excel | ❌ | vídeos SD02, SD18 | camada de apresentação |
+| 19 | **Caixa de entrada de exames por token** — laboratório envia por link rastreável, revogável e com expiração; o arquivo espera o **aceite** do dentista antes de entrar no prontuário | ❌ | ideia de Max; **nenhum dos 8 tem** | `aba_health` + Edge Function; o padrão já está construído e depurado no **CRM Sindcom** |
+| 20 | **Assinatura do paciente por link multicanal** (WhatsApp **+ e-mail + SMS**), com o mesmo token do item 19 | ❌ | ideia de Max; o concorrente faz só por WhatsApp e cobra R$ 0,15/doc | `aba_health.consentimentos` (já existe, sem tela) |
+| 21 | **Alertas de estoque e de vencimento** — validade de insumo, estoque mínimo, calibragem e contrato de terceiro vencendo | ❌ | ideia de Max | **é conformidade sanitária, não gestão**: é o que evita a autuação no dia da fiscalização |
+| 22 | **Tabela de métricas** por CRM-filho, agregando na origem (só contagem e categoria) | ❌ | ideia de Max | **a única que não dá para adiar** — retroajustar coleta em N instâncias vendidas é migração em N bancos |
+| 23 | **Semente do catálogo** com os 84 procedimentos da Atenção Básica | ❌ | `fontes/procedimentos.txt` | `aba_catalog`; troca a tela vazia inicial por uma base real |
 
 ### Futuro (`+1.0`)
 
@@ -176,6 +181,9 @@ odontológico, e hoje não existe no nosso modelo de dados.
 | 27 | **Faceograma 2D para HOF** — pontos sobre a foto do paciente, antes/depois por região | vídeos CF05/CF09/CF11 | **o mercado não usa 3D**; ver §5.1 |
 | 28 | **Multiunidade e franquia** com isolamento por unidade e metas consolidadas | vídeos CF12/CF13/CF15/CF23 | é a forma-produto do nosso modelo de CRM-filho |
 | 29 | **TISS/TUSS/CID-10 e elegibilidade de convênio** · **certificação SBIS/CFM** | EasyDental; ausente em todos | esforço alto, mas nenhum concorrente exibe o selo SBIS |
+| 30 | **Envio do prontuário ao paciente**, quando ele mesmo solicita | ideia de Max | a obrigação já existe (Art. 18, I do CFO); o mecanismo precisa de token de expiração curta e segunda prova de identidade |
+| 31 | **Inventário completo** de materiais e serviços, com lote, entrada/saída e vínculo a fornecedores; e o **banco de itens modelo** a partir de atas públicas | ideia de Max | `aba_people.fornecedores` já existe; ata de registro de preço é documento público |
+| 32 | **Assinatura ICP-Brasil do paciente** · plataforma **Aurora** consolidando as métricas dos CRMs-filhos | ideias de Max | ambas dependem de peças de custódia (certificado do profissional, painel consolidado) que não são MVP |
 
 ### 5.1 Sobre os repositórios — o que muda com a medição
 

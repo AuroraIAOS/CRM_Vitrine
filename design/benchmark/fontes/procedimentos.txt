@@ -1,0 +1,84 @@
+Procedimentos comuns da Atenção Básica / Sistema Único de Saúde (SUS)
+
+01 - 1ª Consulta odontológica programática
+02 - Acesso à polpa dentária e medicação (dente)
+03 - Apicectomia c/ ou s/ obturação retrograda
+04 - Aplicação de cariostático (por dente)
+05 - Aplicação de selante (por dente)
+06 - Aplicação tópica de flúor (individual por sessão)
+07 - Aprofundamento de vestíbulo oral (sext.)
+08 - Atendimento de urgência
+09 - Biópsia de glândula salivar
+10 - Biópsia de osso do crânio e da face
+11 - Biópsia dos tecidos moles da boca
+12 - Capeamento pulpar
+13 - Consulta de nível superior atenção especializada
+14 - Contenção de dentes por splintagem
+15 - Correção cirúrgica de fístula oronasal/ oro-sinusal
+16 - Correção de bridas musculares
+17 - Correção de irregularidades de rebordo alveolar
+18 - Correção de tuberosidade do maxilar
+19 - Curativo demorado c/ ou s/ reparo biomecânico
+20 - Curetagem periapical
+21 - Dente incluso
+22 - Drenagem de abscesso da boca e anexos
+23 - Enxerto gengival
+24 - Enxerto ósseo de área doadora intrabucal
+25 - Escovação supervisionada
+26 - Evidenciação de placa bacteriana
+27 - Excisão de cálculo de glândula salivar
+28 - Excisão de rânula ou fenômeno de retenção salivar
+29 - Excisão e sutura de lesão na boca
+30 - Excisão em cunha do lábio
+31 - Exerese de cisto odontogênico e não-odontogênico
+32 - Exodontia de dente decíduo
+33 - Exodontia de dente permanente
+34 - Exodontia multipla c/ alveoloplastia (sext.)
+35 - Exodontia multipla c/ alveoloplastia sextante
+36 - Frenectomia
+37 - Gengivectomia (sext.)
+38 - Gengivoplastia (sext.)
+39 - Glossorrafia
+40 - Marsupialização de cistos e pseudocistos
+41 - Obturação de dente decíduo
+42 - Obturação em dente permanente birradicular
+43 - Obturação em dente permanente c/ três ou mais raízes
+44 - Obturação em dente permanente unirradicular
+45 - Odontosecção / radilectomia / tunelização
+46 - Osteotomia das fraturas alveolo dentárias
+47 - Profilaxia/remoção de placa
+48 - Pulpotomia dentária
+49 - Radiografia periapical
+50 - Raspagem alisamento e polimento supragengivais (sext.)
+51 - Raspagem alisamento subgengival (sext.)
+52 - Raspagem corono-radicular (sext.) 
+53 - Raspagem, alisamento e polimento supragengival (sext.)
+54 - Reconstrução parcial do lábio traumatizado
+55 - Redução de fratura alveolo-dentária sem osteossíntese
+56 - Redução de luxação têmporo mandibular
+57 - Reimplante e transplante dental (por elemento)
+58 - Remoção de dente retido (incluso / impactado)
+59 - Remoção de tórus e exostoses
+60 - Restauração de dente anterior
+61 - Restauração de dente decíduo
+62 - Restauração de dente permanente anterior
+63 - Restauração de dente permanente posterior
+64 - Restauração de dente posterior
+65 - Retirada de corpo estranho dos ossos da face
+66 - Retirada de material de síntese óssea/ dentária
+67 - Retirada de meios de fixação ma xilo-mandibular
+68 - Retirada de pontos
+69 - Retratamento endodôntico em dente permanente bi-radicular
+70 - Retratamento endodôntico em dente permanente c/ ou mais raízes
+71 - Retratamento endodôntico em dente permanente uni-radicular
+72 - Selamento de perfuração radicular
+73 - Selamento provisório de cavidade dentária
+74 - Sinusotomia transmaxilar
+75 - Tratamento cirúrgico de fístula intra/ extra-oral
+76 - Tratamento cirúrgico de fístula oro-sinusal / oro-nasal
+77 - Tratamento cirúrgico de hemorragia buco-dental
+78 - Tratamento cirúrgico p/ tracionamento dental
+79 - Tratamento cirúrgico periodontal (sext.)
+80 - Tratamento de alveolite
+81 - Tratamento de nevralgias faciais
+82 - Ulotomia/ulectomia
