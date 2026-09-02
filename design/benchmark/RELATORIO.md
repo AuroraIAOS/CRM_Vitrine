@@ -1,8 +1,10 @@
 # Benchmark de concorrentes — software odontológico
 
-Oito concorrentes reais investigados no bench `bench/benchmark-odonto`, em duas rodadas: as
-páginas públicas em **2026-08-31**, e em **2026-09-01** a mecânica por dentro — **56 vídeos**
-dos concorrentes, os recursos que Max colheu nos sites, 4 repositórios e 14 capturas dele.
+Oito concorrentes reais investigados no bench `bench/benchmark-odonto`, em três rodadas: as
+páginas públicas em **2026-08-31**; a mecânica por dentro em **2026-09-01** — **56 vídeos** dos
+concorrentes, os recursos colhidos nos sites, 4 repositórios, 14 capturas de Max e o acervo dele
+de gestão pública em Saúde Bucal; e em **2026-09-02** a revisão do §5 (c) por Max, que refez a
+numeração, fundiu duplicações e reclassificou cinco itens.
 Cinco brasileiros — contendo os três mais vendidos do país — e três internacionais.
 
 **Nada aqui foi implantado.** O produto em `crm/`, o Supabase e o subdomínio no ar seguem
@@ -115,41 +117,44 @@ IA** — os dois que a vendem separada cobram sob consulta (Clinicorp) ou 3,7× 
 
 ## 5. (c) O que importar para o Vitrine
 
-Reescrito na **rodada 2** (2026-09-01) com quatro fontes que a rodada 1 não tinha: os recursos que
-Max colheu nos sites, **58 vídeos** dos concorrentes, **4 repositórios** e **14 capturas** dele.
-Detalhe em [`fontes/COLETA.md`](fontes/COLETA.md) §C1, [`fontes/VIDEOS.md`](fontes/VIDEOS.md),
-[`fontes/REPOS.md`](fontes/REPOS.md) e [`fontes/IDEIAS.md`](fontes/IDEIAS.md).
+**Revisado por Max em 2026-09-02.** A numeração foi refeita em sequência única (1–33), quatro
+duplicações foram fundidas e cinco itens mudaram de MVP para futuro ou o contrário. As tabelas
+canônicas são [`fontes/MVP.xlsx`](fontes/MVP.xlsx) e [`fontes/FUTURO.xlsx`](fontes/FUTURO.xlsx);
+o que segue é a transcrição delas, com as observações técnicas que a revisão levantou.
+
+Fontes: os recursos que Max colheu nos sites, **56 vídeos** dos concorrentes, **4 repositórios**,
+**14 capturas** dele e o **acervo de gestão pública** — detalhe em
+[`fontes/COLETA.md`](fontes/COLETA.md) §C1, [`fontes/VIDEOS.md`](fontes/VIDEOS.md),
+[`fontes/REPOS.md`](fontes/REPOS.md), [`fontes/IDEIAS.md`](fontes/IDEIAS.md),
+[`fontes/IDEIAS_MAX.md`](fontes/IDEIAS_MAX.md) e
+[`fontes/REFERENCIA_ODONTO_CEO.md`](fontes/REFERENCIA_ODONTO_CEO.md).
 
 **A coluna "temos?" foi conferida nas 39 migrations e em `crm/src/`** — nunca de memória.
 `✅` existe · `🟡` fundação existe, falta a peça · `❌` ausente do schema inteiro.
 
-### O achado que reordena a lista
+### O achado que ordena a lista
 
-A rodada 1 pôs o **odontograma** como item nº 1. Os vídeos mostram que ele não é uma tela isolada:
-é o meio de uma corrente de quatro elos —
+O odontograma não é uma tela isolada: é o meio de uma corrente de quatro elos —
 
-> **catálogo** (procedimento marcado como "aceita faces") → **odontograma** (seleciona dente e
-> faces) → **orçamento** (linha com dente, faces e o preço *daquele convênio*) → **contrato e
-> financeiro** (aprovar o orçamento gera o lançamento).
+> **catálogo** (procedimento com "aceita faces" e unidade de lançamento) → **odontograma**
+> (seleciona dente e faces) → **orçamento** (linha com dente, faces e o preço daquele convênio) →
+> **contrato e financeiro** (aprovar o orçamento gera o lançamento).
 
-O Vitrine tem o **primeiro** elo (`aba_catalog` com planos e variantes) e o **quarto**
-(`aba_finance` com contratos, parcelas, faturas). Faltam os dois do meio — e **o orçamento é o
-mais crítico dos dois**, porque sem ele o odontograma não tem onde escrever. Em cinco das
-quatorze capturas de Max o orçamento aparece; ele é o substantivo central do produto
-odontológico, e hoje não existe no nosso modelo de dados.
+O Vitrine tem o **primeiro** elo (`aba_catalog`) e o **quarto** (`aba_finance`). Faltam os dois do
+meio — e **o orçamento é o mais crítico**, porque sem ele o odontograma não tem onde escrever.
 
 ### Agora — cabe no MVP
 
 | # | O que | Temos? | Origem | Onde encosta |
 |---|---|---|---|---|
-| 1 | **Orçamento** como entidade: cabeçalho + linhas (`plano · procedimento · dente · faces · valor`), estados rascunho→aprovado, PDF "Plano de Tratamento" com duas assinaturas, e aprovar gera lançamento | ❌ | vídeo SD06, CT09 | schema novo, entre `aba_catalog` e `aba_finance` |
+| 1 | **Orçamento como entidade**: cabeçalho + linhas (`plano · procedimento · dente · faces · valor`), estados rascunho→aprovado, PDF "Plano de Tratamento" com duas assinaturas, e aprovar gera lançamento | ❌ | vídeos SD06, CT09 | schema novo, entre `aba_catalog` e `aba_finance` |
 | 2 | **Odontograma** com dentição permanente/decídua/**mista** e estados *a realizar / executado / existente* | ❌ | todos | `aba_health`; ver §5.1 sobre o peso |
 | 3 | **"Aceita faces"** no procedimento do catálogo — o elo que liga catálogo e odontograma | ❌ | vídeo SD12 | `aba_catalog.servicos` |
 | 4 | **`faltou` e `sala_de_espera`** no enum de status do agendamento | 🟡 | vídeo CT10 | `aba_scheduling` — uma linha de migration; sem `faltou` não existe taxa de falta, o KPI nº 1 do setor |
 | 5 | **Alertas clínicos derivados da anamnese**, fixos no cabeçalho da ficha ("Hipertenso", "Risco de hemorragia") | ❌ | vídeo SD15 | `aba_health.respostas_anamnese` — **é segurança do paciente, não conveniência** |
 | 6 | **Consentimento de imagem visível** na ficha, travando publicação | ✅ no banco | Art. 14, III do CFO | `aba_health.consentimentos` — só falta a tela |
-| 7 | **Exportação do prontuário pelo dono da conta**, a qualquer momento | ❌ | ninguém faz bem — **oportunidade** | Art. 18, I do CFO + Art. 6º da Lei 13.787 (§6) |
-| 8 | **Relatório "Ações dos usuários"** sobre o log que já gravamos | ✅ no banco | vídeo CT04 | `aba_health.log_acesso` — **a tela mais barata de maior valor comercial desta rodada** |
+| 7 | **Exportação do prontuário** — pelo dono da conta a qualquer momento, **e pelo próprio paciente quando ele solicita**, sempre por token de expiração curta e com segunda prova de identidade | ❌ | ninguém faz bem — **oportunidade** | Art. 18, I do CFO + Art. 6º da Lei 13.787 (§6) |
+| 8 | **Relatório "Ações dos usuários"** sobre o log que já gravamos — **visível apenas ao `owner`** | ✅ no banco | vídeo CT04 | `aba_health.log_acesso` — a tela mais barata de maior valor comercial desta rodada |
 | 9 | **Marcadores coloridos no agendamento** + relatório por marcador | ❌ | vídeo CF19 | `aba_scheduling.agendamentos` (a cor existe em `profissionais` e `recursos`, não no agendamento) |
 | 10 | **Link público de agendamento** — entrando como *solicitação a confirmar*, não direto na agenda | ❌ | vídeo CF04; os 5 concorrentes têm | `aba_scheduling` |
 | 11 | **Expor o controle de cadeiras** e a ocupação da agenda | ✅ no banco | vídeo CT10 | `aba_scheduling.recursos` + `horarios_recursos` já existem, sem UI |
@@ -158,33 +163,28 @@ odontológico, e hoje não existe no nosso modelo de dados.
 | 14 | **Editor de template** com variáveis como fichas coloridas no texto, prévia ao vivo e contador | 🟡 | imagem `whatsapp_01` | `aba_messaging` |
 | 15 | **Cota de mensagem declarada no plano** em vez de créditos opacos | ❌ | Weave (1.500/3.000/15.000) | `aba_messaging`; resolve a precificação da janela de 24 h |
 | 16 | **Campanhas por receita pronta** (aniversário, retorno, pós-operatório…) com **contagem de alcance antes do envio** | 🟡 | vídeo SD09 | `aba_automations` |
-| 17 | **Assinatura eletrônica simples** — link por WhatsApp, desenho no celular, estado pendente→assinado | ❌ | vídeo CF10 | `aba_health`; ver §5.2 |
-| 18 | **Estados vazios instrutivos** e exportação para Excel | ❌ | vídeos SD02, SD18 | camada de apresentação |
-| 19 | **Caixa de entrada de exames por token** — laboratório envia por link rastreável, revogável e com expiração; o arquivo espera o **aceite** do dentista antes de entrar no prontuário | ❌ | ideia de Max; **nenhum dos 8 tem** | `aba_health` + Edge Function; o padrão já está construído e depurado no **CRM Sindcom** |
-| 20 | **Assinatura do paciente por link multicanal** (WhatsApp **+ e-mail + SMS**), com o mesmo token do item 19 | ❌ | ideia de Max; o concorrente faz só por WhatsApp e cobra R$ 0,15/doc | `aba_health.consentimentos` (já existe, sem tela) |
-| 21 | **Alertas de estoque e de vencimento** — validade de insumo, estoque mínimo, calibragem e contrato de terceiro vencendo | ❌ | ideia de Max | **é conformidade sanitária, não gestão**: é o que evita a autuação no dia da fiscalização |
-| 22 | **Tabela de métricas** por CRM-filho, agregando na origem (só contagem e categoria) | ❌ | ideia de Max | **a única que não dá para adiar** — retroajustar coleta em N instâncias vendidas é migração em N bancos |
-| 23 | **Semente do catálogo** com os procedimentos da Atenção Básica **e o código SIGTAP de cada um**, mais o campo **unidade de lançamento** (`dente`/`sextante`/`arcada`/`sessão`) | ❌ | `fontes/procedimentos.txt` + acervo de gestão pública de Max | `aba_catalog`; troca a tela vazia inicial por uma base real, e prepara TISS/TUSS sem retrabalho |
-| 24 | **Encaminhamento com contrarreferência** — estado (`encaminhado → aceito → em atendimento → contrarreferenciado`), formulário nas duas pontas e pré-requisito clínico declarado | ❌ | protocolo público do CEO — **nenhum dos 8 modela isso** | `aba_health` + `aba_scheduling`; reusa o token do item 19 quando o especialista é externo |
+| 17 | **Estados vazios instrutivos** e exportação para Excel | ❌ | vídeos SD02, SD18 | camada de apresentação |
+| 18 | **Caixa de entrada de exames por token** — laboratório envia por link rastreável, revogável e com expiração; o arquivo espera o **aceite** do dentista antes de entrar no prontuário | ❌ | ideia de Max; **nenhum dos 8 tem** | `aba_health` + Edge Function; o padrão está construído e depurado no **CRM Sindcom** |
+| 19 | **Assinatura eletrônica simples do paciente por link multicanal** — WhatsApp, e-mail, SMS **ou leitura de QR code** —, com token rastreável, desenho no celular e estado pendente→assinado | ❌ | ideia de Max; o concorrente faz **só por WhatsApp** e cobra R$ 0,15/doc | `aba_health.consentimentos` (já existe, sem tela) |
+| 20 | **Estoque e inventário de materiais e serviços** — lote, validade, entrada/saída, vínculo a fornecedores e **alertas** (validade de insumo, estoque mínimo, calibragem e contrato de terceiro vencendo) | ❌ | ideia de Max | **é conformidade sanitária, não gestão** — é o que evita a autuação no dia da fiscalização. `aba_people.fornecedores` já existe |
+| 21 | **Tabela de métricas** por CRM-filho, agregando na origem (só contagem e categoria), pronta para a plataforma **Aurora** consolidar quando existir | ❌ | ideia de Max | **a única que não dá para adiar** — retroajustar coleta em N instâncias vendidas é migração em N bancos |
+| 22 | **Semente do catálogo** com os procedimentos da Atenção Básica, o **código SIGTAP**, a **unidade de lançamento** e a **quantidade máxima** por unidade | ❌ | `fontes/SIGTAP.xlsx` + acervo de gestão pública de Max | `aba_catalog`; troca a tela vazia inicial por uma base real e prepara TISS/TUSS sem retrabalho |
+| 23 | **Encaminhamento com contrarreferência** — estado (`encaminhado → aceito → em atendimento → contrarreferenciado`), formulário nas duas pontas, pré-requisito clínico declarado e **trânsito sempre por token**, nunca anexo em e-mail | ❌ | protocolo público do CEO — **nenhum dos 8 modela isso** | `aba_health` + `aba_scheduling`; o uso do token diz **com quem está a demanda**, e alimenta um alerta de "aguardando contrarreferência" |
+| 24 | **Multiunidade** — isolamento por unidade, metas consolidadas e **login em dois estágios** (e-mail e senha → o sistema detecta que o e-mail pertence a mais de um consultório → seleção de consultório) | ❌ | vídeos CF12/CF13/CF15/CF23 | **é a realidade de muitos profissionais**, e adiar isso decide a compra no primeiro contato. Ver a ressalva técnica em §5.2 |
 
 ### Futuro (`+1.0`)
 
 | # | O que | Origem | Observação |
 |---|---|---|---|
-| 19 | **Assinatura ICP-Brasil** com certificado A1 do profissional, QR code e verificação pública no ITI | vídeo CF21 | é o que a Lei 13.787 Art. 2º §2º prefere; o item 17 é a etapa barata antes desta |
-| 20 | **Estoque de materiais** com **lote e validade** | Clinicorp, EasyDental, e o SD tem sem anunciar | exigência sanitária para injetável, não só gestão |
-| 21 | **Controle protético como kanban** de 5 etapas com cor de atraso | vídeo CF18 | **reusa o componente de `aba_sales.etapas_funil`** — a mesma peça serve aos dois |
-| 22 | **Plano recorrente** com "liberar procedimento a cada N pagamentos" | vídeos CF03/CF17 | fundação **já existe** (`aba_catalog.planos`, `aba_finance.planos_cliente`, `saldos_plano`); falta a regra |
-| 23 | **Programa de indicação medido em receita** ("18 indicações · R$ 5.124 aprovados") | imagem `marketing_01` | `leads.origem` já aceita `'indicacao'`, mas não registra **quem** indicou |
-| 24 | **Ditado clínico que preenche o odontograma**, com tabela de revisão e confirmação humana antes de aplicar | vídeo CT07 | o desenho ético correto: a IA propõe, o profissional aplica |
-| 25 | **IA como consulta em linguagem natural sobre o próprio dado** da conta | vídeo CT07 | `aba_ai`; **colide com `CLAUDE.md` §15 — reportado, não planejado** |
-| 26 | **NFS-e** | vídeo CF08 | o vídeo mostra o custo real: exige configuração tributária municipal |
-| 27 | **Faceograma 2D para HOF** — pontos sobre a foto do paciente, antes/depois por região | vídeos CF05/CF09/CF11 | **o mercado não usa 3D**; ver §5.1 |
-| 28 | **Multiunidade e franquia** com isolamento por unidade e metas consolidadas | vídeos CF12/CF13/CF15/CF23 | é a forma-produto do nosso modelo de CRM-filho |
-| 29 | **TISS/TUSS/CID-10 e elegibilidade de convênio** · **certificação SBIS/CFM** | EasyDental; ausente em todos | esforço alto, mas nenhum concorrente exibe o selo SBIS |
-| 30 | **Envio do prontuário ao paciente**, quando ele mesmo solicita | ideia de Max | a obrigação já existe (Art. 18, I do CFO); o mecanismo precisa de token de expiração curta e segunda prova de identidade |
-| 31 | **Inventário completo** de materiais e serviços, com lote, entrada/saída e vínculo a fornecedores; e o **banco de itens modelo** a partir de atas públicas | ideia de Max | `aba_people.fornecedores` já existe; ata de registro de preço é documento público |
-| 32 | **Assinatura ICP-Brasil do paciente** · plataforma **Aurora** consolidando as métricas dos CRMs-filhos | ideias de Max | ambas dependem de peças de custódia (certificado do profissional, painel consolidado) que não são MVP |
+| 25 | **Assinatura ICP-Brasil com certificado A1 do profissional**, QR code e verificação pública no ITI | vídeo CF21 | é o que a Lei 13.787 Art. 2º §2º prefere; o item 19 é a etapa barata antes desta |
+| 26 | **Controle protético como kanban** de 5 etapas com cor de atraso | vídeo CF18 | reusa o componente de `aba_sales.etapas_funil` — a mesma peça serve aos dois |
+| 27 | **Plano recorrente** com "liberar procedimento a cada N pagamentos" | vídeos CF03/CF17 | fundação já existe (`aba_catalog.planos`, `aba_finance.planos_cliente`, `saldos_plano`); falta a regra |
+| 28 | **Programa de indicação medido em receita** ("18 indicações · R$ 5.124 aprovados") | imagem `marketing_01` | `leads.origem` já aceita `'indicacao'`, mas não registra **quem** indicou |
+| 29 | **Ditado clínico que preenche o odontograma**, com tabela de revisão e confirmação humana antes de aplicar | vídeo CT07 | o desenho ético correto: a IA propõe, o profissional aplica |
+| 30 | **IA como consulta em linguagem natural** sobre o próprio dado da conta | vídeo CT07 | `aba_ai`; **colide com `CLAUDE.md` §15 — reportado, não planejado** |
+| 31 | **NFS-e** | vídeo CF08 | o vídeo mostra o custo real: exige configuração tributária municipal |
+| 32 | **Faceograma 2D para HOF** — pontos sobre a foto do paciente, antes/depois por região | vídeos CF05/CF09/CF11 | o mercado **não usa 3D**; ver §5.1 |
+| 33 | **TISS/TUSS/CID-10 e elegibilidade de convênio** · **certificação SBIS/CFM** | EasyDental; ausente em todos | esforço alto, mas nenhum concorrente exibe o selo SBIS |
 
 ### 5.1 Sobre os repositórios — o que muda com a medição
 
@@ -204,13 +204,35 @@ triagem nunca é diagnóstico); do segundo, só a técnica — que o item 2 já 
 
 Fichas completas em [`fontes/REPOS.md`](fontes/REPOS.md).
 
-### 5.2 O que os vídeos corrigiram da rodada 1
+### 5.2 Três ressalvas técnicas que a revisão de 2026-09-02 levantou
 
-Quatro conclusões da rodada 1 não sobreviveram ao vídeo: **estoque são 3 de 5, não 2** (o Simples
-Dental tem e não anuncia); **assinatura eletrônica são dois produtos**, não um; o líder **opera
-custódia do dinheiro do cliente**; e os dois líderes têm **receita secundária** — marketplace de
-um lado, anúncio de terceiro dentro do modal de evolução clínica do outro. Detalhe em
-[`fontes/VIDEOS.md`](fontes/VIDEOS.md).
+**1. O item 24 (multiunidade) não é tela — é cirurgia no núcleo de permissão.** Medido no schema
+real: `public.profiles` tem **`user_id UUID NOT NULL UNIQUE`**, ou seja, um usuário pertence hoje
+a **exatamente uma** conta; e `access.can()` descobre a conta com
+`SELECT account_id, account_role FROM public.profiles WHERE user_id = auth.uid()` — busca de
+linha única, **sem parâmetro de conta**. O login em dois estágios exige remover essa UNIQUE e
+passar a conta ativa por toda a camada de autorização, que é justamente a peça que `CLAUDE.md`
+§14 manda portar sem reescrever. **21 arquivos de migration** tocam `profiles` ou
+`is_account_member`. A decisão de Max de trazer o item para o MVP continua valendo — o argumento
+comercial é forte —, mas ele deve ser tratado como **subetapa de núcleo, com portão adversarial
+próprio**, e não como recurso de aplicação.
+
+**2. O item 20 ficou o maior do MVP.** Juntar estoque, inventário, lote, entrada/saída,
+fornecedores e alertas num item só é coerente do ponto de vista de venda (é assim que se anuncia),
+mas são vários blocos de trabalho. Sugestão de sequência, se apertar: **alertas e validade
+primeiro** — é o que sustenta o argumento de conformidade sanitária —, entrada/saída depois.
+
+**3. A tabela SIGTAP acrescentou uma regra que o item 3 não previa.** Além de `Local`
+(dente / sextante / arcada), ela traz **`Quantidade máxima`** por unidade: **32 por dente, 6 por
+sextante, 2 por arcada**, ao longo de 64 procedimentos. Isso não é rótulo, é **validação**: um
+orçamento com 33 restaurações por dente está errado e o sistema pode dizer isso. Entra no item 22.
+
+### 5.3 Uma correção minha
+
+O antigo item 32 dizia *"Assinatura ICP-Brasil do paciente · plataforma Aurora"*. **Estava
+errado nas duas metades:** o certificado A1 é do **profissional**, não do paciente (é o que o
+vídeo CF21 mostra), e a plataforma Aurora já estava coberta pelo item 21. Max apontou; a lista
+revisada corrige.
 
 ---
 

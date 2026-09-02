@@ -22,6 +22,8 @@ UX adotar continua sendo escolha de Max (`CLAUDE.md` §13).
 | | [`fontes/IDEIAS_MAX.md`](fontes/IDEIAS_MAX.md) | As **6 ideias de desenvolvimento** de Max avaliadas para MVP ou futuro — trazidas de quem foi diretor de Saúde Bucal, não de hipótese de produto. |
 | | [`fontes/REFERENCIA_ODONTO_CEO.md`](fontes/REFERENCIA_ODONTO_CEO.md) | **Estruturas** do acervo de gestão pública de Max: códigos SIGTAP, esquema de estoque, taxonomia de serviços, POP e PGRSS, referência/contrarreferência e o molde AMAQ. Só estruturas — nenhum arquivo copiado, nenhum dado pessoal. |
 | | [`DIRETRIZES_FORA_DO_BENCHMARK.md`](DIRETRIZES_FORA_DO_BENCHMARK.md) | O que nasceu aqui e **pertence a outro lugar** em `main`: arquitetura, compliance, plano e estratégia — com destino sugerido. |
+| ★ | [`FECHAMENTO.md`](FECHAMENTO.md) | **Análise final e checklist para o merge** — o que o bench traz, o que não toca, o que fica em aberto e o parecer. |
+| ★ | [`HANDOFF_PLANO_MVP.md`](HANDOFF_PLANO_MVP.md) | **Abertura da próxima sessão**: a espinha do MVP, as 5 armadilhas já medidas e o que o Plano de Ação precisa entregar. |
 | | [`capturar.mjs`](capturar.mjs) · [`assistir.mjs`](assistir.mjs) · [`frames_video.mjs`](frames_video.mjs) | Os coletores: sites, vídeos e quadros em alta resolução. |
 
 ## Como esta pesquisa foi construída

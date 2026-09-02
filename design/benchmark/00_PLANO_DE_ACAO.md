@@ -258,3 +258,43 @@ teste antes de virar diagnóstico (`CLAUDE.md` §11) — detalhe no cabeçalho d
 5. a skill fixa `--sub-langs en.*` e usa `-vsync`, removido no ffmpeg 8+.
 
 **Status: ✅ CONCLUÍDA** — ver `RELATORIO.md` §5 (c) e os três arquivos de fonte.
+
+---
+
+# 10. Rodada 3 — revisão do §5 (c) por Max e fechamento do bench
+
+**2026-09-02.** Max revisou o tópico §5 (c) e produziu três tabelas em `fontes/`:
+`MVP.xlsx` (24 itens), `FUTURO.xlsx` (9 itens) e `SIGTAP.xlsx` (64 procedimentos com código,
+local e quantidade máxima). As duas primeiras passam a ser **as tabelas canônicas** — o
+`RELATORIO.md` §5 (c) é a transcrição delas.
+
+## 10.1 O que a revisão mudou
+
+| Observação de Max | Efeito |
+|---|---|
+| numeração desconexa | refeita em sequência única 1–33 |
+| #8 (log de ações) | **visível apenas ao `owner`** |
+| #17 e #19 eram o mesmo | fundidos no item 19, com **QR code** como quarto canal |
+| #24 (contrarreferência) | trânsito **sempre por token**, nunca anexo em e-mail; o uso do token diz com quem está a demanda e alimenta alerta de "aguardando contrarreferência" |
+| #20 + #21 + #31 (estoque) | reunidos e movidos **para o MVP** — o conjunto é o argumento de venda |
+| #28 (multiunidade) | movido **para o MVP**, com login em dois estágios |
+| #30 + #7 (prontuário) | fundidos no item 7 |
+| #32 (ICP-Brasil "do paciente") | **erro meu**, corrigido: o certificado A1 é do profissional, e a Aurora já estava no item 21 |
+
+## 10.2 O que a revisão fez o CODE descobrir
+
+Três ressalvas técnicas, medidas no schema real e registradas em `RELATORIO.md` §5.2:
+
+1. **Multiunidade é cirurgia no núcleo, não tela.** `public.profiles` tem `user_id UNIQUE` e
+   `access.can()` resolve a conta sem parâmetro. 21 migrations tocam essa área.
+2. **O item 20 ficou o maior do MVP** — sugestão de sequência interna registrada.
+3. **A `SIGTAP.xlsx` trouxe `Quantidade máxima`** (32/dente, 6/sextante, 2/arcada), que é
+   **validação**, não rótulo. Entrou no item 22.
+
+## 10.3 Entregas de fechamento
+
+- [`../benchmark/HANDOFF_PLANO_MVP.md`](HANDOFF_PLANO_MVP.md) — abertura da sessão do Plano de Ação.
+- [`../benchmark/FECHAMENTO.md`](FECHAMENTO.md) — análise final, checklist e parecer de merge.
+
+**Status: ✅ CONCLUÍDA** — 3 rodadas, 8 concorrentes, 56 vídeos, 4 repositórios, 61 referências
+visuais, 14 documentos. Parecer favorável ao merge; **ordenar o merge é de Max** (`CLAUDE.md` §13).
