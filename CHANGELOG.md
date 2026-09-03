@@ -2,7 +2,10 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
-## [+0.1] - 2026-09-03 (Subetapa 03.3 — divisão por rota + fontes auto-hospedadas)
+## [+0.1] - 2026-09-03 (Subetapa 03.4 — agenda: sala de espera, marcadores e cadeiras)
+- **A recepção agora sabe quem já chegou.** O check-in do Balcão deixou de confundir "cliente confirmou por telefone" com "cliente está fisicamente na cadeira de espera" — são duas coisas diferentes, e agora têm cada uma o seu estado. A tela mostra as duas listas separadas, e o profissional chama quem está esperando com um clique.
+- **Cada atendimento pode ganhar uma etiqueta colorida** definida pela própria clínica — "Convênio X", "Primeira consulta", o que fizer sentido — e a Agenda semanal mostra quantos atendimentos de cada etiqueta aconteceram na semana.
+- **Salas e cadeiras agora têm cadastro e mostram a própria ocupação** — quanto da jornada de cada uma já está preenchida na semana, antes escondido no banco sem nenhuma tela.
 - **O CRM abre mais rápido.** A primeira tela agora baixa só o que ela precisa — antes, abrir o login trazia junto a agenda, o prontuário, o editor de automações e o agente de IA, mesmo sem a senha ainda digitada. O carregamento inicial caiu de 284 KB para menos de 160 KB gzip.
 - **A tipografia do produto deixou de depender do Google.** As fontes passaram a ser servidas pelo próprio domínio do CRM — elimina uma etapa de carregamento de terceiro no primeiro desenho da tela e, no processo, corta uma transmissão do IP do visitante a um serviço externo (LGPD, `docs/05_COMPLIANCE_E_ETICA.md` §6).
 

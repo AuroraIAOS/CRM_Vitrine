@@ -44,7 +44,14 @@ function ItemAgendamento({ agendamento }: { agendamento: Agendamento }) {
       <div className="py-2 pl-3">
         <div className="flex items-center justify-between gap-2 rounded-[5px] border-l-[3px] bg-content px-3 py-2.5" style={{ borderLeftColor: agendamento.profissionalCor }}>
           <div className="flex flex-col gap-0.5">
-            <span className="text-[11.5px] font-medium text-foreground">
+            <span className="flex items-center gap-1 text-[11.5px] font-medium text-foreground">
+              {agendamento.marcadorCor && (
+                <span
+                  className="h-1.5 w-1.5 flex-shrink-0 rounded-full"
+                  style={{ backgroundColor: agendamento.marcadorCor }}
+                  title={agendamento.marcadorNome ?? undefined}
+                />
+              )}
               {agendamento.clienteNome} {agendamento.servicos.length > 0 ? `· ${agendamento.servicos.map((s) => s.nome).join(", ")}` : ""}
             </span>
             <span className="text-[10.5px] text-muted-foreground">
@@ -54,7 +61,7 @@ function ItemAgendamento({ agendamento }: { agendamento: Agendamento }) {
           </div>
           <div className="flex items-center gap-2">
             <Badge tone={STATUS_TONE[agendamento.status]}>{STATUS_LABEL[agendamento.status]}</Badge>
-            {(agendamento.status === "agendado" || agendamento.status === "confirmado") && (
+            {(agendamento.status === "agendado" || agendamento.status === "confirmado" || agendamento.status === "sala_de_espera") && (
               <Button size="sm" onClick={() => acionar("em_andamento")} disabled={atualizar.isPending}>
                 Iniciar
               </Button>

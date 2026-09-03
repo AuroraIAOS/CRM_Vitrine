@@ -5,6 +5,7 @@ import {
   useClientesParaSelecao,
   useCriarAgendamento,
   useRecursos,
+  useMarcadores,
   useServicos,
   usePlanosClienteAtivos,
   mensagemErroAgendamento,
@@ -40,11 +41,13 @@ export function NovoAtendimentoForm({
   const { data: clientes } = useClientesParaSelecao();
   const { data: servicos } = useServicos();
   const { data: recursos } = useRecursos();
+  const { data: marcadores } = useMarcadores();
   const criar = useCriarAgendamento();
 
   const [clienteId, setClienteId] = useState("");
   const [profissionalId, setProfissionalId] = useState(profissionalIdPadrao ?? "");
   const [recursoId, setRecursoId] = useState("");
+  const [marcadorId, setMarcadorId] = useState("");
   const [servicoId, setServicoId] = useState("");
   const [planoClienteId, setPlanoClienteId] = useState("");
   const { data: planosCliente } = usePlanosClienteAtivos(clienteId || undefined);
@@ -80,6 +83,7 @@ export function NovoAtendimentoForm({
               clienteId,
               profissionalId,
               recursoId: recursoId || undefined,
+              marcadorId: marcadorId || undefined,
               inicio: inicioLocal.toISOString(),
               fim: fimLocal.toISOString(),
               observacoes: observacoes || undefined,
@@ -93,6 +97,7 @@ export function NovoAtendimentoForm({
                 setClienteId("");
                 setServicoId("");
                 setPlanoClienteId("");
+                setMarcadorId("");
                 setObservacoes("");
                 onCriado();
               },
@@ -179,7 +184,7 @@ export function NovoAtendimentoForm({
 
           {recursos && recursos.length > 0 && (
             <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-medium text-secondary-foreground">Sala/recurso (opcional)</label>
+              <label className="text-[11px] font-medium text-secondary-foreground">Sala/cadeira (opcional)</label>
               <select
                 className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
                 value={recursoId}
@@ -189,6 +194,24 @@ export function NovoAtendimentoForm({
                 {recursos.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {marcadores && marcadores.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium text-secondary-foreground">Marcador (opcional)</label>
+              <select
+                className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
+                value={marcadorId}
+                onChange={(e) => setMarcadorId(e.target.value)}
+              >
+                <option value="">Sem marcador</option>
+                {marcadores.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nome}
                   </option>
                 ))}
               </select>

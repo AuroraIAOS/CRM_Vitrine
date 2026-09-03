@@ -18,7 +18,7 @@
 | 03.1 | Evolution GO como módulo pago | (fora de onda) | Opus | ⏸️ ADIADA |
 | 03.2 | Uniformidade do repositório | Etapa 1 do roteiro | Sonnet | ✅ CONCLUÍDA |
 | 03.3 | Divisão por rota + fontes auto-hospedadas | Onda 1 | Sonnet | ✅ CONCLUÍDA |
-| 03.4 | Agendamento: espera, marcadores e cadeiras | Onda 1 | Sonnet | ⬜ não iniciada |
+| 03.4 | Agendamento: espera, marcadores e cadeiras | Onda 1 | Sonnet | ✅ CONCLUÍDA |
 | 03.5 | Ações dos usuários + consentimento de imagem | Onda 1 · P-sub | Opus | ⬜ não iniciada |
 | 03.6 | Catálogo: faces, unidade e semente SIGTAP | Onda 2 | Sonnet | ⬜ não iniciada |
 | 03.7 | Odontograma | Onda 2 · P-sub | Opus | ⬜ não iniciada |
@@ -39,7 +39,7 @@
 | 03.22 | Implantação da UX Versão 03 | Etapa 3 do roteiro | Sonnet | ⬜ não iniciada |
 | 03.23 | Portão de segurança adversarial do MVP | Etapa 4 do roteiro · **PORTÃO COMPLETO** | Opus | ⬜ não iniciada |
 
-**Progresso: 3 de 24 concluídas (03.0, 03.2, 03.3) · 1 adiada (03.1) · 20 restantes.** Três portões completos aguardam (03.9, 03.15, 03.23) — nenhum deles é executado sem bench isolado, e nenhum termina em merge por conta do CODE (`CLAUDE.md` §13).
+**Progresso: 4 de 24 concluídas (03.0, 03.2, 03.3, 03.4) · 1 adiada (03.1) · 19 restantes.** Três portões completos aguardam (03.9, 03.15, 03.23) — nenhum deles é executado sem bench isolado, e nenhum termina em merge por conta do CODE (`CLAUDE.md` §13).
 
 ---
 
@@ -138,6 +138,7 @@ Esforço máximo do /goal: 3 tentativas
 Escalonamento de LLM: Sonnet nas 2 primeiras; Opus na última.
 Se esgotar: parar e emitir relatório curto.
 CHANGELOG: **+0.1**
+Status: ✅ CONCLUÍDA — executada em 2026-09-03 (Sonnet, `[Goal]`, uma tentativa). Migration `040_agenda_sala_de_espera_marcadores.sql` aplicada em produção contra 600 agendamentos reais: `sala_de_espera` no `CHECK` (buscado por catálogo, não suposto — o Postgres reescreve `IN (...)` como `= ANY (ARRAY[...])`), tabela `marcadores` nova com FK composta por `account_id` desde a origem, "cadeiras" reaproveitando `recursos`/`horarios_recursos` já existentes sem tabela nova. Seis provas por SQL real em `BEGIN...ROLLBACK` (zero resíduo): CHECK aceita/recusa, sobreposição continua tratando `sala_de_espera` como ocupando agenda, marcador associado, **FK composta recusa marcador de outra conta**, `ON DELETE SET NULL (marcador_id)` preserva `account_id`. Auditoria `fks_sem_isolamento_de_conta()` zero linhas. Achado corrigido pela varredura de literais: o "Check-in" do Balcão conflava confirmação prévia com chegada física (`agendado→confirmado`); agora é `→sala_de_espera`, com lista real de espera na tela. Detalhe completo em `docs/00_PLANO_E_CRITERIOS.md`.
 
 ### Subetapa 03.5 — Ações dos usuários + consentimento de imagem [Goal] [Manual] [LLM: Opus] · P-sub
 Objetivo: itens 8 e 6, os dois mais baratos de maior valor comercial da rodada, porque o dado já está no banco. Item 8: relatório "Ações dos usuários" sobre `aba_health.log_acesso`, **visível apenas ao `owner`**. Item 6: consentimento de imagem visível na ficha, travando publicação — `aba_health.consentimentos` já existe e nunca teve tela.

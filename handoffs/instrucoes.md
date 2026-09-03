@@ -616,6 +616,13 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Regra que fica:** "esta rota é a porta de entrada, deixa eager" é hipótese, não conclusão — pesar por pacote (`generateBundle` do Rollup, `c.modules` de cada chunk) antes de decidir qual rota fica fora do `React.lazy()`. Vale para qualquer subetapa futura que mexer no `router.tsx`.
 - **Fonte:** Subetapa 03.3, 2026-09-03.
 
+### `pg_get_constraintdef()` reescreve `CHECK (col IN (...))` como `= ANY (ARRAY[...])` — buscar o CHECK por catálogo, nunca supor o nome ou o texto
+- **Gatilho:** Subetapa 03.4, ao acrescentar `sala_de_espera` ao `CHECK` de `aba_scheduling.agendamentos.status`. A migration `009` criou o `CHECK` inline (`status TEXT ... CHECK (status IN (...))`), sem `CONSTRAINT` nomeado — o nome que o Postgres gera sozinho para esse padrão não é documentado como estável entre versões, e supor `agendamentos_status_check` de cabeça teria 50% de chance de acertar por sorte de convenção, não por garantia.
+- **O que a medição mostrou:** consultando `pg_get_constraintdef(oid)` do constraint real, o texto devolvido é `CHECK ((status = ANY (ARRAY['agendado'::text, 'confirmado'::text, ...])))` — o Postgres reescreveu o `IN (...)` do DDL original como `= ANY (ARRAY[...])` na hora de armazenar. Um `WHERE ... LIKE '%IN%'` para achar o constraint teria devolvido zero linhas, e a migration falharia silenciosamente em achar o que precisava dropar (ou, pior, dropar o constraint errado se o filtro fosse frouxo demais).
+- **Ação:** buscar pelo nome da COLUNA no texto da definição (`pg_get_constraintdef(oid) LIKE '%status%'`), nunca pela sintaxe do operador — a coluna sobrevive à reescrita, o operador não. Recriar com `CONSTRAINT` nomeado explicitamente, para a próxima migration que precisar dele não repetir a busca.
+- **Regra que fica:** ao escrever uma migration que precisa alterar um `CHECK` criado sem nome explícito em migration anterior, nunca confiar em como o SQL original foi escrito — ler `pg_get_constraintdef()` de verdade antes de montar o filtro de busca ou o `DROP CONSTRAINT`.
+- **Fonte:** Subetapa 03.4, 2026-09-03.
+
 ---
 
 ## 6. Armadilhas conhecidas (não repetir)
