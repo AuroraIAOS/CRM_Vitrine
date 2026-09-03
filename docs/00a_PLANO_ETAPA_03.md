@@ -56,6 +56,18 @@ Portão de entrada: `HANDOFF_UPGRADE.md` preenchido, MVP v01 no ar e 100% verde 
 Portão de saída: os 26 itens entregues ou explicitamente reportados como inviáveis (item inviável se **reporta**, nunca se remove — `handoffs/HANDOFF_PLANO_MVP.md`); UX da Versão 03 implantada; portão adversarial do MVP executado com parecer registrado; `CHANGELOG.md` atualizado. Enquanto vermelho, as Etapas 5 a 7 do roteiro (teste em campo, lançamento, versionamentos futuros) não abrem.
 Observações: o roteiro de sete etapas decidido por Max em 2026-09-02 mapeia assim nas subetapas abaixo — Etapa 1 (uniformidade) = 03.2; Etapa 2 (os 26 itens) = 03.3 a 03.21, incluindo a 03.16.a; Etapa 3 (UX) = 03.22; Etapa 4 (adversarial) = 03.23. As Etapas 5 a 7 são planos futuros e não constam aqui. Trabalho conduzido no branch `etapa-03/plano-mvp-odontologico`, com `main` intocada — merge é ordem exclusiva de Max (`CLAUDE.md` §13).
 
+> ### ⏸️ PAUSA DA ETAPA 03 — sessão adicional `analise-ice` (2026-09-03)
+>
+> **A Etapa 03 está pausada na Subetapa 03.8, por ordem de Max, em 2026-09-03**, antes de qualquer linha de código dela. As sete subetapas concluídas (03.0, 03.2–03.7) continuam válidas e commitadas no branch `etapa-03/plano-mvp-odontologico`; nada foi desfeito.
+>
+> **Motivo:** Max localizou o **ICE Health System** (`https://help.icehealthsystems.com/` + canal de 32 vídeos no YouTube), um CRM odontológico documentado em nível de detalhe muito superior ao dos oito concorrentes do benchmark de 2026-08-31 — em especial no **odontograma** (dentes em SVG com face, raiz e região individualmente clicáveis; pop-up de detalhamento por dente com espaço próprio para trabalho e orçamento) e no **financeiro/orçamento**. Levantar isso agora é mais barato que descobri-lo depois: a 03.8 ainda não começou e a 03.7 acabou de fechar.
+>
+> **Como se retoma.** A pesquisa acontece numa **sessão própria, em branch próprio (`analise-ice`), restrita a `design/benchmark/`** — nenhum arquivo de `crm/`, `db/` ou `docs/` é tocado por ela sem passar por relatório de impacto aprovado por Max. A sequência acordada é: plano de ação → aprovação de Max → coleta (site + vídeos) → aprovação de Max sobre evidências e relatórios → **relatório de impacto** dizendo o que muda na Etapa 03 já executada → aprovação de Max → merge em `main` **ordenado por Max** (`CLAUDE.md` §13) → prompt de retomada da Etapa 03.
+>
+> **Expectativa declarada, não escondida:** o relatório de impacto provavelmente **reabre subetapas já marcadas `✅ CONCLUÍDA`**, com destaque para a **03.7 (odontograma)**, e redefine o desenho da **03.8 (orçamento)** antes de ela nascer. Reabrir subetapa concluída por decisão de Max é caminho previsto — o Status antigo não se apaga, ganha o registro da revisão ao lado.
+
+---
+
 ### As seis decisões do Plano de Ação (D1–D6)
 
 Tomadas em 2026-09-03, na sessão da Subetapa 03.0. As de Max estão datadas e nominadas; as do CODE trazem o raciocínio para poderem ser derrubadas.
@@ -200,6 +212,12 @@ Esforço máximo do /goal: 5 tentativas
 Escalonamento de LLM: Opus do início ao fim.
 Se esgotar: parar e emitir relatório curto.
 CHANGELOG: **+1.0**
+**⏸️ Aberta e pausada em 2026-09-03, antes da primeira linha de código** (ver o bloco de pausa no topo desta Etapa). Nada foi implementado e nada foi commitado; a subetapa segue **não iniciada** e por isso sem marcador de Status no título. O que ficou apurado, para a sessão que a retomar não pagar de novo o reconhecimento:
+
+- **Decisão de Max (2026-09-03):** o schema novo é **`aba_budget`**, chave de módulo **`budget`**, label "Orçamentos" — o décimo schema de módulo, a ser acrescentado à lista do `CLAUDE.md` §2 e a `access.modules`. Sujeita a revisão se a pesquisa `analise-ice` mudar o desenho da entidade.
+- **Decisão preliminar de Max sobre o PDF:** vista de impressão + `window.print()` (sem dependência nova, sem custo de bundle nem de precache), a reconfirmar depois das referências do ICE.
+- **As quatro dependências foram conferidas no repositório e todas sobreviveram:** `Marcacao.faces` (`crm/src/features/health/mapas.ts:246`), `projetarMarcacoes()` (`crm/src/features/health/odontograma.ts:196`), as colunas da migration `042` com os tetos 32/`dente`, 6/`sextante`, 2/`arcada`, e as seis operações de `aba_finance` em `011_aba_finance_operations.sql` (linhas 49/153/214/298/329/362).
+- **Achado de premissa, o sexto da Etapa 03** — registrado em `handoffs/instrucoes.md` §5 e em `docs/02_MODELO_DE_DADOS.md` §11.1: o `plano` de `plano · procedimento · dente · faces · valor` **não é** `aba_catalog.planos`.
 
 ### ONDA 3 — o núcleo de permissão
 
@@ -393,6 +411,7 @@ CHANGELOG: **+0.1**
 
 Lista completa e permanente em `docs/00_PLANO_E_CRITERIOS.md` → "Pendências vigiadas". Aqui só as que travam, informam ou nasceram de uma subetapa `03.n`.
 
+- [ ] **Pesquisa `analise-ice` — o ICE Health System como fonte de referência, e o retrabalho que ela vai gerar** — gatilho: **imediato**, em sessão e branch próprios (`analise-ice`), com a Etapa 03 pausada na Subetapa 03.8 (2026-09-03, ordem de Max). Escopo restrito a `design/benchmark/`: site de suporte (`https://help.icehealthsystems.com/`, todas as páginas) e canal de 32 vídeos no YouTube, com atenção especial ao **odontograma** (SVG com face/raiz/região clicáveis e pop-up de detalhamento por dente) e ao **financeiro/orçamento**. Saídas: `design/benchmark/fontes/ice.md`, capturas em `design/benchmark/capturas/ice/`, resumo incorporado ao `RELATORIO.md` §5(c) — que **já está desatualizado**, pois lista 24 itens de MVP onde hoje são 26. **Risco de não fazer agora:** a 03.8 nasce com um desenho de orçamento que a referência mais rica do mercado desmente, e a 03.7 fica congelada num odontograma sem face clicável — os dois elos centrais do produto odontológico. **Risco assumido ao fazer:** o relatório de impacto provavelmente reabre subetapas já `✅ CONCLUÍDA` (03.7 em primeiro lugar) e redesenha a 03.8. **O merge de `analise-ice` em `main` é ordem exclusiva de Max** (`CLAUDE.md` §13).
 - [ ] **Matriz Bronze/Prata/Ouro/Diamante — qual módulo e qual funcionalidade entra em cada nível** — gatilho: decisão de Max, no momento que ele julgar correto, e não antes. **Não é bloqueio da Etapa 03.** A Subetapa 03.9 constrói o *mecanismo* (a camada de plano consultada antes do atalho de `owner` em `access.can()`), que nasce com todos os níveis liberando tudo; preencher a matriz depois é dado, não código.
 - [x] **FECHADA em 2026-09-03 — Max autorizou.** `CLAUDE.md` §14 passou a nomear o CRM Sindcom como fonte de porte para comunicação externa por token, com o mesmo estatuto do Maximus. **A Subetapa 03.10 está desbloqueada.**
 - [x] **FECHADA em 2026-09-03 — Max decidiu: `Resumo do paciente` e `Prescrições de medicamento` entram como itens NOVOS do MVP** (itens 25 e 26). A lista fechada do benchmark foi reaberta por ele, com registro no cabeçalho da Etapa 2 do roteiro. As outras 12 abas do dossiê são interface sobre dado já existente e não ampliam escopo. Prescrições é a única peça com tabela nova em `aba_health`, e por isso leva o regime completo do schema e P-sub próprio. **A Subetapa 03.16.a está desbloqueada quanto a escopo.**
