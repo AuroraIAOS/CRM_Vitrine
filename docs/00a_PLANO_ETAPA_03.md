@@ -21,7 +21,7 @@
 | 03.4 | Agendamento: espera, marcadores e cadeiras | Onda 1 | Sonnet | ✅ CONCLUÍDA |
 | 03.5 | Ações dos usuários + consentimento de imagem | Onda 1 · P-sub | Sonnet (Opus indisponível) | ✅ CONCLUÍDA |
 | 03.6 | Catálogo: faces, unidade e semente SIGTAP | Onda 2 | Sonnet | ✅ CONCLUÍDA |
-| 03.7 | Odontograma | Onda 2 · P-sub | Opus | ⬜ não iniciada |
+| 03.7 | Odontograma | Onda 2 · P-sub | Opus | ✅ CONCLUÍDA |
 | 03.8 | Orçamento como entidade | Onda 2 · P-sub | Opus | ⬜ não iniciada |
 | 03.9 | Multiunidade + trava de plano por módulo | Onda 3 · **PORTÃO COMPLETO** | Opus | ⬜ não iniciada |
 | 03.10 | Infraestrutura de token externo | Onda 4 · P-sub | Opus | ⬜ não iniciada |
@@ -31,6 +31,7 @@
 | 03.14 | Encaminhamento com contrarreferência | Onda 4 · P-sub | Opus | ⬜ não iniciada |
 | 03.15 | Portão adversarial da comunicação externa | Onda 4 · **PORTÃO COMPLETO** | Opus | ⬜ não iniciada |
 | 03.16 | Alertas clínicos derivados da anamnese | Onda 5 · P-sub | Opus | ⬜ não iniciada |
+| 03.16.a | Dossiê do paciente: três famílias de abas com permissão por módulo | Onda 5 · P-sub | Opus | ⬜ não iniciada |
 | 03.17 | Painel como lista de tarefas + estados vazios + exportação | Onda 5 | Sonnet | ⬜ não iniciada |
 | 03.18 | Régua de cobrança, campanhas, template e cota | Onda 5 | Sonnet | ⬜ não iniciada |
 | 03.19 | Link público de agendamento | Onda 5 · P-sub | Sonnet | ⬜ não iniciada |
@@ -39,7 +40,7 @@
 | 03.22 | Implantação da UX Versão 03 | Etapa 3 do roteiro | Sonnet | ⬜ não iniciada |
 | 03.23 | Portão de segurança adversarial do MVP | Etapa 4 do roteiro · **PORTÃO COMPLETO** | Opus | ⬜ não iniciada |
 
-**Progresso: 6 de 24 concluídas (03.0, 03.2, 03.3, 03.4, 03.5, 03.6) · 1 adiada (03.1) · 17 restantes.** Três portões completos aguardam (03.9, 03.15, 03.23) — nenhum deles é executado sem bench isolado, e nenhum termina em merge por conta do CODE (`CLAUDE.md` §13).
+**Progresso: 7 de 25 concluídas (03.0, 03.2, 03.3, 03.4, 03.5, 03.6, 03.7) · 1 adiada (03.1) · 17 restantes** — a 03.16.a entrou em 2026-09-03, a pedido de Max, pela convenção de sufixo de letra que insere sem renumerar. Três portões completos aguardam (03.9, 03.15, 03.23) — nenhum deles é executado sem bench isolado, e nenhum termina em merge por conta do CODE (`CLAUDE.md` §13).
 
 ---
 
@@ -177,6 +178,12 @@ Esforço máximo do /goal: 5 tentativas
 Escalonamento de LLM: Opus do início ao fim — toca `aba_health` e introduz dependência pesada.
 Se esgotar: parar e emitir relatório curto.
 CHANGELOG: **+1.0**
+Status: ✅ CONCLUÍDA — executada em 2026-09-03 (Opus do início ao fim, `[Goal]`, uma tentativa). **Nenhuma migration** — a restrição 3 foi cumprida ao pé da letra: grava em `aba_health.evolucoes.marcacoes`/`mapa_tipo`, criadas pela `025`, sem tabela, política ou função nova.
+**As três restrições:** (1) preguiça em dois níveis — chunk de entrada **160.212 → 160.263 B gzip (+51 B)**, odontograma isolado em **414.738 B gzip**, e a rede provando no navegador que ele só viaja ao abrir a aba; (2) **a restrição da tradução estava desatualizada** — a 2.4.0 tem 12 idiomas com `pt-br` e **907/907 chaves** de vocabulário odontológico brasileiro correto, restando três strings em inglês que a biblioteca não permite sobrescrever (sem API de override), declaradas como resíduo; (3) adaptador com projeção legível por dente (com `faces`, que a 03.8 consome) + item sentinela com o payload podado, invisível por construção a todo leitor anterior.
+**Estados:** `existente`, `a_realizar` e `executado` — este último **derivado, nunca digitado**. Dentição mista veio de graça: a biblioteca modela decídua como substrato das mesmas 32 posições FDI, e a hipótese de estender o catálogo para 51–85 foi derrubada pela medição antes de virar código.
+**Cinco achados da medição, três com custo real evitado:** o CSS da biblioteca sequestraria `--card`/`--muted`/`--accent` do app (escopado offline com PostCSS); o precache do PWA desfazia a divisão por rota, **4.404 → 1.124 KiB**, com guarda que quebra o build acima de 1.400 KiB; o singleton de módulo vazava a boca de um paciente para o seguinte, e `importStatus({})` não limpa `globals` — inclusive `edentulous`, que é achado clínico; a suíte ficou **27/27 verde com a arcada em 0px de largura**, porque media a nossa projeção e não o desenho; e a barra do aplicativo de demonstração foi escondida **por governança** — os botões de exportar baixavam o prontuário em um clique, que é o que a **03.13** vai construir com token e segunda prova de identidade.
+**Mudança de tela pedida por Max durante a execução:** os quatro mapas viraram **abas do mesmo bloco** de Anamnese/Evoluções/Anexos/Consentimentos, em largura cheia — `.chart-column` passou de 458px para 726px e o layout nativo da biblioteca cabe sem reescrita de grade.
+**P-sub:** 6 casos de ataque novos e permanentes (**30/30** em `05_aba_health.spec.ts`), privilégio de coluna medido (`marcacoes`/`mapa_tipo` sem `SELECT` para `authenticated` e `anon`), `get_advisors` sem achado novo, e `npm audit` sem nenhuma vulnerabilidade vinda da cadeia nova. **Evidência em navegador real: 37/37**, com ciclo clínico completo (abrir → marcar → salvar → recarregar → trocar de paciente) e limpeza por diferença de conjunto. Detalhe completo em `docs/00_PLANO_E_CRITERIOS.md`.
 
 ### Subetapa 03.8 — Orçamento como entidade [Goal] [Manual] [LLM: Opus] · P-sub
 Objetivo: item 1, **o mais crítico do MVP inteiro** — é o elo sem o qual o produto não é odontológico. Schema novo entre `aba_catalog` e `aba_finance`: cabeçalho + linhas (`plano · procedimento · dente · faces · valor`), estados `rascunho → aprovado`, PDF "Plano de Tratamento" com duas assinaturas, e a aprovação gerando lançamento.
@@ -270,6 +277,23 @@ Evidência: alerta nascendo e sumindo com a mudança da resposta + casos de ataq
 Esforço máximo do /goal: 5 tentativas · Escalonamento: Opus do início ao fim.
 CHANGELOG: **+1.0**
 
+### Subetapa 03.16.a — Dossiê do paciente: três famílias de abas com permissão por módulo [Goal] [Manual] [LLM: Opus] · P-sub
+Objetivo: **pedido de Max de 2026-09-03**, registrado durante a execução da 03.7 e provisionado aqui em vez de executado na hora. A ficha do paciente deixa de ser só clínica e passa a reunir, no mesmo bloco de abas que a 03.7 unificou, **três famílias**: **Saúde** (Resumo, Anamnese, Mapa facial, Mapa corporal, Odontograma, Acupuntura, Evoluções, Anexos, Consentimentos, Prescrições), **Organizacional** (agendamentos do paciente, alertas ligados a ele, mensagens salvas, notas e observações) e **Financeiro** (contrato, plano, serviços, faturas, pagamentos, atrasos). Duas abas são novas de conteúdo: **Resumo**, a aba inicial que consolida dados sociais, alergias, riscos e planos vigentes; e **Prescrições**, registro de prescrição de medicamento.
+Levantamento já feito (2026-09-03, `information_schema` do projeto de produção), para a subetapa não nascer sobre suposição: **12 das 14 abas são interface sobre dado que já existe** — `aba_scheduling.agendamentos`, `aba_messaging.conversas`/`mensagens`, `aba_people.pessoa_notas`/`pessoa_tags`, e as oito tabelas de `aba_finance` (`contratos`, `planos_cliente`, `faturas`, `itens_fatura`, `pagamentos`, `parcelas_contrato`, `saldos_plano`, `extrato_plano`). **Resumo** é derivação, sem tabela nova. **Prescrições não tem nenhuma tabela** e é a única peça que exige migration.
+Conclusão: um recepcionista abre a ficha e vê as abas organizacionais e financeiras, e **não consegue ler prontuário nem prescrever — pela recusa do banco, não por aba escondida**; um dentista com alcance clínico vê as abas de saúde e **não vê a situação financeira do paciente**; o proprietário vê tudo, e a tela **diz** que ele vê tudo em vez de fingir um controle que não existe para ele.
+Qualidade — **quatro travas, e a primeira é a que decide se a subetapa vale alguma coisa:**
+  1. **Esconder aba não é controle de acesso — é cortina.** Cada aba precisa ser sustentada por recusa no banco: as de saúde já são, por `aba_health.pode_acessar()` + o regime de coluna e log; as financeiras passam por `access.can('finance', ação)`; as organizacionais, pelo módulo correspondente. O teste que prova isso não é abrir a tela: é chamar a consulta de cada aba **direto pela API**, com o papel que não deveria alcançá-la, e exigir conjunto vazio ou `42501`.
+  2. **`access.can()` devolve TRUE para `owner` antes de consultar a tabela** (`003_core_access.sql:162`, medido duas vezes neste projeto). O proprietário enxerga toda aba, e isso é desenho, não defeito — mas a tela não pode oferecer a ele um interruptor que não faz nada, erro que a 02.12 já pagou uma vez no grid de módulos. Onde o atalho vale, a tela informa; não simula.
+  3. **Prescrição de medicamento é entidade clínica nova em `aba_health`** — logo nasce com o regime completo do schema (RLS por `pode_acessar()`, log de leitura e de escrita, revogação de coluna, imutabilidade depois de assinada) e com **P-sub próprio**. E é responsabilidade profissional: prescrever exige o atributo profissional ativo, nunca papel administrativo.
+  4. **A separação "dentista não vigia o financeiro" é nova em natureza.** Até aqui o produto separava por módulo e por alcance clínico; nunca precisou esconder o financeiro de quem tem alcance clínico. Conferir se `access.module_permissions` já expressa isso para `agent` ou se falta granularidade — e, se faltar, **reportar antes de inventar**.
+Dependência de ordem: **depois da 03.9**, sem exceção. A 03.9 reescreve `access.can()` para multiunidade e trava de plano; montar o dossiê antes obrigaria a reauditar aba por aba depois — exatamente o retrabalho que a decisão D1 de Max existiu para evitar. E depois da 03.8 e da 03.16, que produzem o conteúdo das abas de orçamento/financeiro e dos alertas do Resumo.
+Decisão pendente de Max, a responder antes de abrir a subetapa: **Prescrições e Resumo não estão entre os 24 itens do MVP** (`design/benchmark/RELATORIO.md` §5c, lista fechada e revisada por ele em 2026-09-02). `CLAUDE.md` §15 proíbe expandir escopo por conta própria. Entram como item novo do MVP, ou vão para `docs/07_BACKLOG_COMERCIAL.md` como `+1.0` posterior? As outras 12 abas são reorganização de interface sobre dado existente e **não** ampliam escopo.
+Evidência: para cada uma das três famílias, a consulta da aba disparada direto pela API com o papel que não deveria alcançá-la, devolvendo vazio ou `42501` — com controle positivo provando que o papel certo continua alcançando; mais os casos de ataque novos e permanentes na suíte e o ciclo de prescrição (criar → assinar → tentar reescrever) se a decisão de escopo a incluir.
+Esforço máximo do /goal: 5 tentativas
+Escalonamento de LLM: Opus do início ao fim — toca `aba_health` e o núcleo de permissão.
+Se esgotar: parar e emitir relatório curto.
+CHANGELOG: **+1.0**
+
 ### Subetapa 03.17 — Painel como lista de tarefas + estados vazios + exportação [Goal] [Manual] [LLM: Sonnet]
 Objetivo: itens 12 e 17 — painel como lista de tarefas acionáveis (confirmar / reagendar / receber), **não de gráficos**, e estados vazios instrutivos mais exportação para Excel.
 Conclusão: cada pendência do painel tem o seu botão e leva à ação; nenhuma tela vazia sem instrução do que fazer.
@@ -348,6 +372,8 @@ Lista completa e permanente em `docs/00_PLANO_E_CRITERIOS.md` → "Pendências v
 
 - [ ] **Matriz Bronze/Prata/Ouro/Diamante — qual módulo e qual funcionalidade entra em cada nível** — gatilho: decisão de Max, no momento que ele julgar correto, e não antes. **Não é bloqueio da Etapa 03.** A Subetapa 03.9 constrói o *mecanismo* (a camada de plano consultada antes do atalho de `owner` em `access.can()`), que nasce com todos os níveis liberando tudo; preencher a matriz depois é dado, não código.
 - [x] **FECHADA em 2026-09-03 — Max autorizou.** `CLAUDE.md` §14 passou a nomear o CRM Sindcom como fonte de porte para comunicação externa por token, com o mesmo estatuto do Maximus. **A Subetapa 03.10 está desbloqueada.**
+- [ ] **Escopo de "Resumo do paciente" e "Prescrições de medicamento" (Subetapa 03.16.a)** — gatilho: decisão de Max. As duas abas nasceram do pedido dele de 2026-09-03 e **não estão entre os 24 itens** da lista fechada do benchmark; `CLAUDE.md` §15 impede o CODE de decidir sozinho. Pergunta a responder: entram como item novo do MVP, ou vão para `docs/07_BACKLOG_COMERCIAL.md` como `+1.0`? As outras 12 abas do dossiê são interface sobre dado que já existe (medido em 2026-09-03) e não ampliam escopo. **Prescrições é o único item que exige tabela nova em `aba_health`**, com o regime completo do schema e P-sub próprio.
+- [ ] **Granularidade de permissão para "dentista não vê o financeiro do paciente" (Subetapa 03.16.a)** — gatilho: abertura daquela subetapa. Até hoje o produto separa por módulo (`access.can`) e por alcance clínico (`aba_health.pode_acessar`), e **nunca precisou esconder o financeiro de quem tem alcance clínico**. Conferir se `access.module_permissions` já expressa isso para `agent`; se não expressar, reportar a Max antes de inventar mecanismo — e lembrar que `access.can()` devolve TRUE para `owner` antes de consultar a tabela.
 - [ ] **Colisões com `CLAUDE.md` §15 encontradas no benchmark (diretriz P1)** — gatilho: decisão de Max sobre escopo. Duas: agente de IA 24h no WhatsApp e certificação SBIS/CFM (item 33, futuro). Reportadas, não planejadas; nenhuma das duas está em subetapa da Etapa 03. O odontograma da 03.7 traz HL7 FHIR R4 de graça, que é vocabulário útil se a certificação entrar um dia.
 - [x] **FECHADA na Subetapa 03.0 — virou pré-requisito, não melhoria (diretriz P2).** A divisão por rota deixou de ser acabamento e virou pré-requisito da 03.7 (odontograma, 426 KB gzip). Institucionalizada como Subetapa 03.3, **executada em 2026-09-03**.
 - [ ] **Consentimento de uso de imagem trava a exibição, não o envio — e trava para todos** — gatilho: prova de fogo com profissional real. Decisão de Max (2026-08-08): manter como está. Se a 03.5 confirmar o incômodo, a correção certa não é liberar geral: é separar "posso documentar" (consentimento de tratamento de dados) de "posso divulgar" (uso de imagem, para exportação e publicação). **Candidata a considerar ao desenhar a Subetapa 03.5**, sem que isso mude a decisão já tomada.

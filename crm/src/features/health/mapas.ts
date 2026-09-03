@@ -134,6 +134,38 @@ export const QUADRANTES_FDI: number[][] = [
   [31, 32, 33, 34, 35, 36, 37, 38],
 ];
 
+/**
+ * OS TRÊS ESTADOS DO ODONTOGRAMA (Subetapa 03.7) — e por que eles
+ * substituíram o vocabulário de achado da 02.9.
+ *
+ * A 02.9 usava `restauracao`/`carie`/`em_tratamento`/`concluido`, que
+ * misturava duas coisas: o ACHADO (o que o dente tem) e o MOMENTO (em
+ * que ponto do tratamento aquilo está). Com a biblioteca da 03.7 o
+ * achado passa a ser responsabilidade dela — ela distingue cárie por
+ * face, material de restauração, diagnóstico pulpar, prótese e ortodontia
+ * com um vocabulário que nenhum catálogo nosso alcançaria. Ao mapa resta
+ * o eixo que o Objetivo do item 2 nomeia, que é o do TEMPO:
+ *
+ *   · `existente`  — está na boca hoje (carta de status da biblioteca);
+ *   · `a_realizar` — planejado e ainda não feito (a carta de plano diverge
+ *                    da de status naquele dente);
+ *   · `executado`  — a sessão assinada anterior marcou como `a_realizar` e
+ *                    esta já traz o achado no status.
+ *
+ * `executado` é DERIVADO, nunca digitado — mesma regra que a 03.16 aplica
+ * aos alertas de anamnese. Ninguém marca "executado" à mão: ele nasce da
+ * comparação entre o que a sessão anterior planejou e o que esta sessão
+ * encontra. Marcar à mão permitiria declarar feito o que não foi.
+ *
+ * TROCA SEGURA, MEDIDA ANTES: `select` sobre `aba_health.evolucoes`
+ * agrupado por `mapa_tipo` devolveu 2 linhas de odontograma com ZERO
+ * marcações em produção (a única linha com marcação real é `facial`).
+ * Nenhum dado existente usa o vocabulário antigo, então trocá-lo não é
+ * migração de dado — é definição de um vocabulário que nunca chegou a ser
+ * usado. Se houvesse linha gravada, a regra de `handoffs/instrucoes.md`
+ * ("estado novo num CHECK exige revisar quem filtrava pelo estado
+ * antigo") pediria conversão, não substituição.
+ */
 const ODONTOGRAMA: MapaClinicoDef = {
   chave: "odontograma",
   rotulo: "Odontograma",
@@ -143,10 +175,9 @@ const ODONTOGRAMA: MapaClinicoDef = {
   // o tipo; `MapaClinico` desvia deste caso.
   viewBox: "0 0 0 0",
   estados: [
-    { chave: "restauracao", rotulo: "restauração", ...AZUL },
-    { chave: "carie", rotulo: "cárie", ...TERRACOTA },
-    { chave: "em_tratamento", rotulo: "em tratamento", ...TAN },
-    { chave: "concluido", rotulo: "concluído", ...SAGE },
+    { chave: "existente", rotulo: "existente", ...AZUL },
+    { chave: "a_realizar", rotulo: "a realizar", ...TAN },
+    { chave: "executado", rotulo: "executado", ...SAGE },
   ],
   regioes: QUADRANTES_FDI.flat().map((fdi) => ({
     chave: String(fdi),
@@ -199,6 +230,22 @@ export type Marcacao = {
   rotulo: string;
   estado: string;
   nota: string;
+  /**
+   * Faces do dente alcançadas pelo achado — só o odontograma preenche.
+   * Vocabulário da biblioteca: `mesial`, `distal`, `buccal`, `lingual`,
+   * `occlusal`, `incisal`, `labial`, `palatal`, `subcrown`.
+   *
+   * OPCIONAL DE PROPÓSITO, e não por comodidade: face é conceito de
+   * dente. Mapa facial, corporal e de acupuntura marcam região, que não
+   * tem face nenhuma — dar-lhes um `faces: []` obrigatório seria afirmar
+   * "este mapa tem faces e nenhuma foi marcada", que é falso. `undefined`
+   * ali diz a verdade: a pergunta não se aplica.
+   *
+   * É POR ESTE CAMPO que a Subetapa 03.8 lê dente e face para montar a
+   * linha do orçamento (`plano · procedimento · dente · faces · valor`),
+   * e é ele que a `quantidade_maxima` por unidade da 03.6 valida.
+   */
+  faces?: string[];
 };
 
 export function ehTipoMapa(valor: string | null | undefined): valor is TipoMapa {
@@ -226,12 +273,18 @@ export function marcacoesValidas(tipo: TipoMapa, bruto: unknown): Marcacao[] {
     const regiao = typeof m.regiao === "string" ? m.regiao : "";
     const estado = typeof m.estado === "string" ? m.estado : "";
     if (!regiaoDoMapa(tipo, regiao) || !estadoDoMapa(tipo, estado)) return [];
+    // `faces` atravessa a validação em vez de ser recriado: quem grava é
+    // o adaptador do odontograma, que já limitou os valores ao
+    // vocabulário da biblioteca. Aqui só se garante que é array de
+    // string — o mesmo cuidado que o resto da função tem com `nota`.
+    const faces = Array.isArray(m.faces) ? m.faces.filter((f): f is string => typeof f === "string") : undefined;
     return [
       {
         regiao,
         estado,
         rotulo: regiaoDoMapa(tipo, regiao)!.rotulo,
         nota: typeof m.nota === "string" ? m.nota : "",
+        ...(faces && faces.length > 0 ? { faces } : {}),
       },
     ];
   });

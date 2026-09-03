@@ -497,6 +497,175 @@ describe("aba_health — marcação de mapa clínico segue o mesmo regime (Subet
 });
 
 /**
+ * Subetapa 03.7 — P-sub do odontograma.
+ *
+ * O QUE MUDA O NÍVEL DE RISCO E EXIGE CASOS NOVOS. Até a 02.9, uma
+ * marcação era `{regiao, rotulo, estado, nota}` — quatro campos rasos
+ * sobre uma região de um mapa esquemático. Com o odontograma, a MESMA
+ * coluna passa a guardar o quadro clínico da boca inteira: cárie por
+ * face, diagnóstico pulpar, diagnóstico apical, endodontia, prótese,
+ * ortodontia, sondagem periodontal e o plano de tratamento proposto. O
+ * regime de proteção não mudou; o valor do que ele protege, sim. Estes
+ * casos existem para que a fronteira continue provada com a carga nova,
+ * e não apenas com a carga antiga que passou nos testes de 2026-08.
+ *
+ * O terceiro caso é o mais importante e o menos óbvio: ele guarda a
+ * DECISÃO DE DESENHO desta subetapa. O payload da biblioteca é um
+ * OBJETO; a coluna exige ARRAY (migration 025). A ponte é um item
+ * sentinela dentro do array. Se uma sessão futura resolver "simplificar"
+ * gravando o objeto direto, o banco recusa — e é este teste que garante
+ * que a recusa continue existindo e que ninguém a afrouxe sem perceber
+ * que está mexendo na invariante da coluna.
+ */
+describe("aba_health — odontograma segue o mesmo regime da marcação (Subetapa 03.7)", () => {
+  const admin = adminClient();
+  let ctx: TestContext;
+  let clienteId: string;
+  let profissionalId: string;
+  let evolucaoId: string;
+
+  /**
+   * Recorte fiel do payload real de `getStatusChart()` v2.20, já podado:
+   * dois dentes com achado, um deles decíduo (dentição mista) e um plano
+   * divergente. É dado clínico de verdade em miniatura — o teste não
+   * prova nada se a carga for `{a: 1}`.
+   */
+  const PAYLOAD_ODONTOGRAMA = {
+    version: "2.20",
+    globals: { wisdomVisible: true, showBase: true, occlusalVisible: true, showHealthyPulp: false, edentulous: false },
+    teeth: {
+      "16": { toothSelection: "tooth-base", caries: ["occlusal", "mesial"], cariesActiveDepth: "deep", note: "dor à percussão" },
+      "55": { toothSelection: "milktooth", caries: ["distal"] },
+    },
+    plan: {
+      "16": { toothSelection: "tooth-base", fillingSurfaces: ["occlusal", "mesial"], fillingMaterial: "composite" },
+    },
+  };
+
+  const MARCACOES_ODONTOGRAMA = [
+    { regiao: "16", rotulo: "Dente 16", estado: "a_realizar", nota: "Cárie: oclusal, mesial", faces: ["mesial", "occlusal"] },
+    { regiao: "55", rotulo: "Dente 55", estado: "existente", nota: "Dente decíduo", faces: ["distal"] },
+    { regiao: "estado_nativo", rotulo: "Estado nativo do odontograma", estado: "estado_nativo", nota: "", payload: PAYLOAD_ODONTOGRAMA },
+  ];
+
+  beforeAll(async () => {
+    ctx = await loadContext();
+    clienteId = await criarClienteFixture(admin, ctx.accountId, "Cliente Fictício Odontograma 03.7");
+
+    const { data: profissional, error: profErr } = await admin
+      .schema("aba_scheduling")
+      .from("profissionais")
+      .insert({ account_id: ctx.accountId, nome_exibicao: "Profissional Fictício Odontograma 03.7", ativo: false })
+      .select("id")
+      .single();
+    if (profErr) throw profErr;
+    profissionalId = profissional.id;
+
+    const { data: evolucao, error } = await admin
+      .schema("aba_health")
+      .from("evolucoes")
+      .insert({
+        account_id: ctx.accountId,
+        cliente_id: clienteId,
+        profissional_id: profissionalId,
+        avaliacao: "Sessão com odontograma",
+        mapa_tipo: "odontograma",
+        marcacoes: MARCACOES_ODONTOGRAMA,
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+    evolucaoId = evolucao.id;
+  });
+
+  afterAll(async () => {
+    // DELETE completo, nunca desativação — a lição de resíduo de fixture
+    // já custou uma subetapa neste projeto (`instrucoes.md` §5).
+    await admin.schema("aba_health").from("log_acesso").delete().eq("cliente_id", clienteId);
+    await admin.schema("aba_health").from("evolucoes").delete().eq("id", evolucaoId);
+    await admin.schema("aba_scheduling").from("profissionais").delete().eq("id", profissionalId);
+    await apagarCliente(admin, clienteId);
+  });
+
+  it("ATAQUE: o quadro clínico da boca não sai por select direto — nem para o owner", async () => {
+    const owner = await clientAs("owner");
+    const { error } = await owner.schema("aba_health").from("evolucoes").select("marcacoes").eq("id", evolucaoId);
+    // O alvo aqui não é "a coluna está revogada" (a 02.9 já provava
+    // isso), é que o payload INTEIRO do odontograma herda a revogação
+    // sem que nada tenha sido acrescentado ao banco por esta subetapa.
+    expect(ehErroRls(error)).toBe(true);
+  });
+
+  it("ATAQUE: `select('*')` também não abre a porta — devolve 42501, não a linha sem a coluna", async () => {
+    const owner = await clientAs("owner");
+    const { error } = await owner.schema("aba_health").from("evolucoes").select("*").eq("id", evolucaoId);
+    expect(ehErroRls(error)).toBe(true);
+  });
+
+  it("ATAQUE: gravar o payload nativo como OBJETO é recusado — a coluna é array (guarda do desenho do envelope)", async () => {
+    const owner = await clientAs("owner");
+    const { error } = await owner
+      .schema("aba_health")
+      .from("evolucoes")
+      .update({ marcacoes: PAYLOAD_ODONTOGRAMA })
+      .eq("id", evolucaoId);
+    expect(error).not.toBeNull();
+    expect(error?.code).toBe("23514");
+  });
+
+  it("ATAQUE: agent sem alcance clínico não recebe o odontograma — nem o payload, nem os dentes", async () => {
+    const antes = await contarLog(admin, clienteId, ctx.userIds.agent, "leitura");
+
+    const agent = await clientAs("agent");
+    const { data, error } = await agent.schema("aba_health").rpc("ler_evolucoes", { p_cliente_id: clienteId });
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+    // Conjunto vazio E nenhuma linha de log: não houve leitura, então
+    // não há o que registrar. Log a mais aqui seria log mentindo.
+    expect(await contarLog(admin, clienteId, ctx.userIds.agent, "leitura")).toBe(antes);
+  });
+
+  it("CONTROLE POSITIVO: ler_evolucoes() devolve o payload íntegro e grava o log na mesma transação", async () => {
+    const antes = await contarLog(admin, clienteId, ctx.userIds.owner, "leitura");
+
+    const owner = await clientAs("owner");
+    const { data, error } = await owner.schema("aba_health").rpc("ler_evolucoes", { p_cliente_id: clienteId });
+    expect(error).toBeNull();
+    expect(data).toHaveLength(1);
+    expect(data![0].mapa_tipo).toBe("odontograma");
+
+    const marcacoes = data![0].marcacoes as typeof MARCACOES_ODONTOGRAMA;
+    const envelope = marcacoes.find((m) => m.regiao === "estado_nativo");
+    // Ida e volta sem perda: é isto que faz a marcação REAPARECER na
+    // sessão seguinte com cárie por face, e não só com o rótulo.
+    expect(envelope?.payload).toEqual(PAYLOAD_ODONTOGRAMA);
+    // E a projeção legível continua legível — é dela que a Subetapa 03.8
+    // vai tirar dente e face para a linha do orçamento.
+    expect(marcacoes.find((m) => m.regiao === "16")?.faces).toEqual(["mesial", "occlusal"]);
+
+    expect(await contarLog(admin, clienteId, ctx.userIds.owner, "leitura")).toBe(antes + 1);
+  });
+
+  it("ATAQUE: odontograma de sessão ASSINADA não se reescreve — histórico clínico não se conserta depois", async () => {
+    const owner = await clientAs("owner");
+    const { error: assinarErr } = await owner
+      .schema("aba_health")
+      .from("evolucoes")
+      .update({ travada: true })
+      .eq("id", evolucaoId);
+    expect(assinarErr).toBeNull();
+
+    const { error } = await owner
+      .schema("aba_health")
+      .from("evolucoes")
+      .update({ marcacoes: [] })
+      .eq("id", evolucaoId);
+    expect(error).not.toBeNull();
+    expect(error?.code).toBe("23514");
+  });
+});
+
+/**
  * Subetapa 02.12b — anamnese não grava pela metade.
  *
  * O defeito foi encontrado em uso real por Max: uma anamnese gravada com

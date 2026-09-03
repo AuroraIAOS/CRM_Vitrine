@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,31 @@ import {
   type ProntuarioEditavel,
 } from "./api";
 import { LISTA_MAPAS, MAPAS, ehTipoMapa, marcacoesValidas, type Marcacao, type TipoMapa } from "./mapas";
+import {
+  REGIAO_ESTADO_NATIVO,
+  itemEstadoNativo,
+  payloadDeMarcacoes,
+  regioesARealizar,
+  type PayloadOdontograma,
+} from "./odontograma";
+
+/**
+ * SEGUNDO NÍVEL DE PREGUIÇA — Subetapa 03.7.
+ *
+ * `/prontuario` já é rota preguiçosa desde a 03.3. Este `lazy()` aninhado
+ * existe porque `react-advanced-odontogram` pesa **436.343 B gzip
+ * medidos**, contra 11.070 B do chunk inteiro desta página. Deixá-lo
+ * junto do resto do prontuário cobraria 436 KB de todo mundo que abre uma
+ * ficha para ler anamnese, anexo ou consentimento — a maioria das
+ * aberturas — por um mapa que talvez nem seja consultado. Aqui ele só
+ * viaja quando alguém escolhe a aba "Odontograma".
+ *
+ * O `fallback` do `<Suspense>` não é um spinner: é a grade FDI leve da
+ * Subetapa 02.9 (3.023 B gzip), desenhando as marcações já gravadas em
+ * modo leitura. Quem abre o odontograma vê o estado do paciente
+ * imediatamente e ganha as ferramentas de edição quando o chunk chega.
+ */
+const OdontogramaClinico = lazy(() => import("./OdontogramaClinico"));
 
 const formatoData = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" });
 const formatoDataHora = new Intl.DateTimeFormat("pt-BR", {
@@ -32,14 +57,35 @@ const formatoDataHora = new Intl.DateTimeFormat("pt-BR", {
   minute: "2-digit",
 });
 
-const ABAS = [
+/**
+ * UMA FAIXA DE ABAS SÓ, para os oito conteúdos do paciente — decisão de
+ * Max de 2026-09-03, durante a Subetapa 03.7.
+ *
+ * Até aqui a tela era partida em duas colunas: mapa clínico à esquerda,
+ * com um seletor próprio de quatro botões, e as quatro abas de texto à
+ * direita. O odontograma expôs o custo desse arranjo com número: o
+ * componente precisa de ~1.030px para desenhar a arcada ao lado do
+ * painel de controles, e a coluna esquerda entregava 458px numa tela de
+ * 1680 — arcada cortada, painel de controles cortado, ficha dentária
+ * quebrando uma palavra por linha.
+ *
+ * Unificando, o conteúdo escolhido recebe a LARGURA INTEIRA da página, e
+ * some a assimetria de o odontograma ser "um mapa dentro de um painel"
+ * enquanto a anamnese é "uma aba". Todos são a mesma coisa: um assunto
+ * do mesmo paciente. Os quatro mapas ficam agrupados no fim da faixa,
+ * separados por um divisor, porque compartilham entre si o que as
+ * quatro primeiras não têm — dependem de uma sessão aberta para
+ * receber marcação.
+ */
+const ABAS_TEXTO = [
   { chave: "anamnese", rotulo: "Anamnese" },
   { chave: "evolucoes", rotulo: "Evoluções" },
   { chave: "anexos", rotulo: "Anexos" },
   { chave: "consentimentos", rotulo: "Consentimentos" },
 ] as const;
 
-type ChaveAba = (typeof ABAS)[number]["chave"];
+type AbaTexto = (typeof ABAS_TEXTO)[number]["chave"];
+type ChaveAba = AbaTexto | TipoMapa;
 
 // ============================================================
 // Seleção de cliente — o prontuário é sempre DE alguém
@@ -206,7 +252,6 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
   const assinarEvolucao = useAssinarEvolucao(clienteId);
 
   const [aba, setAba] = useState<ChaveAba>("anamnese");
-  const [mapaAtivo, setMapaAtivo] = useState<TipoMapa>("facial");
   const [regiaoSelecionada, setRegiaoSelecionada] = useState<string | null>(null);
   const [rascunho, setRascunho] = useState<Marcacao[] | null>(null);
   const [nota, setNota] = useState("");
@@ -218,11 +263,21 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
   const sessaoAberta = useMemo(() => evolucoes.find((e) => !e.travada) ?? null, [evolucoes]);
   const sessoesAnteriores = useMemo(() => evolucoes.filter((e) => e.travada).slice(0, 3), [evolucoes]);
 
-  // O mapa da sessão aberta manda no seletor: reabrir a tela não pode
-  // trocar em silêncio o mapa em que as marcações foram feitas.
-  useEffect(() => {
-    if (sessaoAberta && ehTipoMapa(sessaoAberta.mapaTipo)) setMapaAtivo(sessaoAberta.mapaTipo);
-  }, [sessaoAberta?.id, sessaoAberta?.mapaTipo]);
+  /**
+   * O mapa da sessão aberta deixou de ser um EFEITO e virou um SINAL.
+   *
+   * Antes, reabrir a tela trocava o seletor sozinho para o mapa da
+   * sessão — necessário quando havia um seletor escondido dentro de um
+   * painel, porque o profissional podia não notar em qual mapa estava.
+   * Com os mapas como abas, trocar de aba por conta própria seria pior
+   * que o problema que resolvia: moveria a pessoa de tela sem ela pedir.
+   * Em vez disso, a aba do mapa da sessão recebe uma marca visível, e
+   * quem decide para onde ir continua sendo quem está olhando.
+   */
+  const mapaDaSessao =
+    sessaoAberta && ehTipoMapa(sessaoAberta.mapaTipo) ? (sessaoAberta.mapaTipo as TipoMapa) : null;
+  const ehAbaDeMapa = ehTipoMapa(aba);
+  const mapaAtivo: TipoMapa = ehAbaDeMapa ? (aba as TipoMapa) : (mapaDaSessao ?? "facial");
 
   useEffect(() => {
     if (profissionais.length && !profissionalId) setProfissionalId(profissionais[0].id);
@@ -246,6 +301,56 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
   );
   const marcacoes = rascunho ?? marcacoesPersistidas;
   const sujo = rascunho !== null;
+
+  // ============================================================
+  // Odontograma (Subetapa 03.7)
+  // ============================================================
+  const ehOdontograma = mapaAtivo === "odontograma";
+
+  /**
+   * O payload nativo da biblioteca, recuperado do item sentinela. Vem do
+   * valor CRU (`evolucaoExibida.marcacoes`), nunca da lista já validada:
+   * `marcacoesValidas()` descarta o sentinela de propósito, porque
+   * "estado_nativo" não é um dos 32 dentes do catálogo.
+   */
+  const payloadPersistido = useMemo(
+    () => (ehOdontograma && evolucaoExibida ? payloadDeMarcacoes(evolucaoExibida.marcacoes) : null),
+    [ehOdontograma, evolucaoExibida],
+  );
+  const [payloadRascunho, setPayloadRascunho] = useState<PayloadOdontograma | null>(null);
+  const payloadOdontograma = payloadRascunho ?? payloadPersistido;
+
+  /**
+   * Dentes que a última sessão ASSINADA de odontograma deixou como
+   * `a_realizar` — a metade esquerda da derivação de `executado`
+   * (ver `mapas.ts`). `evolucoes` já vem ordenada da mais recente para a
+   * mais antiga; a exibida é excluída para a sessão não se comparar
+   * consigo mesma, que devolveria "executado" para tudo que ela própria
+   * acabou de planejar.
+   */
+  const aRealizarAntes = useMemo(() => {
+    if (!ehOdontograma) return new Set<string>();
+    const anterior = evolucoes.find(
+      (e) => e.travada && e.mapaTipo === "odontograma" && e.id !== evolucaoExibida?.id,
+    );
+    return anterior ? regioesARealizar(marcacoesValidas("odontograma", anterior.marcacoes)) : new Set<string>();
+  }, [ehOdontograma, evolucoes, evolucaoExibida?.id]);
+
+  /** `.dark` no `<html>` é o sinal de tema que `lib/preferencias.tsx` mantém. */
+  const [escuro, setEscuro] = useState(
+    () => typeof document !== "undefined" && document.documentElement.classList.contains("dark"),
+  );
+  useEffect(() => {
+    const raiz = document.documentElement;
+    const obs = new MutationObserver(() => setEscuro(raiz.classList.contains("dark")));
+    obs.observe(raiz, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+
+  const aoAlterarOdontograma = useCallback((novas: Marcacao[], payload: PayloadOdontograma) => {
+    setRascunho(novas);
+    setPayloadRascunho(payload);
+  }, []);
 
   if (verificando) {
     return <span className="text-[11px] text-muted-foreground">Verificando autorização…</span>;
@@ -293,9 +398,31 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
         marcacoes: [],
       });
       setRascunho(null);
+      setPayloadRascunho(null);
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não foi possível abrir a sessão.");
     }
+  }
+
+  /**
+   * O que de fato vai para `aba_health.evolucoes.marcacoes`.
+   *
+   * Para os três mapas de região é a lista como está. Para o odontograma
+   * é a projeção legível MAIS o item sentinela com o payload da
+   * biblioteca — e o sentinela é acrescentado aqui, no único lugar que
+   * grava, em vez de viver dentro do estado da tela. Se ele morasse em
+   * `rascunho`, a lista lateral teria de filtrá-lo em todo lugar que a
+   * renderiza, e bastaria um ponto esquecido para desenhar um 33º dente
+   * chamado "estado_nativo".
+   *
+   * `payloadOdontograma` cai no persistido quando não há rascunho: salvar
+   * uma sessão em que só o texto da evolução mudou não pode apagar o
+   * estado do odontograma gravado antes.
+   */
+  function marcacoesParaGravar(): Marcacao[] {
+    if (!ehOdontograma) return marcacoes;
+    const dentes = marcacoes.filter((m) => m.regiao !== REGIAO_ESTADO_NATIVO);
+    return payloadOdontograma ? [...dentes, itemEstadoNativo(payloadOdontograma)] : dentes;
   }
 
   function aplicarEstado(estadoChave: string) {
@@ -316,8 +443,13 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
     setErro(null);
     if (!sessaoAberta) return;
     try {
-      await atualizarEvolucao.mutateAsync({ id: sessaoAberta.id, mapaTipo: mapaAtivo, marcacoes });
+      await atualizarEvolucao.mutateAsync({
+        id: sessaoAberta.id,
+        mapaTipo: mapaAtivo,
+        marcacoes: marcacoesParaGravar(),
+      });
       setRascunho(null);
+      setPayloadRascunho(null);
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não foi possível salvar as marcações.");
     }
@@ -328,10 +460,15 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
     if (!sessaoAberta) return;
     try {
       if (sujo) {
-        await atualizarEvolucao.mutateAsync({ id: sessaoAberta.id, mapaTipo: mapaAtivo, marcacoes });
+        await atualizarEvolucao.mutateAsync({
+          id: sessaoAberta.id,
+          mapaTipo: mapaAtivo,
+          marcacoes: marcacoesParaGravar(),
+        });
       }
       await assinarEvolucao.mutateAsync(sessaoAberta.id);
       setRascunho(null);
+      setPayloadRascunho(null);
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não foi possível assinar a sessão.");
     }
@@ -356,77 +493,168 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
         </Link>
       </div>
 
-      <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[1.35fr_1fr]">
-        {/* ---------- Coluna esquerda: paciente + mapa ---------- */}
-        <Card className="flex min-h-0 flex-col overflow-hidden">
-          <div className="flex items-center justify-between border-b px-3.5 py-3">
-            <div className="flex items-center gap-2.5">
-              <div className="h-[30px] w-[30px] rounded-full bg-accent" />
-              <div className="flex flex-col">
-                <span className="text-[12.5px] font-medium text-foreground">{cliente?.nome ?? "Cliente"}</span>
-                <button
-                  type="button"
-                  onClick={() => setFichaAberta((v) => !v)}
-                  className="self-start text-[10.5px] text-primary underline-offset-2 hover:underline"
-                >
-                  {fichaAberta ? "Fechar ficha clínica" : "Ficha clínica"}
-                </button>
-              </div>
-            </div>
-            {alergias && <Badge tone="danger">Alerta: {alergias}</Badge>}
-          </div>
-
-          {fichaAberta && (
-            <FichaClinica clienteId={clienteId} podeEscrever={podeEscrever} aoFechar={() => setFichaAberta(false)} />
-          )}
-
-          {/* Seletor de mapa */}
-          <div className="flex flex-wrap items-center gap-1.5 border-b px-3.5 py-2.5">
-            {LISTA_MAPAS.map((m) => (
+      {/* ---------- Bloco único do paciente ---------- */}
+      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="flex items-center justify-between border-b px-3.5 py-3">
+          <div className="flex items-center gap-2.5">
+            <div className="h-[30px] w-[30px] rounded-full bg-accent" />
+            <div className="flex flex-col">
+              <span className="text-[12.5px] font-medium text-foreground">{cliente?.nome ?? "Cliente"}</span>
               <button
-                key={m.chave}
                 type="button"
-                onClick={() => {
-                  setMapaAtivo(m.chave);
-                  setRegiaoSelecionada(null);
-                  // Marcação pertence ao mapa em que foi feita — trocar de
-                  // mapa não carrega marcação de um vocabulário para outro.
-                  setRascunho(null);
-                }}
-                className={`rounded-md px-3 py-1.5 text-[11px] ${
-                  mapaAtivo === m.chave
-                    ? "bg-accent font-semibold text-primary"
-                    : "border text-secondary-foreground hover:bg-content"
-                }`}
+                onClick={() => setFichaAberta((v) => !v)}
+                className="self-start text-[10.5px] text-primary underline-offset-2 hover:underline"
               >
-                {m.rotulo}
+                {fichaAberta ? "Fechar ficha clínica" : "Ficha clínica"}
               </button>
-            ))}
-            <span className="ml-auto rounded-md border border-dashed px-3 py-1.5 text-[10.5px] text-muted-foreground">
-              arte definitiva do mapa é asset a definir
-            </span>
-          </div>
-
-          {/* Mapa + marcações da sessão */}
-          <div className="grid min-h-0 flex-1 gap-3 p-3.5 md:grid-cols-[1fr_210px]">
-            <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-content p-3.5">
-              <MapaClinico
-                tipo={mapaAtivo}
-                marcacoes={marcacoes}
-                regiaoSelecionada={regiaoSelecionada}
-                onSelecionarRegiao={
-                  sessaoAberta && podeEscrever
-                    ? (chave) => {
-                        setRegiaoSelecionada(chave);
-                        setNota(marcacoes.find((m) => m.regiao === chave)?.nota ?? "");
-                      }
-                    : undefined
-                }
-              />
-              <span className="text-center font-mono text-[9.5px] text-muted-foreground">
-                placeholder — arte definitiva de cada mapa entra como SVG de biblioteca própria
-              </span>
             </div>
+          </div>
+          {alergias && <Badge tone="danger">Alerta: {alergias}</Badge>}
+        </div>
+
+        {fichaAberta && (
+          <FichaClinica clienteId={clienteId} podeEscrever={podeEscrever} aoFechar={() => setFichaAberta(false)} />
+        )}
+
+        {/* ---------- Faixa única: 4 abas de texto + 4 mapas ---------- */}
+        <div className="flex flex-wrap items-center gap-0.5 border-b px-3 pt-2.5">
+          {ABAS_TEXTO.map((a) => (
+            <button
+              key={a.chave}
+              type="button"
+              onClick={() => setAba(a.chave)}
+              className={`px-2.5 py-2 text-[11.5px] ${
+                aba === a.chave
+                  ? "border-b-2 border-primary font-semibold text-primary"
+                  : "text-secondary-foreground hover:text-foreground"
+              }`}
+            >
+              {a.rotulo}
+            </button>
+          ))}
+
+          {/* Divisor: dali para a direita, tudo depende de sessão aberta. */}
+          <span className="mx-2 h-4 w-px self-center bg-border" />
+
+          {LISTA_MAPAS.map((m) => (
+            <button
+              key={m.chave}
+              type="button"
+              onClick={() => {
+                setAba(m.chave);
+                setRegiaoSelecionada(null);
+                // Marcação pertence ao mapa em que foi feita — trocar de
+                // mapa não carrega marcação de um vocabulário para outro.
+                setRascunho(null);
+                setPayloadRascunho(null);
+              }}
+              className={`flex items-center gap-1.5 px-2.5 py-2 text-[11.5px] ${
+                aba === m.chave
+                  ? "border-b-2 border-primary font-semibold text-primary"
+                  : "text-secondary-foreground hover:text-foreground"
+              }`}
+            >
+              {m.rotulo}
+              {/* A marca da sessão aberta: diz ONDE as marcações da sessão
+                  em curso estão, sem arrastar ninguém para lá. */}
+              {mapaDaSessao === m.chave && (
+                <span
+                  className="h-1.5 w-1.5 rounded-full bg-primary"
+                  title="A sessão aberta registra as marcações neste mapa"
+                />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* ---------- Corpo da aba ---------- */}
+        {!ehAbaDeMapa && (
+          <div className="min-h-0 flex-1 overflow-auto p-3">
+            {aba === "anamnese" && <AnamneseTab clienteId={clienteId} podeEscrever={podeEscrever} />}
+            {aba === "evolucoes" && (
+              <EvolucoesTab
+                clienteId={clienteId}
+                evolucoes={evolucoes}
+                podeEscrever={podeEscrever}
+                carregando={carregandoEvolucoes}
+              />
+            )}
+            {aba === "anexos" && <AnexosTab clienteId={clienteId} evolucoes={evolucoes} podeEscrever={podeEscrever} />}
+            {aba === "consentimentos" && <ConsentimentosTab clienteId={clienteId} podeEscrever={podeEscrever} />}
+          </div>
+        )}
+
+        {ehAbaDeMapa && (
+          <>
+            {/* Aviso que a faixa unificada tornou possível errar: com uma
+                sessão aberta em OUTRO mapa, marcar aqui e salvar troca o
+                `mapa_tipo` da evolução e substitui as marcações de lá.
+                Antes o seletor ficava colado no mapa e o risco era o
+                mesmo; agora ele está dito em voz alta. */}
+            {mapaDaSessao && mapaDaSessao !== mapaAtivo && (
+              // `text-warning-tint-foreground` junto do `bg-warning-tint`, e
+              // não `text-secondary-foreground`: o par é o que a Subetapa
+              // 02.12 fixou depois de o modo escuro revelar tint claro com
+              // texto claro por cima em quatro famílias semânticas de uma vez.
+              <div className="border-b bg-warning-tint px-3.5 py-2 text-[10.5px] text-warning-tint-foreground">
+                A sessão aberta registra em <strong>{MAPAS[mapaDaSessao].rotulo}</strong>. Marcar aqui e salvar move a
+                sessão para <strong>{MAPAS[mapaAtivo].rotulo}</strong> e substitui as marcações do outro mapa.
+              </div>
+            )}
+            {/* Mapa + marcações da sessão */}
+            <div className="grid min-h-0 flex-1 gap-3 p-3.5 md:grid-cols-[1fr_240px]">
+            {ehOdontograma ? (
+              /* O odontograma é o único mapa com arte de produção: a
+                 biblioteca desenha os 32 dentes em SVG, com face, cárie,
+                 endodontia, prótese e ortodontia. Por isso ele não leva a
+                 tarja de "placeholder" que os outros três ainda levam. */
+              <div className="flex min-h-0 flex-col overflow-auto rounded-lg border bg-content">
+                <Suspense
+                  fallback={
+                    <div className="flex flex-col items-center justify-center gap-3 p-3.5">
+                      <MapaClinico tipo="odontograma" marcacoes={marcacoes} />
+                      <span className="text-center font-mono text-[9.5px] text-muted-foreground">
+                        carregando o odontograma completo…
+                      </span>
+                    </div>
+                  }
+                >
+                  <OdontogramaClinico
+                    /* `key` além da prop: uma sessão nova precisa de
+                       componente novo, não de um efeito reaproveitando o
+                       anterior — o estado da biblioteca é singleton de
+                       módulo, e remontar é a forma mais barata de garantir
+                       que nada do paciente anterior sobreviva. */
+                    key={`${clienteId}:${evolucaoExibida?.id ?? "nenhuma"}`}
+                    chaveSessao={`${clienteId}:${evolucaoExibida?.id ?? "nenhuma"}`}
+                    marcacoesGravadas={evolucaoExibida?.marcacoes}
+                    aRealizarAntes={aRealizarAntes}
+                    somenteLeitura={!sessaoAberta || !podeEscrever}
+                    escuro={escuro}
+                    onAlterar={aoAlterarOdontograma}
+                  />
+                </Suspense>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-content p-3.5">
+                <MapaClinico
+                  tipo={mapaAtivo}
+                  marcacoes={marcacoes}
+                  regiaoSelecionada={regiaoSelecionada}
+                  onSelecionarRegiao={
+                    sessaoAberta && podeEscrever
+                      ? (chave) => {
+                          setRegiaoSelecionada(chave);
+                          setNota(marcacoes.find((m) => m.regiao === chave)?.nota ?? "");
+                        }
+                      : undefined
+                  }
+                />
+                <span className="text-center font-mono text-[9.5px] text-muted-foreground">
+                  placeholder — arte definitiva de cada mapa entra como SVG de biblioteca própria
+                </span>
+              </div>
+            )}
 
             <div className="flex min-h-0 flex-col gap-2.5">
               <span className="font-mono text-[9.5px] uppercase tracking-wider text-muted-foreground">
@@ -517,7 +745,13 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
                           <div className="h-2 w-2 rounded-full" style={{ background: estado?.traco }} />
                           <span className="text-[11px] font-medium text-foreground">{m.rotulo}</span>
                         </div>
-                        {sessaoAberta && podeEscrever && (
+                        {/* No odontograma não há "remover" aqui: a marcação
+                            é desfeita no próprio dente, dentro do
+                            componente. Um botão nesta lista apagaria a
+                            projeção e deixaria o estado nativo intacto —
+                            a linha sumiria da tela e voltaria no próximo
+                            carregamento. */}
+                        {sessaoAberta && podeEscrever && !ehOdontograma && (
                           <button
                             type="button"
                             onClick={() => removerMarcacao(m.regiao)}
@@ -528,6 +762,12 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
                         )}
                       </div>
                       <span className="text-[10.5px] text-muted-foreground">{m.nota || estado?.rotulo}</span>
+                      {/* Faces em mono, que é o vocabulário de metadado da
+                          identidade (`docs/04` §5). É esta linha que a
+                          Subetapa 03.8 transforma em item de orçamento. */}
+                      {m.faces && m.faces.length > 0 && (
+                        <span className="font-mono text-[9.5px] text-muted-foreground">{m.faces.join(" · ")}</span>
+                      )}
                     </div>
                   );
                 })}
@@ -538,101 +778,73 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
                 <LegendaMapa tipo={mapaAtivo} />
               </div>
             </div>
-          </div>
-
-          {erro && <span className="px-3.5 pb-1 text-[10.5px] text-destructive">{erro}</span>}
-
-          {sessaoAberta && podeEscrever && (
-            <div className="mt-auto flex gap-2 border-t px-3 py-2.5">
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex-1"
-                onClick={() => void salvarRascunho()}
-                disabled={!sujo || atualizarEvolucao.isPending}
-              >
-                Salvar rascunho
-              </Button>
-              <Button size="sm" className="flex-1" onClick={() => void assinarSessao()} disabled={assinarEvolucao.isPending}>
-                Assinar e encerrar sessão
-              </Button>
             </div>
-          )}
-        </Card>
 
-        {/* ---------- Coluna direita: abas + sessões anteriores ---------- */}
-        <div className="flex min-h-0 flex-col gap-3">
-          <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <div className="flex gap-0.5 border-b px-3 pt-2.5">
-              {ABAS.map((a) => (
-                <button
-                  key={a.chave}
-                  type="button"
-                  onClick={() => setAba(a.chave)}
-                  className={`px-2.5 py-2 text-[11.5px] ${
-                    aba === a.chave
-                      ? "border-b-2 border-primary font-semibold text-primary"
-                      : "text-secondary-foreground hover:text-foreground"
-                  }`}
+            {erro && <span className="px-3.5 pb-1 text-[10.5px] text-destructive">{erro}</span>}
+
+            {sessaoAberta && podeEscrever && (
+              <div className="mt-auto flex gap-2 border-t px-3 py-2.5">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => void salvarRascunho()}
+                  disabled={!sujo || atualizarEvolucao.isPending}
                 >
-                  {a.rotulo}
-                </button>
-              ))}
-            </div>
-            <div className="min-h-0 flex-1 overflow-auto p-3">
-              {aba === "anamnese" && <AnamneseTab clienteId={clienteId} podeEscrever={podeEscrever} />}
-              {aba === "evolucoes" && (
-                <EvolucoesTab
-                  clienteId={clienteId}
-                  evolucoes={evolucoes}
-                  podeEscrever={podeEscrever}
-                  carregando={carregandoEvolucoes}
-                />
-              )}
-              {aba === "anexos" && (
-                <AnexosTab clienteId={clienteId} evolucoes={evolucoes} podeEscrever={podeEscrever} />
-              )}
-              {aba === "consentimentos" && (
-                <ConsentimentosTab clienteId={clienteId} podeEscrever={podeEscrever} />
-              )}
-            </div>
-          </Card>
-
-          <Card className="flex flex-col gap-2 p-3">
-            <span className="text-[12px] font-medium text-foreground">Sessões anteriores</span>
-            <div className="flex gap-2">
-              {sessoesAnteriores.length === 0 && (
-                <span className="text-[10.5px] text-muted-foreground">Nenhuma sessão assinada ainda.</span>
-              )}
-              {sessoesAnteriores.map((s) => (
-                <div key={s.id} className="flex flex-1 flex-col gap-1 rounded-md border p-2.5">
-                  <span className="font-mono text-[9.5px] text-muted-foreground">
-                    {formatoData.format(new Date(s.registradoEm))}
-                  </span>
-                  <span className="truncate text-[10.5px] text-secondary-foreground">
-                    {s.avaliacao ?? (ehTipoMapa(s.mapaTipo) ? MAPAS[s.mapaTipo].rotulo : "Sessão")}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <span className="text-[10px] text-muted-foreground">
-              acesso restrito por IBAC — só profissional autorizado, e toda leitura fica registrada
-            </span>
-            {log.length > 0 && (
-              <div className="flex flex-col gap-1 border-t pt-2">
-                <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
-                  Log de acesso · {log.length} registro(s) recentes
-                </span>
-                {log.slice(0, 4).map((l) => (
-                  <span key={l.id} className="font-mono text-[9.5px] text-muted-foreground">
-                    {formatoDataHora.format(new Date(l.ocorridoEm))} · {l.acao} · {l.tipoRegistro}
-                  </span>
-                ))}
+                  Salvar rascunho
+                </Button>
+                <Button
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => void assinarSessao()}
+                  disabled={assinarEvolucao.isPending}
+                >
+                  Assinar e encerrar sessão
+                </Button>
               </div>
             )}
-          </Card>
+          </>
+        )}
+      </Card>
+
+      {/* ---------- Rodapé de contexto: histórico e rastro de acesso ----------
+          Desceu da coluna direita para cá quando as abas se unificaram. Vale
+          para o paciente inteiro, não para a aba escolhida, então é rodapé e
+          não conteúdo de aba. Em faixa horizontal, ocupa pouca altura — o que
+          importa porque a altura que ele não usa é a que o odontograma usa. */}
+      <Card className="flex flex-col gap-2 p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[12px] font-medium text-foreground">Sessões anteriores</span>
+          {sessoesAnteriores.length === 0 && (
+            <span className="text-[10.5px] text-muted-foreground">Nenhuma sessão assinada ainda.</span>
+          )}
+          {sessoesAnteriores.map((s) => (
+            <div key={s.id} className="flex items-center gap-2 rounded-md border px-2.5 py-1.5">
+              <span className="font-mono text-[9.5px] text-muted-foreground">
+                {formatoData.format(new Date(s.registradoEm))}
+              </span>
+              <span className="max-w-[26ch] truncate text-[10.5px] text-secondary-foreground">
+                {s.avaliacao ?? (ehTipoMapa(s.mapaTipo) ? MAPAS[s.mapaTipo].rotulo : "Sessão")}
+              </span>
+            </div>
+          ))}
+          <span className="ml-auto text-[10px] text-muted-foreground">
+            acesso restrito por IBAC — só profissional autorizado, e toda leitura fica registrada
+          </span>
         </div>
-      </div>
+        {log.length > 0 && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t pt-2">
+            <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+              Log de acesso · {log.length} registro(s) recentes
+            </span>
+            {log.slice(0, 4).map((l) => (
+              <span key={l.id} className="font-mono text-[9.5px] text-muted-foreground">
+                {formatoDataHora.format(new Date(l.ocorridoEm))} · {l.acao} · {l.tipoRegistro}
+              </span>
+            ))}
+          </div>
+        )}
+      </Card>
     </div>
   );
 }

@@ -2,6 +2,13 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-09-03 (Subetapa 03.7 — odontograma)
+- **O CRM ganhou um odontograma de verdade.** Não é mais uma grade de 32 quadradinhos com um estado por dente: é a arcada desenhada dente a dente, com cárie e restauração **por face**, dentição permanente, decídua e **mista**, dente ausente, implante, raiz residual, prótese, diagnóstico pulpar e apical, ortodontia e ficha periodontal completa. Tudo em português.
+- **O tratamento tem duas cartas: o que existe hoje e o que está planejado.** O profissional marca a boca como ela está, monta o plano ao lado, e o sistema mostra a diferença entre os dois. Cada dente aparece na sessão como **existente**, **a realizar** ou **executado** — e "executado" ninguém digita: nasce sozinho quando o que a sessão passada planejou já aparece na boca desta.
+- **A ficha do paciente virou um bloco só.** Anamnese, Evoluções, Anexos, Consentimentos e os quatro mapas clínicos deixaram de ser dois painéis apertados lado a lado e passaram a ser abas do mesmo bloco, cada uma com a largura inteira da tela.
+- **Nada disso deixou o produto mais pesado para quem não usa.** O odontograma só é baixado quando alguém abre a aba dele; o carregamento inicial do CRM continua igual (160 KB), e o que o aplicativo guarda para funcionar offline não cresceu.
+- A marcação continua onde já estava — dentro da evolução da sessão, com o mesmo regime do prontuário: quem lê fica registrado, quem escreve fica registrado, e sessão assinada não se reescreve.
+
 ## [+1.0] - 2026-09-03 (Subetapa 03.6 — catálogo com faces e semente SIGTAP)
 - **O catálogo de serviços agora sabe o vocabulário odontológico oficial.** Um botão em Catálogo → Serviços semeia os 64 procedimentos comuns da Atenção Básica com código SIGTAP, unidade de lançamento (por dente, por sextante, por arcada) e o teto de quantidade que a própria tabela nacional define — sem apagar nem duplicar o que a clínica já cadastrou. É a base que faltava para o orçamento e o odontograma saberem do que cada procedimento trata.
 - Qualquer serviço, semeado ou cadastrado à mão, agora pode ser marcado como "aceita marcação por face" — o elo que conecta o catálogo ao odontograma.
