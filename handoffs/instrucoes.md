@@ -601,6 +601,21 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Regra que fica:** ao auditar um conjunto de funções escritas em épocas diferentes, **comparar a ordem das guardas entre elas**. A divergência entre irmãs é um sinal mais barato de achar que a leitura de cada uma isolada.
 - **Fonte:** Subetapa 02.15, sessão de 2026-08-21.
 
+### `design/ux/06_ORCAMENTO_DE_PESO.md` contou a mesma face de fonte três vezes — Google Fonts v23 serve IBM Plex Sans como fonte variável
+- **Gatilho:** Subetapa 03.3, ao auto-hospedar as faces. O dossiê de peso listava `IBM Plex Sans 400/500/600` como três arquivos de 45.712 B cada (137 KB), citando o CSS que o Google devolve — que de fato lista três blocos `@font-face`, um por peso.
+- **O que a medição mostrou:** os três blocos apontam para a **mesma URL**. Lendo a tabela `fvar` de dentro do próprio `.woff2` (não supondo pelo nome do arquivo), a Sans do Google v23 tem `fvar`/`gvar`/`avar`/`STAT` — é fonte variável, um arquivo cobre a faixa `400 600` inteira. Mono e Serif, no mesmo teste, não têm `fvar` — são estáticas, uma por peso, como o dossiê já assumia corretamente para elas.
+- **Custo do erro, se não pego:** a subetapa ia auto-hospedar 3 arquivos idênticos de 45.712 B (137.136 B) onde 1 arquivo bastava — 91.424 B de desperdício, silencioso porque cada download "funciona" e nada no build acusa duplicata de conteúdo com nome de arquivo diferente.
+- **Ação:** baixar um woff2 e testar a tabela `fvar` (leitura binária do cabeçalho da tabela, sem depender de metadado do provedor) antes de decidir quantos arquivos uma família precisa. `font-weight: 400 600;` no `@font-face` (faixa, não valor único) é a sintaxe para servir fonte variável a pesos discretos.
+- **Regra que fica:** número de "peso declarado" no CSS do Google **não é** número de arquivo distinto — verificar por família, cada uma pode ter mudado de estática para variável numa atualização de versão do serviço (o v23 nem sempre foi assim).
+- **Fonte:** Subetapa 03.3, 2026-09-03.
+
+### Eager por "é a porta de entrada" é suposição — a medição pode mandar o oposto
+- **Gatilho:** Subetapa 03.3, divisão por rota. A primeira versão manteve `/login` fora do `React.lazy()`, pelo argumento plausível de que é a porta de entrada de sessão fria e preguiçá-la trocaria 1 requisição por 2 no pior momento possível.
+- **O que a medição mostrou:** `LoginPage` era o **único** módulo do grafo eager que importava `zod` + `react-hook-form` + `@hookform/resolvers` — 232 KB brutos só para validar dois campos —, e o chunk de entrada é pago em **toda** carga de página, inclusive por quem já está logado e nunca mais vê a tela. Com `/login` eager o chunk de entrada media 186,70 KB gzip; preguiçoso, 160,36 KB — a diferença entre estourar e não estourar o teto de 180 KB de `design/ux/06_ORCAMENTO_DE_PESO.md` §4.
+- **Por que o argumento inicial estava errado, especificamente:** ele pesava só o **número de requisições** (1 vs. 2) e ignorou de quem é o **caso comum** — um CRM é usado logado; login acontece uma vez por sessão. Otimizar a rota mais rara às custas da mais frequente é a troca inversa da que a divisão por rota inteira existe para fazer.
+- **Regra que fica:** "esta rota é a porta de entrada, deixa eager" é hipótese, não conclusão — pesar por pacote (`generateBundle` do Rollup, `c.modules` de cada chunk) antes de decidir qual rota fica fora do `React.lazy()`. Vale para qualquer subetapa futura que mexer no `router.tsx`.
+- **Fonte:** Subetapa 03.3, 2026-09-03.
+
 ---
 
 ## 6. Armadilhas conhecidas (não repetir)

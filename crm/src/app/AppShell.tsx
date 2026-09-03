@@ -1,9 +1,11 @@
+import { Suspense } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { LogOut, LifeBuoy, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useReadableModules } from "@/lib/access";
 import { buildModuleNav, findSettingsNavItem, type NavItem } from "./nav";
 import { cn } from "@/lib/utils";
+import { CarregandoRota } from "@/components/shared/CarregandoRota";
 
 /**
  * Shell do wireframe ratificado (`design/wireframes-crm-sa-de-e-est-tica/
@@ -169,7 +171,14 @@ export function AppShell() {
           ))}
         </nav>
         <main className="flex-1 overflow-auto bg-content p-4">
-          <Outlet />
+          {/* Fronteira da divisão por rota (Subetapa 03.3). Fica AQUI, e não
+              em volta do `<RouterProvider>`, porque é isto que mantém
+              sidebar, header e breadcrumb pintados enquanto o chunk da tela
+              nova chega — suspender acima do shell apagaria a navegação
+              inteira a cada troca de rota. */}
+          <Suspense fallback={<CarregandoRota />}>
+            <Outlet />
+          </Suspense>
         </main>
       </section>
     </div>

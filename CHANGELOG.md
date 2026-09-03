@@ -2,6 +2,10 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+0.1] - 2026-09-03 (Subetapa 03.3 — divisão por rota + fontes auto-hospedadas)
+- **O CRM abre mais rápido.** A primeira tela agora baixa só o que ela precisa — antes, abrir o login trazia junto a agenda, o prontuário, o editor de automações e o agente de IA, mesmo sem a senha ainda digitada. O carregamento inicial caiu de 284 KB para menos de 160 KB gzip.
+- **A tipografia do produto deixou de depender do Google.** As fontes passaram a ser servidas pelo próprio domínio do CRM — elimina uma etapa de carregamento de terceiro no primeiro desenho da tela e, no processo, corta uma transmissão do IP do visitante a um serviço externo (LGPD, `docs/05_COMPLIANCE_E_ETICA.md` §6).
+
 ## [+1.0] - 2026-08-22 — **MVP v01 lançado** (fecha a Etapa 02)
 
 **O CRM Vitrine está no ar e é um produto, não um protótipo.** https://vitrine.strategicepiphany.com

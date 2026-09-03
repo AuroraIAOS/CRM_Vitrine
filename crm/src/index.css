@@ -1,3 +1,7 @@
+/* Fontes auto-hospedadas (Subetapa 03.3) — precisa vir antes de tudo:
+   `@import` em CSS só é válido no topo do arquivo. */
+@import "./fontes.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
