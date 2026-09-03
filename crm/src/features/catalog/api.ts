@@ -59,6 +59,20 @@ export function useAlternarAtivoCategoria() {
 // ============================================================
 // Serviços
 // ============================================================
+// `unidade_lancamento` — Subetapa 03.6, item 3. "sessao"/"elemento" não
+// aparecem nos 64 procedimentos semeados (que só usam dente/sextante/
+// arcada, migration 042); ficam disponíveis para procedimento cadastrado
+// à mão que não seja da tabela SIGTAP.
+export type UnidadeLancamento = "dente" | "sextante" | "arcada" | "sessao" | "elemento";
+
+export const ROTULO_UNIDADE: Record<UnidadeLancamento, string> = {
+  dente: "Por dente",
+  sextante: "Por sextante",
+  arcada: "Por arcada",
+  sessao: "Por sessão",
+  elemento: "Por elemento",
+};
+
 export type Servico = {
   id: string;
   categoriaId: string;
@@ -70,6 +84,10 @@ export type Servico = {
   requerProfissional: boolean;
   requerRecurso: boolean;
   ativo: boolean;
+  aceitaFaces: boolean;
+  unidadeLancamento: UnidadeLancamento | null;
+  quantidadeMaxima: number | null;
+  codigoSigtap: string | null;
   variantes: Variante[];
 };
 
@@ -85,7 +103,9 @@ export function useServicos() {
       const [{ data: servicos, error: e1 }, { data: categorias, error: e2 }, { data: variantes, error: e3 }] = await Promise.all([
         db()
           .from("servicos")
-          .select("id, categoria_id, nome, descricao, duracao_padrao_minutos, preco_base, requer_profissional, requer_recurso, ativo")
+          .select(
+            "id, categoria_id, nome, descricao, duracao_padrao_minutos, preco_base, requer_profissional, requer_recurso, ativo, aceita_faces, unidade_lancamento, quantidade_maxima, codigo_sigtap",
+          )
           .eq("account_id", accountId!)
           .order("nome"),
         db().from("categorias").select("id, nome").eq("account_id", accountId!),
@@ -112,6 +132,10 @@ export function useServicos() {
         requerProfissional: s.requer_profissional,
         requerRecurso: s.requer_recurso,
         ativo: s.ativo,
+        aceitaFaces: s.aceita_faces,
+        unidadeLancamento: s.unidade_lancamento as UnidadeLancamento | null,
+        quantidadeMaxima: s.quantidade_maxima,
+        codigoSigtap: s.codigo_sigtap,
         variantes: (variantes ?? [])
           .filter((v) => v.servico_id === s.id)
           .map((v) => ({
@@ -140,6 +164,10 @@ export function useCriarServico() {
       precoBase: number;
       requerProfissional: boolean;
       requerRecurso: boolean;
+      aceitaFaces?: boolean;
+      unidadeLancamento?: UnidadeLancamento;
+      quantidadeMaxima?: number;
+      codigoSigtap?: string;
     }) => {
       const { error } = await db().from("servicos").insert({
         account_id: profile!.accountId,
@@ -150,10 +178,38 @@ export function useCriarServico() {
         preco_base: input.precoBase,
         requer_profissional: input.requerProfissional,
         requer_recurso: input.requerRecurso,
+        aceita_faces: input.aceitaFaces ?? false,
+        unidade_lancamento: input.unidadeLancamento || null,
+        quantidade_maxima: input.quantidadeMaxima || null,
+        codigo_sigtap: input.codigoSigtap || null,
       });
       if (error) throw error;
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["servicos-catalogo"] }),
+  });
+}
+
+/**
+ * Semente do catálogo com os 64 procedimentos SIGTAP da Atenção Básica
+ * (item 22, Subetapa 03.6) — ação OPCIONAL e IDEMPOTENTE, nunca
+ * automática: a conta decide quando (ou se) semear, e rodar de novo não
+ * duplica (`aba_catalog.semear_procedimentos_sigtap()`, migration 042).
+ */
+export type ResultadoSemente = { inseridos: number; jaExistentes: number };
+
+export function useSemearProcedimentosSigtap() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (): Promise<ResultadoSemente> => {
+      const { data, error } = await db().rpc("semear_procedimentos_sigtap");
+      if (error) throw error;
+      const linha = Array.isArray(data) ? data[0] : data;
+      return { inseridos: linha?.inseridos ?? 0, jaExistentes: linha?.ja_existentes ?? 0 };
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["servicos-catalogo"] });
+      void qc.invalidateQueries({ queryKey: ["categorias"] });
+    },
   });
 }
 

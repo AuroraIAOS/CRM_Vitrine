@@ -20,7 +20,7 @@
 | 03.3 | Divisão por rota + fontes auto-hospedadas | Onda 1 | Sonnet | ✅ CONCLUÍDA |
 | 03.4 | Agendamento: espera, marcadores e cadeiras | Onda 1 | Sonnet | ✅ CONCLUÍDA |
 | 03.5 | Ações dos usuários + consentimento de imagem | Onda 1 · P-sub | Sonnet (Opus indisponível) | ✅ CONCLUÍDA |
-| 03.6 | Catálogo: faces, unidade e semente SIGTAP | Onda 2 | Sonnet | ⬜ não iniciada |
+| 03.6 | Catálogo: faces, unidade e semente SIGTAP | Onda 2 | Sonnet | ✅ CONCLUÍDA |
 | 03.7 | Odontograma | Onda 2 · P-sub | Opus | ⬜ não iniciada |
 | 03.8 | Orçamento como entidade | Onda 2 · P-sub | Opus | ⬜ não iniciada |
 | 03.9 | Multiunidade + trava de plano por módulo | Onda 3 · **PORTÃO COMPLETO** | Opus | ⬜ não iniciada |
@@ -39,7 +39,7 @@
 | 03.22 | Implantação da UX Versão 03 | Etapa 3 do roteiro | Sonnet | ⬜ não iniciada |
 | 03.23 | Portão de segurança adversarial do MVP | Etapa 4 do roteiro · **PORTÃO COMPLETO** | Opus | ⬜ não iniciada |
 
-**Progresso: 5 de 24 concluídas (03.0, 03.2, 03.3, 03.4, 03.5) · 1 adiada (03.1) · 18 restantes.** Três portões completos aguardam (03.9, 03.15, 03.23) — nenhum deles é executado sem bench isolado, e nenhum termina em merge por conta do CODE (`CLAUDE.md` §13).
+**Progresso: 6 de 24 concluídas (03.0, 03.2, 03.3, 03.4, 03.5, 03.6) · 1 adiada (03.1) · 17 restantes.** Três portões completos aguardam (03.9, 03.15, 03.23) — nenhum deles é executado sem bench isolado, e nenhum termina em merge por conta do CODE (`CLAUDE.md` §13).
 
 ---
 
@@ -162,6 +162,7 @@ Esforço máximo do /goal: 4 tentativas
 Escalonamento de LLM: Sonnet nas 3 primeiras; Opus na última.
 Se esgotar: parar e emitir relatório curto.
 CHANGELOG: **+1.0**
+Status: ✅ CONCLUÍDA — executada em 2026-09-03 (Sonnet, `[Goal]`, uma tentativa). **Correção de fonte:** `procedimentos.txt` (citado no Objetivo) não tem código nenhum; a fonte real é `SIGTAP.xlsx` (64 linhas com código, unidade e quantidade máxima), já nomeada em `RELATORIO.md` linha 22. Migration `042` aplicada em produção e teste: `aceita_faces`, `unidade_lancamento`, `quantidade_maxima`, `codigo_sigtap` em `aba_catalog.servicos` + 3 CHECKs + função de semente opcional/idempotente. Provado com SQL real em `BEGIN...ROLLBACK`: semente 64/0 na primeira chamada, 0/64 na segunda (idempotência); CHECKs recusando dado inválido; permissão recusando usuário sem conta. Enforcement do teto contra orçamento fica para a 03.8 (docs/02 §11.2 já previa isso). Suíte de `aba_catalog` 7/7. Detalhe completo em `docs/00_PLANO_E_CRITERIOS.md`.
 
 ### Subetapa 03.7 — Odontograma [Goal] [Manual] [LLM: Opus] · P-sub
 Objetivo: item 2 — odontograma com dentição permanente, decídua e **mista**, e estados *a realizar / executado / existente*, adotando `react-advanced-odontogram` 2.4.0 (MIT, `github.com/ZoliQua/React-Odontogram-Modul`) por decisão de Max de 2026-09-03.

@@ -631,6 +631,14 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Regra que fica:** confrontar CADA cláusula do Objetivo com o repositório antes de escrever — inclusive a que parece mais óbvia ou mais bem escrita. "Nunca teve tela" é uma afirmação factual, checável em segundos com `grep`, e não checá-la primeiro é o mesmo erro que a 03.0 já pagou.
 - **Fonte:** Subetapa 03.5, 2026-09-03.
 
+### Objetivo de subetapa citou o arquivo errado como fonte de código SIGTAP — `procedimentos.txt` não tem código nenhum
+- **Gatilho:** Subetapa 03.6, ao ler o Objetivo ("semear... de `design/benchmark/fontes/procedimentos.txt`, com o código SIGTAP de cada um") antes de escrever a migration.
+- **O que a leitura do arquivo mostrou:** `procedimentos.txt` tem 82 nomes de procedimento numerados **sem nenhum código** — só "01 - 1ª Consulta odontológica programática" etc. Cumprir o Objetivo ao pé da letra exigiria inventar 82 códigos SIGTAP, que é exatamente o tipo de "codificar de memória" que `CLAUDE.md` §11 proíbe — e pior aqui, porque é identificador de faturamento real, não sintaxe de API.
+- **A fonte certa já estava nomeada em outro lugar do próprio material:** `design/benchmark/RELATORIO.md` linha 22 diz explicitamente "`fontes/SIGTAP.xlsx` + acervo de gestão pública de Max". Esse xlsx tem 64 linhas com código, descrição, unidade (Local) e quantidade máxima — batendo exatamente com "64 procedimentos" que `docs/02_MODELO_DE_DADOS.md` §11.2 e o achado 3 do benchmark já citavam. O Objetivo da 03.6 (escrito na 03.0, resumindo de memória) citou o arquivo errado; o documento mais detalhado (`docs/02`) e o mais antigo (`RELATORIO.md`) já tinham a referência certa.
+- **Ação:** semente construída a partir do `.xlsx` (projeto não tinha biblioteca de leitura de xlsx — parseado o XML cru dentro do zip com Node, sem dependência nova) e as 64 linhas geradas programaticamente para o `INSERT`, nunca digitadas à mão.
+- **Regra que fica:** quando um Objetivo cita uma fonte de dado, abrir a fonte ANTES de desenhar a migration — "tem os dados que preciso" não é suposição segura só porque o nome do arquivo soa certo. Se dois documentos do mesmo material citam fontes diferentes para a mesma coisa, o mais detalhado/específico tende a estar certo, mas só a leitura confirma.
+- **Fonte:** Subetapa 03.6, 2026-09-03.
+
 ---
 
 ## 6. Armadilhas conhecidas (não repetir)

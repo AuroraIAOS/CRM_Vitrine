@@ -2,6 +2,10 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-09-03 (Subetapa 03.6 — catálogo com faces e semente SIGTAP)
+- **O catálogo de serviços agora sabe o vocabulário odontológico oficial.** Um botão em Catálogo → Serviços semeia os 64 procedimentos comuns da Atenção Básica com código SIGTAP, unidade de lançamento (por dente, por sextante, por arcada) e o teto de quantidade que a própria tabela nacional define — sem apagar nem duplicar o que a clínica já cadastrou. É a base que faltava para o orçamento e o odontograma saberem do que cada procedimento trata.
+- Qualquer serviço, semeado ou cadastrado à mão, agora pode ser marcado como "aceita marcação por face" — o elo que conecta o catálogo ao odontograma.
+
 ## [+0.1] - 2026-09-03 (Subetapa 03.5 — relatório de ações dos usuários)
 - **O proprietário da conta agora tem um relatório de "Ações dos usuários"** — quem da equipe acessou dado clínico, quantas leituras e quantas escritas cada um fez, e quando foi a última vez. Antes essa trilha existia só como uma lista técnica de 12 eventos crus, visível para administradores; agora é exclusiva do proprietário, com nome de verdade em vez de código, e é ele quem decide se compartilha isso com a equipe.
 - O consentimento de uso de imagem, que já trava a exibição de foto clínica sem consentimento vigente, foi conferido de ponta a ponta e continua funcionando como sempre funcionou.
