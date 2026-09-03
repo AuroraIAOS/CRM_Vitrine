@@ -70,7 +70,7 @@ O ativo que o Vitrine já tem nessa frente é `crm/scripts/provisionar_banco.mjs
 
 ## 4. Faixa de preço e modelo (referência do benchmark)
 
-Registrado aqui porque a **Etapa 6 do roteiro** vende Bronze/Prata/Ouro/Diamante, e a Subetapa 03.9 constrói o mecanismo que torna o corte possível — **qual item entra em qual nível é decisão comercial de Max**, preenchida sem tocar em código.
+Registrado aqui porque a **Etapa 6 do roteiro** vende Bronze/Prata/Ouro/Diamante, e a Subetapa 03.9 constrói o mecanismo que torna o corte possível — **qual item entra em qual nível é decisão comercial de Max**, preenchida sem tocar em código. **Decisão dele de 2026-09-03: a matriz fica para o momento correto de configurar seus detalhes, e não bloqueia a Etapa 03.** O mecanismo nasce com todos os níveis liberando tudo; o corte passa a existir no dia em que a tabela for preenchida. A faixa abaixo é referência do benchmark, não compromisso.
 
 | Plano | Faixa sugerida pelo benchmark | Recorte sugerido |
 |---|---|---|
