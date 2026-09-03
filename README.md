@@ -44,4 +44,6 @@ O `.env` fica na raiz do repositório (não em `crm/`) — `crm/vite.config.ts` 
 
 **Fora do escopo entregue:** a configuração da API oficial do WhatsApp (Meta) segue congelada por decisão de Max — o produto trata isso com honestidade, registrando no log o passo que não executa em vez de fingir sucesso. Detalhe em `handoffs/HANDOFF_UPGRADE.md`.
 
-Próximo passo: **Subetapa 03.0** (leitura de referências e revisão do plano da Etapa 03) — ver `handoffs/HANDOFF_UPGRADE.md`. Roteiro completo em `docs/00_PLANO_E_CRITERIOS.md`. Dicas técnicas e armadilhas conhecidas em `handoffs/instrucoes.md`. Histórico de versões em `CHANGELOG.md`.
+**Etapa 03 em curso — fechamento do MVP odontológico.** Entre as Etapas 02 e 03 correu um benchmark de 8 concorrentes (5 brasileiros, incluindo os 3 mais vendidos do país) e um dossiê de UX com três versões completas: `design/benchmark/` e `design/ux/`. Dali saíram os **24 itens do MVP odontológico** e o roteiro de sete etapas que Max fixou em 2026-09-02. A Etapa 03 cobre as quatro primeiras — uniformidade, os 24 itens, a UX e o portão adversarial — em 22 subetapas, planejadas na Subetapa 03.0 e detalhadas em `docs/00_PLANO_E_CRITERIOS.md`.
+
+Próximo passo: **Subetapa 03.3** (divisão por rota e fontes auto-hospedadas), pré-requisito medido do odontograma. Roteiro completo em `docs/00_PLANO_E_CRITERIOS.md`. Dicas técnicas e armadilhas conhecidas em `handoffs/instrucoes.md`. Backlog comercial das Etapas 5 e 6 em `docs/07_BACKLOG_COMERCIAL.md`. Histórico de versões em `CHANGELOG.md`.

@@ -408,6 +408,30 @@ Status: ✅ CONCLUÍDA — fechada em 1 tentativa. `handoffs/HANDOFF_UPGRADE.md`
 
 ---
 
+## ETAPA DE TRANSIÇÃO 2 → 3 — Benchmark de concorrentes e dossiê de UX [Plan] [LLM: Opus]
+
+**Datas:** 2026-08-23 (dossiê de UX) e 2026-08-31 a 2026-09-02 (benchmark). Não é uma subetapa numerada — é o registro do trabalho feito entre o fechamento da Etapa 02 (02.16, em 2026-08-22) e a abertura de fato da Etapa 03, motivado por uma decisão de Max: antes de escolher o próximo item do backlog, investigar o mercado em que o produto vai ser vendido.
+
+**Objetivo:** descobrir o que o mercado odontológico brasileiro entrega, o que cobra por isso, e o que o Vitrine precisa ter para ser vendável — e escolher a direção de UX.
+
+**Conclusão:**
+- **`design/ux/`** — 7 documentos, protótipo navegável e **três versões completas** da aplicação com 19 capturas, para escolha de Max. Parecer favorável à **Versão 03**.
+- **`design/benchmark/`** — 8 concorrentes (5 brasileiros, incluindo os 3 mais vendidos do país, e 3 internacionais), **56 vídeos**, 4 repositórios, 61 referências visuais, 15 documentos. Preço, número e artigo de lei com link e data em `fontes/COLETA.md`.
+- **Os 24 itens do MVP odontológico** (`fontes/MVP.xlsx`, transcritos em `RELATORIO.md` §5 c), revisados por Max em 2026-09-02 — numeração refeita, quatro duplicações fundidas, cinco itens reclassificados.
+- **As 9 idas para versão futura** (`fontes/FUTURO.xlsx`, itens 25 a 33).
+- **30 diretrizes que nasceram no bench e pertencem a outro lugar** (`DIRETRIZES_FORA_DO_BENCHMARK.md`), distribuídas na Subetapa 03.2.
+- **`handoffs/HANDOFF_PLANO_MVP.md`** — a ponte para a Etapa 03, com o roteiro de sete etapas que Max fixou.
+
+**Qualidade:** nada foi implantado — o produto em `crm/`, o Supabase e o subdomínio no ar seguiram intactos durante todo o bench (`CLAUDE.md` §13). Coleta só de material público: sem cadastro, sem login, sem trial. Toda afirmação marcada como `[verificado]`, `[declarado]` ou `[a conferir]`. Nenhum arquivo do acervo de gestão pública de Max entrou no repositório — só a transcrição das estruturas que ele aprovou item a item.
+
+**Evidência:** os 15 documentos de `design/benchmark/` e os 7 de `design/ux/`, mais o merge ordenado por Max em 2026-09-02 (`141b2f7`).
+
+**Status: ✅ CONCLUÍDA**
+
+**O que nasce daqui para a Etapa 03:** o escopo inteiro dela. A Etapa 03 deixou de ser "upgrades e versionamentos sobre o backlog herdado" e passou a ser "fechamento do MVP odontológico" — reescrita na Subetapa 03.0 (2026-09-03).
+
+---
+
 ## ETAPA 03 — FECHAMENTO DO MVP ODONTOLÓGICO
 Objetivo geral: implantar os 24 itens do MVP levantados pelo benchmark (`design/benchmark/RELATORIO.md` §5 c, revisado por Max em 2026-09-02), escolher e implantar a UX, e passar pelo portão adversarial — sobre o produto já lançado, sem reconstruir nada do v01.
 Versionamento: +0.1 = correções/melhorias | +1.0 = novas funcionalidades/serviços.
@@ -471,6 +495,7 @@ Esforço máximo do /goal: 2 tentativas
 Escalonamento de LLM: Sonnet nas duas.
 Se esgotar: parar e emitir relatório curto (problema + causas + alternativas).
 CHANGELOG: **nenhum** — é documentação e não muda nada para quem usa o produto.
+Status: ✅ CONCLUÍDA — executada em 2026-09-03 (Sonnet/Opus, `[Plan]`, uma tentativa). **As 30 diretrizes distribuídas, 30/30 com destino aplicado** (conferido por varredura, saída `diretrizes sem destino: 0 de 30`): A1/A3/A8/A9/A10 → `docs/02_MODELO_DE_DADOS.md` §11 (novo); A2/A7 + o efeito de arquitetura de C4 → `docs/01_ARQUITETURA.md` §8 (novo); C1–C10 + A6 → `docs/05_COMPLIANCE_E_ETICA.md` §5 (novo); A5/A6 + uma lição de método → `handoffs/instrucoes.md` §6; P1/P2/P4 → Pendências vigiadas deste documento; P3/E1–E6 → `docs/07_BACKLOG_COMERCIAL.md` (**arquivo novo** — o destino "backlog comercial" que as diretrizes pediam não existia como lugar, e cinco delas ficariam órfãs sem ele; referenciado no `README.md` para não nascer perdido). **C1 fechou de quebra uma pendência aberta desde a fundação** — `docs/05` §4 deixava "política exata de retenção a confirmar por jurisdição", e a jurisdição é federal com prazo de 20 anos (Lei 13.787/2018, Art. 6º). **A tarefa 1 do handoff não foi refeita:** `design/benchmark/HANDOFF_PLANO_MVP.md` já não existia e os três ponteiros já apontavam para `handoffs/`, resolvidos no commit `4951cf8` — medido por `ls` e `grep` antes de agir. **O diagnóstico errado foi corrigido nos três lugares onde estava escrito** e em nenhum deles apagado: `handoffs/HANDOFF_PLANO_MVP.md` (armadilha 5, agora com o motivo do erro registrado como aprendizado de método), `design/benchmark/RELATORIO.md` §5(c) (item 4 reescrito) e `design/benchmark/DIRETRIZES_FORA_DO_BENCHMARK.md` (diretriz A4 marcada `[OBSOLETA]`, conforme `CLAUDE.md` §10). **`CLAUDE.md` não foi editado** — a diretriz P4 exige autorização explícita de Max e virou pendência vigiada, com o risco de não decidir declarado.
 
 ---
 
@@ -703,6 +728,10 @@ CHANGELOG: **+0.1**
 ---
 
 ## Pendências vigiadas
+
+- [ ] **Autorização de Max para estender o `CLAUDE.md` §14 ao CRM Sindcom (diretriz P4)** — gatilho: **imediato**, e a Subetapa 03.10 depende dela. O §14 hoje nomeia só o CRM Maximus como fonte de porte. As peças de token, remessa e recepção que os itens 7, 18, 19 e 23 do MVP precisam estão prontas e depuradas no **CRM Sindcom** (`sql/20_comunicacao_externa.sql` e `sql/21_remessas_recepcao.sql`), com as lições de falha nos próprios comentários, e merecem o mesmo tratamento: **portar a lógica, traduzir os nomes**. O cabeçalho do `CLAUDE.md` exige autorização explícita de Max para alterar qualquer item — por isso a Subetapa 03.2 **registrou a diretriz e não editou o arquivo**. Risco de não decidir: a 03.10 porta de um repositório que o documento de regras não reconhece como fonte legítima, ou reescreve do zero uma lógica de comunicação externa já provada em produção.
+- [ ] **Colisões com `CLAUDE.md` §15 encontradas no benchmark (diretriz P1)** — gatilho: decisão de Max sobre escopo. Duas: **agente de IA 24 h no WhatsApp** e **certificação SBIS/CFM** (item 33 da lista de futuro). Ambas **reportadas, não planejadas** — entrar ou não é decisão dele, e nenhuma das duas está em subetapa da Etapa 03. Nota que muda o custo da segunda: o componente de odontograma adotado na Subetapa 03.7 traz **HL7 FHIR R4** de graça (`src/fhir/`), que é exatamente o vocabulário que a certificação pede, e **nenhum dos oito concorrentes exibe o selo SBIS/CFM** nas páginas públicas consultadas.
+- [x] **FECHADA na Subetapa 03.0 (2026-09-03) — virou pré-requisito, não melhoria (diretriz P2).** A divisão por rota de `design/ux/06_ORCAMENTO_DE_PESO.md` deixou de ser acabamento e passou a ser **pré-requisito da Subetapa 03.7**: o componente de odontograma pesa **426 KB gzip medidos** contra os 284 KB do bundle inteiro do Vitrine, e não pode entrar no carregamento inicial. Institucionalizada como **Subetapa 03.3**, que roda antes de qualquer tela nova da Etapa 03 — esta entrada permanece como o registro do motivo.
 
 - [ ] **Portão de segurança adversarial obrigatório antes de qualquer mudança de etapa ou deploy real** — gatilho: qualquer subetapa que implante em produção (deploy real). Motivo: existem categorias de falha que passam despercebida em revisão de código normal e na checklist funcional de `docs/05_COMPLIANCE_E_ETICA.md` (que prova que o comportamento *pretendido* funciona, não que não existe um caminho *não pretendido*). Este portão é o complemento adversarial daquele checklist — ataca de propósito em vez de só confirmar o caminho feliz. Risco de não fazer: falha de RLS, vazamento de dado clínico/pessoal ou sequestro de credencial descoberto em produção, por terceiro, em vez de aqui. **Institucionalizado como Subetapa 01.8 (fim da Etapa 01) e Subetapa 02.15 (fim da Etapa 02) — esta entrada permanece como a definição normativa dos 7 passos, referenciada por ambas.**
   - **1. Bench isolado:** abrir branch ou worktree dedicado, nunca commitado direto em `main` — zona de teste segura, sem risco para o histórico principal do repositório.

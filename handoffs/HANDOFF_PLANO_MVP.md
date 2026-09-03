@@ -205,9 +205,18 @@ saber disso perde horas caçando o arquivo errado. Medido no CRM Sindcom.
 permitiria a um atacante bloquear o envio de exames de uma clínica inteira só errando token de
 propósito. Motivo enumerado: `token_inexistente` / `expirado` / `revogado` / `arquivo_invalido`.
 
-**5. Falta `faltou` no enum de status do agendamento.** Sem esse valor não existe taxa de falta —
-o KPI que todo concorrente destaca. Uma linha de migration, e o painel (item 12) e a tabela de
-métricas (item 21) dependem dela. **Fazer cedo.**
+**5. ~~Falta `faltou` no enum de status do agendamento.~~ [CORRIGIDA — Subetapa 03.0, 2026-09-03]**
+**A afirmação estava errada na premissa, e a medição que a derrubou custou um `grep`.**
+`db/migrations/009_aba_scheduling.sql:259` já traz o `CHECK`
+`status IN ('agendado','confirmado','em_andamento','concluido','nao_compareceu','cancelado')` —
+`nao_compareceu` **é** o `faltou`, traduzido pela convenção do `CLAUDE.md` §2, que manda nomear em
+português dentro do schema de módulo. A taxa de falta é calculável desde a Etapa 01; o painel
+(item 12) e a tabela de métricas (item 21) não dependem de migration nenhuma para isso. **O que de
+fato falta** é o valor `sala_de_espera` e o KPI que consome o dado — entregues na Subetapa 03.4.
+**Por que o erro é instrutivo e fica registrado em vez de apagado:** a armadilha nasceu de comparar
+o vocabulário do concorrente (que diz "faltou") com o vocabulário do nosso banco sem abrir o banco,
+e é o mesmo padrão que o `CLAUDE.md` §11 descreve — hipótese coerente escrita como diagnóstico
+antes do teste mais barato disponível.
 
 ---
 

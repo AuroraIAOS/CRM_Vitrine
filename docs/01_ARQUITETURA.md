@@ -73,3 +73,30 @@ Este bloco de trabalho é candidato natural a subetapa dedicada dentro da Etapa 
 
 ### 7.5 Pacotes de design system do Claude Design (`_ds/`) — ruído, não decidido pelo Vitrine
 O pacote trouxe dois design systems de referência (`alma-pura-design-system`, `classical`) que **não foram usados** nos wireframes reais — confirmado por comparação direta de paleta/tipografia/regras (ex.: `alma-pura` proíbe branco puro, mas o shell usa `#ffffff`; `classical` exige botão sempre outline, mas o wireframe usa botão preenchido). `alma-pura-design-system` pertence a outro produto de Max (Instituto Alma Pura), sem relação com o Vitrine. Tratar `_ds/` como boilerplate do processo do Claude Design a ignorar — a paleta/tipografia real ratificada está em `docs/04_DESIGN_E_MARCA.md` §5.
+
+## 8. Diretrizes de arquitetura vindas do benchmark (Subetapa 03.2, 2026-09-03)
+
+Três diretrizes de `design/benchmark/DIRETRIZES_FORA_DO_BENCHMARK.md` §1 que pertencem a este documento. As demais foram para `docs/02_MODELO_DE_DADOS.md` §11, `docs/05_COMPLIANCE_E_ETICA.md` §5 e `handoffs/instrucoes.md`.
+
+### 8.1 Token de acesso externo é infraestrutura compartilhada, não recurso (A2)
+
+Os itens 7, 18, 19 e 23 do MVP parecem quatro recursos — exportação de prontuário, caixa de entrada de exames, assinatura do paciente e encaminhamento com contrarreferência — e são **um só mecanismo**:
+
+- **a concessão** — `token`, `token_expira_em`, `token_revogado_em`, mais os carimbos de envio e de primeira/última remessa;
+- **a tabela de tentativas**, com `motivo` enumerado (`token_inexistente` / `expirado` / `revogado` / `arquivo_invalido`);
+- **o bucket privado**, com `public = false`, `file_size_limit` e `allowed_mime_types` no próprio Storage como segunda camada, independente da validação da Edge Function;
+- **a Edge Function pública**, da mesma classe do `whatsapp-webhook`.
+
+**Construir uma vez e reusar quatro vezes.** O padrão está pronto e depurado no **CRM Sindcom** (`sql/20_comunicacao_externa.sql` e `sql/21_remessas_recepcao.sql`) — portar a lógica, traduzir os nomes, no mesmo tratamento que o `CLAUDE.md` §14 dá ao Maximus. Subetapa dona: 03.10; consumidores em 03.11 a 03.14.
+
+**Regra de negócio de Max que atravessa o bloco inteiro: nunca anexar dado pessoal em e-mail.** O canal — e-mail, WhatsApp ou SMS — carrega **só o link**; o dado trafega pelo ambiente privado. O uso do token diz **com quem está a demanda**, e é isso que alimenta o alerta de "aguardando contrarreferência".
+
+**Mudança de perfil de risco a registrar:** até aqui o produto tem **um** endpoint público (o webhook da Meta, autenticado por HMAC). Estes quatro itens criam endpoints públicos que **recebem e servem dado clínico** — é a primeira vez que o Vitrine expõe prontuário fora da sessão autenticada. Por isso a Subetapa 03.15 é um portão adversarial completo, e não apenas o portão do fim da Etapa.
+
+### 8.2 O componente de kanban serve a dois módulos (A7)
+
+O kanban já existe em `aba_sales.etapas_funil` desde a Subetapa 02.4 (colunas por etapa, cartão arrastável com `@dnd-kit`). O **controle protético** (item 26, `+1.0`) é o mesmo componente com cinco etapas e cor de atraso. Quem for construir o segundo **não escreve um kanban novo** — generaliza o que existe. Registrado agora para que a generalização seja decisão consciente quando o item 26 abrir, e não descoberta tardia.
+
+### 8.3 Residência do dado é decisão declarada (C4, efeito de arquitetura)
+
+A região do projeto Supabase — do Vitrine e de cada CRM-filho clonado — é **escolha a declarar**, não padrão a herdar. Dado sensível de saúde de paciente brasileiro fora do país é transferência internacional sob a LGPD, com ônus de base legal. O detalhe do achado que motivou a diretriz está em `docs/05_COMPLIANCE_E_ETICA.md` §5.2.

@@ -293,3 +293,31 @@ O "Wait step" do Maximus dependia de um endpoint Next.js pingado por scheduler e
 ## 10. Auditoria e RLS — resumo
 
 Toda tabela de módulo: RLS ativa, testada com role `viewer` restrito (prova: não escreve). `aba_health` acrescenta log de acesso obrigatório em toda leitura de prontuário. Checklist completo em `05_COMPLIANCE_E_ETICA.md`.
+
+## 11. Diretrizes de modelo vindas do benchmark (Subetapa 03.2, 2026-09-03)
+
+Cinco diretrizes de `design/benchmark/DIRETRIZES_FORA_DO_BENCHMARK.md` §1 e §6 que pertencem a este documento. Cada uma nomeia a subetapa da Etapa 03 que a executa — nenhuma é ordem de implementação por si.
+
+### 11.1 A corrente clínico-comercial é uma unidade de desenho (A1)
+
+> **catálogo** (procedimento com "aceita faces" e unidade de lançamento) → **odontograma** (seleciona dente e faces) → **orçamento** (linha com dente, faces e o preço daquele plano) → **contrato e financeiro** (aprovar o orçamento gera o lançamento)
+
+**Não são quatro recursos, é uma corrente.** O Vitrine tem o primeiro elo (`aba_catalog`) e o quarto (`aba_finance`) desde a Subetapa 01.3; faltam os dois do meio, e **o orçamento é o mais crítico** — sem ele o odontograma não tem onde escrever, e sem os dois o produto não é odontológico. O orçamento é **schema novo, entre `aba_catalog` e `aba_finance`**, com cabeçalho e linhas (`plano · procedimento · dente · faces · valor`) e estados `rascunho → aprovado`. Subetapas donas: 03.6 (catálogo), 03.7 (odontograma), 03.8 (orçamento) — nessa ordem, que é obrigatória.
+
+### 11.2 `unidade_lancamento` é irmã de "aceita faces" (A9)
+
+O procedimento do catálogo precisa das duas marcas juntas: **`aceita_faces`** (booleano) e **`unidade_lancamento`** (`dente` / `sextante` / `arcada` / `sessao` / `elemento`). A unidade está embutida no nome do procedimento na tabela nacional, e é o que diz **como** o item é lançado no orçamento. Some-se a **`quantidade_maxima` por unidade** — 32 por dente, 6 por sextante, 2 por arcada —, que não é rótulo e sim **validação de banco**: um orçamento com 33 restaurações no mesmo dente está errado e o sistema pode dizer isso. Origem: tabela SIGTAP do acervo de gestão pública. Subetapa dona: 03.6, com a validação surtindo efeito na 03.8.
+
+### 11.3 Item de catálogo e lote em estoque são um-para-muitos (A8)
+
+A planilha de referência do acervo achata os dois e por isso **repete o mesmo produto por fabricante**. No modelo do Vitrine, `item de catálogo` (o que é) e `lote em estoque` (o que se tem, com fabricante, lote e validade) são tabelas distintas em relação um-para-muitos. `aba_people.fornecedores` já existe desde a Subetapa 01.2 e é o vínculo. Subetapa dona: 03.20, que entrega só a metade de alertas e validade; entrada/saída e lote são `+1.0`.
+
+### 11.4 Encaminhamento com contrarreferência é entidade com estado (A10)
+
+Não é texto livre na evolução clínica, que é como o mercado inteiro resolve. É entidade com máquina de estados — `encaminhado → aceito → em atendimento → contrarreferenciado` —, formulário nas duas pontas e pré-requisito clínico declarado como campo (*"só encaminha com dor eliminada e infecção sob controle"*). Fica **entre `aba_health` e `aba_scheduling`**, e reusa o token de comunicação externa quando o especialista for externo. É lacuna que nenhum dos oito concorrentes do benchmark cobre. Subetapa dona: 03.14.
+
+### 11.5 A tabela de métricas nasce com o CRM-filho (A3)
+
+Retroajustar coleta de métrica em N instâncias já vendidas é migração coordenada em N bancos; nascer com a tabela custa quase nada. A tabela guarda **contagem e categoria, nunca linha de dado** — agregação na origem, não anonimização (ver `docs/05` §5.3, C5 e C6). Métricas: faturamento; clientes ativos; profissionais; procedimentos por categoria; taxa de falta; taxa de falta na primeira consulta, separada; ocupação da agenda; conversão de orçamento; inadimplência; mensagens enviadas. Subetapa dona: 03.21.
+
+> **Nota de medição (Subetapa 03.0, 2026-09-03).** A diretriz A4 do bench dizia faltar o valor `faltou` no enum de status de `aba_scheduling.agendamentos`. **Está incorreta:** `db/migrations/009_aba_scheduling.sql:259` já traz `nao_compareceu` no `CHECK`, que é o mesmo estado traduzido pela convenção do `CLAUDE.md` §2 — a taxa de falta é calculável desde a Etapa 01. O que de fato falta é `sala_de_espera` e o KPI que consome o valor, e é isso que a Subetapa 03.4 entrega.

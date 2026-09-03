@@ -45,5 +45,47 @@ Max levantou, durante a revisão visual da Subetapa 02.12b, a hipótese de **pro
 
 ## 4. O que fica para a Etapa 01 decidir
 
-- Política exata de retenção de log de acesso a prontuário (prazo mínimo legal a confirmar por jurisdição do cliente).
+- ~~Política exata de retenção de log de acesso a prontuário (prazo mínimo legal a confirmar por jurisdição do cliente).~~ **RESOLVIDA na Subetapa 03.2 (2026-09-03):** a jurisdição é federal e o prazo é o da Lei 13.787/2018, Art. 6º — **mínimo de 20 anos** a partir do último registro. Ver §5.1 (C1).
 - Se `pgvector` (busca semântica de IA) entra no v01 ou fica para `+1.0` — não é restrição de compliance, é decisão de escopo.
+
+## 5. Diretrizes de conformidade vindas do benchmark (Subetapa 03.2, 2026-09-03)
+
+Dez diretrizes que nasceram no bench de benchmark (`design/benchmark/DIRETRIZES_FORA_DO_BENCHMARK.md` §2 e §6) e pertencem a este documento, mais uma de arquitetura cujo efeito é de compliance (A6). Elas viram **critério de qualidade** das subetapas da Etapa 03 que as tocam — a subetapa dona está nomeada em cada uma.
+
+### 5.1 Retenção e acesso ao prontuário
+
+**C1 — Guarda mínima de 20 anos (Lei 13.787/2018, Art. 6º).** O prontuário deve ser guardado por no mínimo 20 anos a partir do último registro. A política de retenção do Vitrine precisa ser **explícita** e não pode repetir o que o líder de mercado faz: o termo de uso do Simples Dental (cláusula 8.1.2) declara que, bloqueada a conta, os dados de pacientes são mantidos **30 meses** e depois podem ser eliminados *"sem a manutenção de qualquer backup"*, cabendo ao usuário a responsabilidade exclusiva por pedir cópia. Trinta meses contra vinte anos. A obrigação legal é do cirurgião-dentista, e o software o deixa descoberto. **Fecha a pendência que o §4 deste documento deixou aberta** ("política exata de retenção a confirmar por jurisdição"): a jurisdição é federal e o prazo é 20 anos. Subetapa dona: 03.13 (exportação de prontuário).
+
+**C2 — Fornecer cópia do prontuário é dever, não conveniência (Art. 18, I do Código de Ética Odontológica).** Negar ao paciente ou periciado acesso ao seu prontuário, ou deixar de lhe fornecer cópia quando solicitada, **é infração ética**. A exportação do item 7 é cumprimento de dever do cliente, e é isso que a tela deve comunicar. Subetapa dona: 03.13.
+
+**C3 — Consentimento para imagem e identificação (Art. 14, III e Art. 44, VI do CEO).** Exibir imagem ou identificar paciente exige consentimento livre e esclarecido. `aba_health.consentimentos` existe desde a Subetapa 01.4 e **nunca teve tela** — a trava precisa ser visível onde a foto é publicada, não só ativa no banco. O marketing odontológico vive de antes-e-depois, e é aí que o risco se realiza. Subetapa dona: 03.5.
+
+### 5.2 Residência e transferência de dado
+
+**C4 — Residência do dado é decisão declarada, não padrão herdado.** O segundo colocado do mercado declara, na própria política de privacidade, hospedar dado sensível de saúde de paciente brasileiro em servidores na Carolina do Sul (EUA), região US-EAST 1, **por prazo indeterminado** — o que é transferência internacional, com todo o ônus de base legal da LGPD. A escolha de região do projeto Supabase do Vitrine e de cada CRM-filho é decisão a **declarar**, não a deixar no padrão. Ver também `docs/01_ARQUITETURA.md`.
+
+### 5.3 Métrica agregada
+
+**C5 — A tabela de métricas agrega na origem; não anonimiza depois.** Guardar só contagem e categoria torna o vazamento de dado personalíssimo **estruturalmente impossível**, em vez de proibido por política — anonimização é reversível e dá trabalho provar; agregação na origem não. A cláusula do Termo de Uso deve nomear **quais** métricas, nunca "métricas de uso". Subetapa dona: 03.21.
+
+**C6 — Métrica agregada de clínica ainda é segredo de negócio dela.** Faturamento e número de pacientes de uma clínica não são dado pessoal, mas são informação comercial sensível. O consolidado entre CRMs-filhos é seguro; o dado individual identificável por clínica precisa da mesma régua de acesso do resto — `access.can()`, nunca "quem tem a URL do painel". Subetapa dona: 03.21.
+
+### 5.4 IA e instrumento clínico
+
+**C7 — Em dado clínico, a IA propõe e o humano aplica.** O concorrente já opera assim: o ditado por voz abre uma **tabela de revisão** antes de gravar qualquer coisa no odontograma. Isto é regra escrita deste projeto, não escolha de implementação de quem construir o recurso. Vale para o item 29 (ditado clínico, `+1.0`) e para qualquer sugestão automática que toque `aba_health`. Reforça a trava que já existe e é `CHECK` de banco: o agente não lê prontuário, e nem o proprietário liga.
+
+**C9 — Instrumento de triagem nunca é diagnóstico.** Se um questionário de dor orofacial (ou similar) entrar como modelo de anamnese, entra como **coleta estruturada que apoia a avaliação**, com a ressalva visível na própria tela — nunca como resultado. Ver `design/benchmark/fontes/REPOS.md` §3.
+
+### 5.5 Conformidade sanitária da clínica
+
+**C8 — PGRSS e POP são exigência sanitária de toda clínica odontológica**, não burocracia opcional. Um módulo que rastreia validade de POP, de PGRSS e de contrato de terceiro toca **conformidade**, não gestão — e é o que evita a autuação no dia da fiscalização. É a tese que reposiciona o item 20. Subetapa dona: 03.20.
+
+**C10 — POP e PGRSS têm vigência, responsável e periodicidade.** "Abortamento de ciclo de esterilização" é **evento datado** — o material daquele ciclo não está estéril —, e "controle de manutenção da autoclave" é **vencimento**. São estados com data, não campos de texto. Origem: acervo de gestão pública transcrito em `design/benchmark/fontes/REFERENCIA_ODONTO_CEO.md`. Subetapa dona: 03.20.
+
+### 5.6 Endpoint público (efeito de compliance da diretriz A6)
+
+**A6 — O freio de endpoint público conta por token, nunca pela entidade.** Travar a *entidade* permitiria a um atacante **silenciar um usuário legítimo** só errando token de propósito: bloquear o laboratório impediria o envio de exames de uma clínica inteira. É negação de serviço por desenho, e a defesa é contar por token, com motivo enumerado (`token_inexistente` / `expirado` / `revogado` / `arquivo_invalido`). Medido no CRM Sindcom. Subetapa dona: 03.10; registrada também em `handoffs/instrucoes.md`.
+
+### 5.7 O flanco jurídico é argumento comercial já construído
+
+O Vitrine **já tem** o que os três achados acima pedem: `aba_health` com IBAC, `log_acesso` obrigatório em leitura **e** escrita, `concessoes_prontuario`, consentimento de imagem travando a leitura de anexo, e dado hospedado onde a conta Supabase escolher. Isso não é vantagem técnica — é **argumento comercial**, e nenhum dos cinco concorrentes brasileiros o usa hoje. Falta transformá-lo em três frases na página de venda e numa tela de exportação (diretriz E5, em `docs/07_BACKLOG_COMERCIAL.md`).
