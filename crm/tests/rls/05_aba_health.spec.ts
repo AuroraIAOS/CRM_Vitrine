@@ -639,3 +639,84 @@ describe("aba_health — anamnese incompleta é recusada pelo banco (Subetapa 02
     expect(error!.code).toBe("23514");
   });
 });
+
+describe("aba_health — log_acesso só é legível pelo owner (Subetapa 03.5, migration 041)", () => {
+  const admin = adminClient();
+  let ctx: TestContext;
+  let clienteId: string;
+
+  beforeAll(async () => {
+    ctx = await loadContext();
+    clienteId = await criarClienteFixture(admin, ctx.accountId, "Cliente Fictício Health 03.5");
+
+    // ler_prontuario() só grava log para prontuário que EXISTE (o INSERT
+    // do log é um SELECT sobre a tabela real) — sem esta linha, a
+    // concessão e a chamada abaixo rodariam sem erro e sem produzir
+    // nenhum log, e o controle positivo falharia por falta de dado, não
+    // por falha da política.
+    const { error: prontuarioErr } = await admin
+      .schema("aba_health")
+      .from("prontuarios")
+      .insert({ account_id: ctx.accountId, cliente_id: clienteId, tipo_pele: "mista" });
+    if (prontuarioErr) throw prontuarioErr;
+
+    // Gera pelo menos uma linha real de log_acesso, pelo caminho normal
+    // (concessão + ler_prontuario), para o teste de leitura não depender
+    // de conjunto vazio por falta de dado.
+    const { data: concessao, error: concessaoErr } = await admin
+      .schema("aba_health")
+      .from("concessoes_prontuario")
+      .insert({
+        account_id: ctx.accountId,
+        usuario_concedido_id: ctx.userIds.agent,
+        escopo: "cliente_unico",
+        cliente_id: clienteId,
+        efeito: "permitir",
+        motivo: "Teste 03.5 — gerar log",
+      })
+      .select("id")
+      .single();
+    if (concessaoErr) throw concessaoErr;
+
+    const agentSetup = await clientAs("agent");
+    const { error: leituraErr } = await agentSetup.schema("aba_health").rpc("ler_prontuario", { p_cliente_id: clienteId });
+    if (leituraErr) throw leituraErr;
+
+    await admin.schema("aba_health").from("concessoes_prontuario").delete().eq("id", concessao!.id);
+  });
+
+  afterAll(async () => {
+    await admin.schema("aba_health").from("log_acesso").delete().eq("cliente_id", clienteId);
+    await admin.schema("aba_health").from("prontuarios").delete().eq("cliente_id", clienteId);
+    await apagarCliente(admin, clienteId);
+  });
+
+  it("ATAQUE: admin não vê log_acesso — a política antiga (013) permitia admin+, a 041 restringe a owner", async () => {
+    const client = await clientAs("admin");
+    const { data, error } = await client.schema("aba_health").from("log_acesso").select("id").eq("cliente_id", clienteId);
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+  });
+
+  it("ATAQUE: agent não vê log_acesso, mesmo tendo lido o prontuário que gerou a linha", async () => {
+    const client = await clientAs("agent");
+    const { data, error } = await client.schema("aba_health").from("log_acesso").select("id").eq("cliente_id", clienteId);
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+  });
+
+  it("ATAQUE: viewer não vê log_acesso", async () => {
+    const client = await clientAs("viewer");
+    const { data, error } = await client.schema("aba_health").from("log_acesso").select("id").eq("cliente_id", clienteId);
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+  });
+
+  it("CONTROLE POSITIVO: owner vê a linha de log_acesso gerada no beforeAll — a política não bloqueia todo mundo", async () => {
+    const client = await clientAs("owner");
+    const { data, error } = await client.schema("aba_health").from("log_acesso").select("id, acao, tipo_registro").eq("cliente_id", clienteId);
+    expect(error).toBeNull();
+    expect((data ?? []).length).toBeGreaterThan(0);
+    expect(data!.some((l) => l.acao === "leitura" && l.tipo_registro === "prontuario")).toBe(true);
+  });
+});

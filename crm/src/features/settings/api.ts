@@ -427,9 +427,25 @@ export function useEstadoIA() {
 }
 
 // ============================================================
-// Auditoria
+// Auditoria — "Ações dos usuários" (item 8 do MVP, Subetapa 03.5)
+//
+// `aba_health.log_acesso` só é legível pelo `owner` desde a migration
+// 041 — a política antiga (013) liberava `admin+`, e o Objetivo da
+// 03.5 é explícito: só o dono da conta vê a atividade da equipe sobre
+// dado clínico, nem `admin` enxerga o que os colegas acessaram. A RLS
+// resolve isso sozinha (conjunto vazio para quem não é owner); esta
+// função nunca verifica papel — verificaria em duplicidade
+// (`CLAUDE.md`/Qualidade fixa da Etapa 03).
+//
+// Agregação por usuário, não só lista crua: "Ações dos usuários" pede
+// resposta a "quem fez o quê", e uma lista de UUID sem nome nem
+// contagem não responde isso. Nome resolvido via `public.profiles`
+// (mesmo padrão de `useEquipe.ts`) — `log_acesso` guarda só o UUID.
 // ============================================================
 export type LinhaAuditoria = { id: string; quando: string; o_que: string; detalhe: string };
+export type AcaoUsuario = { userId: string; nome: string; leituras: number; escritas: number; ultimaAcao: string };
+
+const JANELA_AUDITORIA_LOG = 500;
 
 export function useAuditoria() {
   const { profile } = useAuth();
@@ -437,7 +453,7 @@ export function useAuditoria() {
   return useQuery({
     queryKey: ["auditoria", accountId],
     enabled: !!accountId,
-    queryFn: async (): Promise<{ clinica: LinhaAuditoria[]; licenca: LinhaAuditoria[] }> => {
+    queryFn: async (): Promise<{ acoesPorUsuario: AcaoUsuario[]; clinica: LinhaAuditoria[]; licenca: LinhaAuditoria[] }> => {
       const [log, limites] = await Promise.all([
         supabase
           .schema("aba_health")
@@ -445,7 +461,7 @@ export function useAuditoria() {
           .select("id, ocorrido_em, acao, tipo_registro, usuario_ator_id")
           .eq("account_id", accountId!)
           .order("ocorrido_em", { ascending: false })
-          .limit(12),
+          .limit(JANELA_AUDITORIA_LOG),
         supabase
           .schema("licensing")
           .from("limit_changes")
@@ -457,12 +473,32 @@ export function useAuditoria() {
       if (log.error) throw log.error;
       if (limites.error) throw limites.error;
 
+      const eventos = log.data ?? [];
+      const atorIds = Array.from(new Set(eventos.map((l) => l.usuario_ator_id)));
+      const { data: perfis, error: perfisErr } = atorIds.length
+        ? await supabase.from("profiles").select("user_id, full_name, email").eq("account_id", accountId!).in("user_id", atorIds)
+        : { data: [] as { user_id: string; full_name: string | null; email: string }[], error: null };
+      if (perfisErr) throw perfisErr;
+      const nomePorAtor = Object.fromEntries((perfis ?? []).map((p) => [p.user_id, p.full_name || p.email]));
+
+      const porUsuario = new Map<string, AcaoUsuario>();
+      for (const l of eventos) {
+        const nome = nomePorAtor[l.usuario_ator_id] ?? "Usuário removido";
+        const atual = porUsuario.get(l.usuario_ator_id) ?? { userId: l.usuario_ator_id, nome, leituras: 0, escritas: 0, ultimaAcao: l.ocorrido_em };
+        if (l.acao === "leitura") atual.leituras += 1;
+        else atual.escritas += 1; // criacao | atualizacao | exportacao
+        if (l.ocorrido_em > atual.ultimaAcao) atual.ultimaAcao = l.ocorrido_em;
+        porUsuario.set(l.usuario_ator_id, atual);
+      }
+      const acoesPorUsuario = Array.from(porUsuario.values()).sort((a, b) => b.leituras + b.escritas - (a.leituras + a.escritas));
+
       return {
-        clinica: (log.data ?? []).map((l) => ({
+        acoesPorUsuario,
+        clinica: eventos.slice(0, 12).map((l) => ({
           id: l.id,
           quando: l.ocorrido_em,
           o_que: `${l.acao} · ${l.tipo_registro}`,
-          detalhe: l.usuario_ator_id ?? "—",
+          detalhe: nomePorAtor[l.usuario_ator_id] ?? "Usuário removido",
         })),
         licenca: (limites.data ?? []).map((l) => ({
           id: l.id,

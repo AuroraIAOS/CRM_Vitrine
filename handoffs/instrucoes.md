@@ -623,6 +623,14 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Regra que fica:** ao escrever uma migration que precisa alterar um `CHECK` criado sem nome explícito em migration anterior, nunca confiar em como o SQL original foi escrito — ler `pg_get_constraintdef()` de verdade antes de montar o filtro de busca ou o `DROP CONSTRAINT`.
 - **Fonte:** Subetapa 03.4, 2026-09-03.
 
+### Objetivo de subetapa escrito na 03.0 afirmava que o item 6 (consentimento de imagem) "nunca teve tela" — já tinha, desde a 02.9
+- **Gatilho:** Subetapa 03.5, ao abrir o Objetivo ("consentimento de imagem visível na ficha, travando publicação — `aba_health.consentimentos` já existe e nunca teve tela") antes de escrever qualquer código.
+- **O que a leitura do repositório mostrou:** `crm/src/features/health/ConsentimentosTab.tsx` existe, está com `import` real em `ProntuarioPage.tsx`, e cobre exatamente o que o Objetivo pedia — registro dos três tipos de consentimento, badge "vigente"/"sem consentimento", histórico com revogação. A trava de verdade (não travar o *envio*, só a *exibição*, decisão de Max de 2026-08-08) já está em `014_aba_health_attachments_bucket.sql`: `pode_acessar_anexo()` recusa leitura de imagem sem `consentimento_vigente(cliente_id, 'uso_imagem')`. Tudo isso é da Subetapa 02.9 (commit `81375de`), não desta sessão.
+- **Por que a leitura vale a pena mesmo com a tela pronta há semanas:** é a mesma classe de achado que a 03.0 já corrigiu duas vezes (odontograma, enum de falta) — o handoff/plano supõe uma lacuna que confrontar com o repositório desmente. Sem essa checagem, a 03.5 teria reconstruído uma tela existente do zero, com risco real de divergir da trava de bucket que já funciona.
+- **Ação:** nenhum código para o item 6. O trabalho real desta subetapa foi só o item 8. Registrado no cabeçalho da migration `041` e no Status da 03.5, não silenciado.
+- **Regra que fica:** confrontar CADA cláusula do Objetivo com o repositório antes de escrever — inclusive a que parece mais óbvia ou mais bem escrita. "Nunca teve tela" é uma afirmação factual, checável em segundos com `grep`, e não checá-la primeiro é o mesmo erro que a 03.0 já pagou.
+- **Fonte:** Subetapa 03.5, 2026-09-03.
+
 ---
 
 ## 6. Armadilhas conhecidas (não repetir)

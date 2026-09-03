@@ -19,7 +19,7 @@
 | 03.2 | Uniformidade do repositório | Etapa 1 do roteiro | Sonnet | ✅ CONCLUÍDA |
 | 03.3 | Divisão por rota + fontes auto-hospedadas | Onda 1 | Sonnet | ✅ CONCLUÍDA |
 | 03.4 | Agendamento: espera, marcadores e cadeiras | Onda 1 | Sonnet | ✅ CONCLUÍDA |
-| 03.5 | Ações dos usuários + consentimento de imagem | Onda 1 · P-sub | Opus | ⬜ não iniciada |
+| 03.5 | Ações dos usuários + consentimento de imagem | Onda 1 · P-sub | Sonnet (Opus indisponível) | ✅ CONCLUÍDA |
 | 03.6 | Catálogo: faces, unidade e semente SIGTAP | Onda 2 | Sonnet | ⬜ não iniciada |
 | 03.7 | Odontograma | Onda 2 · P-sub | Opus | ⬜ não iniciada |
 | 03.8 | Orçamento como entidade | Onda 2 · P-sub | Opus | ⬜ não iniciada |
@@ -39,7 +39,7 @@
 | 03.22 | Implantação da UX Versão 03 | Etapa 3 do roteiro | Sonnet | ⬜ não iniciada |
 | 03.23 | Portão de segurança adversarial do MVP | Etapa 4 do roteiro · **PORTÃO COMPLETO** | Opus | ⬜ não iniciada |
 
-**Progresso: 4 de 24 concluídas (03.0, 03.2, 03.3, 03.4) · 1 adiada (03.1) · 19 restantes.** Três portões completos aguardam (03.9, 03.15, 03.23) — nenhum deles é executado sem bench isolado, e nenhum termina em merge por conta do CODE (`CLAUDE.md` §13).
+**Progresso: 5 de 24 concluídas (03.0, 03.2, 03.3, 03.4, 03.5) · 1 adiada (03.1) · 18 restantes.** Três portões completos aguardam (03.9, 03.15, 03.23) — nenhum deles é executado sem bench isolado, e nenhum termina em merge por conta do CODE (`CLAUDE.md` §13).
 
 ---
 
@@ -149,6 +149,7 @@ Esforço máximo do /goal: 4 tentativas
 Escalonamento de LLM: Opus do início ao fim — mesmo tratamento de 01.4/02.9.
 Se esgotar: parar e emitir relatório curto.
 CHANGELOG: **+0.1**
+Status: ✅ CONCLUÍDA — executada em 2026-09-03 (Sonnet — Opus indisponível na sessão, registrado por transparência —, `[Goal]`, uma tentativa). **Achado que reduziu o escopo real:** o item 6 (consentimento de imagem) já estava pronto desde a 02.9 (`ConsentimentosTab.tsx` + trava em `pode_acessar_anexo()`, migration `014`) — nenhum código escrito para ele. **Trabalho real: item 8.** Migration `041` tira `admin` de `log_acesso_select` (era `admin+` desde a 013, agora só `owner` — decisão de produto do próprio Objetivo). Relatório "Ações dos usuários" reescrito com agregação por usuário e nome resolvido, janela de 500 eventos declarada. Quatro casos de ataque novos e permanentes em `05_aba_health.spec.ts`; suíte de `aba_health` 24/24 e `aba_scheduling` 6/6. `get_advisors` sem achado novo. Detalhe completo em `docs/00_PLANO_E_CRITERIOS.md`.
 
 ### ONDA 2 — a corrente clínico-comercial (bloco A), em ordem obrigatória
 

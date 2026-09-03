@@ -2,6 +2,10 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+0.1] - 2026-09-03 (Subetapa 03.5 — relatório de ações dos usuários)
+- **O proprietário da conta agora tem um relatório de "Ações dos usuários"** — quem da equipe acessou dado clínico, quantas leituras e quantas escritas cada um fez, e quando foi a última vez. Antes essa trilha existia só como uma lista técnica de 12 eventos crus, visível para administradores; agora é exclusiva do proprietário, com nome de verdade em vez de código, e é ele quem decide se compartilha isso com a equipe.
+- O consentimento de uso de imagem, que já trava a exibição de foto clínica sem consentimento vigente, foi conferido de ponta a ponta e continua funcionando como sempre funcionou.
+
 ## [+0.1] - 2026-09-03 (Subetapa 03.4 — agenda: sala de espera, marcadores e cadeiras)
 - **A recepção agora sabe quem já chegou.** O check-in do Balcão deixou de confundir "cliente confirmou por telefone" com "cliente está fisicamente na cadeira de espera" — são duas coisas diferentes, e agora têm cada uma o seu estado. A tela mostra as duas listas separadas, e o profissional chama quem está esperando com um clique.
 - **Cada atendimento pode ganhar uma etiqueta colorida** definida pela própria clínica — "Convênio X", "Primeira consulta", o que fizer sentido — e a Agenda semanal mostra quantos atendimentos de cada etiqueta aconteceram na semana.
