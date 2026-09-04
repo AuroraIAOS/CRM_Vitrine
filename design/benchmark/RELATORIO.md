@@ -7,13 +7,23 @@ de gestão pública em Saúde Bucal; e em **2026-09-02** a revisão do §5 (c) p
 numeração, fundiu duplicações e reclassificou cinco itens.
 Cinco brasileiros — contendo os três mais vendidos do país — e três internacionais.
 
+**Rodada 4 — o ICE Health System (2026-09-03), no branch `analise-ice`.** Um nono software entra
+no material, **fora da amostra dos oito e por outro motivo**: ele não concorre com o Vitrine no
+mercado brasileiro, mas documenta o produto em nível de campo de formulário e de caminho
+alternativo — **424 páginas de help center e 32 vídeos**, dois deles de ~50 minutos lidos do
+início ao fim. É referência de **modelagem**, não de mercado. Detalhe em
+[`fontes/ice.md`](fontes/ice.md); método e escopo em
+[`00_PLANO_DE_ACAO_ICE.md`](00_PLANO_DE_ACAO_ICE.md); o que ele muda na Etapa 03 em
+[`RELATORIO_DE_IMPACTO_ICE.md`](RELATORIO_DE_IMPACTO_ICE.md).
+
 **Nada aqui foi implantado.** O produto em `crm/`, o Supabase e o subdomínio no ar seguem
 intactos. Isto é matéria-prima de decisão de Max (`CLAUDE.md` §13).
 
 **[verificado]** = visto em fonte pública ou funcionando na tela do vídeo · **[declarado]** = o
 fornecedor afirma, sem prova na tela · **[a conferir]** = não confirmado na fonte primária. Todo
 preço, número e artigo de lei tem link e data em [`fontes/COLETA.md`](fontes/COLETA.md); as
-**61 referências visuais** em [`capturas/`](capturas/), com índice por pasta.
+**115 referências visuais** em [`capturas/`](capturas/), com índice por pasta — 61 das rodadas 1 a
+3 e **54 da rodada 4** ([`capturas/ice/INDICE.md`](capturas/ice/INDICE.md)).
 
 **Três limites, declarados antes do resultado.** (1) Não existe auditoria pública de market
 share deste nicho no Brasil — todo número de base é **autodeclarado pelo fornecedor**. (2) Preço
@@ -122,6 +132,24 @@ duplicações foram fundidas e cinco itens mudaram de MVP para futuro ou o contr
 canônicas são [`fontes/MVP.xlsx`](fontes/MVP.xlsx) e [`fontes/FUTURO.xlsx`](fontes/FUTURO.xlsx);
 o que segue é a transcrição delas, com as observações técnicas que a revisão levantou.
 
+**A lista foi reaberta duas vezes desde então, e as duas estão registradas aqui.**
+
+**(1) 2026-09-03, por Max:** o MVP passou de 24 para **26 itens**, com **25 — Resumo do paciente**
+e **26 — Prescrições de medicamento** (`docs/00_PLANO_E_CRITERIOS.md`, ETAPA 2 DO ROTEIRO). Eles
+estão transcritos ao fim da tabela "Agora".
+
+> ⚠️ **Colisão de numeração, medida e declarada — não é erro de transcrição.** A sequência deste
+> documento é **única de 1 a 33**, com **25–33 no Futuro**. Os dois itens novos do MVP também se
+> chamam 25 e 26. Portanto **`25` e `26` nomeiam dois itens diferentes cada um** neste material, e
+> o desambiguador é o bloco: `25-MVP` / `26-MVP` × `25-futuro` / `26-futuro`. **Nada foi
+> renumerado de propósito** — renumerar quebraria referência já escrita nas subetapas da Etapa 03,
+> e a convenção do projeto é inserir sem renumerar. Registrado por decisão de Max de 2026-09-03
+> (D-ICE-1, `00_PLANO_DE_ACAO_ICE.md` §8).
+
+**(2) 2026-09-03, pela pesquisa `analise-ice`:** os itens que o ICE revelou entram **a partir de
+34** — o primeiro número livre da sequência —, na seção §5.4 abaixo. **Todos entram como
+reportados, nenhum como planejado** (`CLAUDE.md` §15): quem decide o que vira escopo é Max.
+
 Fontes: os recursos que Max colheu nos sites, **56 vídeos** dos concorrentes, **4 repositórios**,
 **14 capturas** dele e o **acervo de gestão pública** — detalhe em
 [`fontes/COLETA.md`](fontes/COLETA.md) §C1, [`fontes/VIDEOS.md`](fontes/VIDEOS.md),
@@ -142,6 +170,18 @@ O odontograma não é uma tela isolada: é o meio de uma corrente de quatro elos
 
 O Vitrine tem o **primeiro** elo (`aba_catalog`) e o **quarto** (`aba_finance`). Faltam os dois do
 meio — e **o orçamento é o mais crítico**, porque sem ele o odontograma não tem onde escrever.
+
+> **[Precisado pela rodada 4, 2026-09-03 — a corrente está certa, o terceiro elo está mal
+> nomeado.]** A palavra **"convênio"** desta frase é a correta, e é ela que a Subetapa 03.8
+> confirmou ao derrubar a leitura "plano" (`handoffs/instrucoes.md` §5). Mas o ICE mostra que
+> **"o preço daquele convênio" não é um campo da linha**: é o resultado de uma **escada de
+> resolução** — `Paciente > Tipo de profissional > Clínica > Grupo de clínicas > Prática` — que
+> roda no momento em que o procedimento é lançado, sem ninguém escolher tabela na tela; e o
+> convênio PPO fica **fora** dessa escada, entrando como **ajuste contratual** sobre a diferença.
+> Prova ao vivo: a mesma consulta custa $250 com um profissional e $400 com um especialista
+> (`fontes/ice.md` §5.2). E o terceiro elo, no ICE, não se chama orçamento: chama-se **plano de
+> tratamento**, com fases clínicas e opções concorrentes, do qual o valor é uma **projeção**
+> (`Estimate: Ins. $X / Pt. $Y`), não o objeto. Ver `RELATORIO_DE_IMPACTO_ICE.md`.
 
 ### Agora — cabe no MVP
 
@@ -171,6 +211,8 @@ meio — e **o orçamento é o mais crítico**, porque sem ele o odontograma nã
 | 22 | **Semente do catálogo** com os procedimentos da Atenção Básica, o **código SIGTAP**, a **unidade de lançamento** e a **quantidade máxima** por unidade | ❌ | `fontes/SIGTAP.xlsx` + acervo de gestão pública de Max | `aba_catalog`; troca a tela vazia inicial por uma base real e prepara TISS/TUSS sem retrabalho |
 | 23 | **Encaminhamento com contrarreferência** — estado (`encaminhado → aceito → em atendimento → contrarreferenciado`), formulário nas duas pontas, pré-requisito clínico declarado e **trânsito sempre por token**, nunca anexo em e-mail | ❌ | protocolo público do CEO — **nenhum dos 8 modela isso** | `aba_health` + `aba_scheduling`; o uso do token diz **com quem está a demanda**, e alimenta um alerta de "aguardando contrarreferência" |
 | 24 | **Multiunidade** — isolamento por unidade, metas consolidadas e **login em dois estágios** (e-mail e senha → o sistema detecta que o e-mail pertence a mais de um consultório → seleção de consultório) | ❌ | vídeos CF12/CF13/CF15/CF23 | **é a realidade de muitos profissionais**, e adiar isso decide a compra no primeiro contato. Ver a ressalva técnica em §5.2 |
+| **25-MVP** | **Resumo do paciente** — aba inicial do dossiê consolidando dados sociais, alergias, riscos e planos vigentes | ❌ | **acrescentado por Max em 2026-09-03** | `aba_health`; Subetapa 03.16.a. O ICE resolve isso com **health facts** com significância na barra lateral e **resumo de evolução** configurável por modelo (`fontes/ice.md` §10) |
+| **26-MVP** | **Prescrições de medicamento** — registro clínico novo | ❌ | **acrescentado por Max em 2026-09-03** | `aba_health`; Subetapa 03.16.a |
 
 ### Futuro (`+1.0`)
 
@@ -235,6 +277,51 @@ vídeo CF21 mostra), e a plataforma Aurora já estava coberta pelo item 21. Max 
 revisada corrige.
 
 ---
+
+### 5.4 Itens 34+ — o que a rodada 4 (ICE) acrescentou
+
+**Numerados a partir de 34 por decisão de Max de 2026-09-03** (D-ICE-1): 34 é o primeiro número
+livre da sequência única, e nada foi renumerado. **Todos são reportados, nenhum é planejado**
+(`CLAUDE.md` §15) — quem decide o que entra em escopo é Max, e a via para isso é o
+[`RELATORIO_DE_IMPACTO_ICE.md`](RELATORIO_DE_IMPACTO_ICE.md).
+
+Evidência de cada linha em [`fontes/ice.md`](fontes/ice.md) e nas 54 capturas de
+[`capturas/ice/`](capturas/ice/INDICE.md).
+
+**Grupo A — não são itens novos: mudam item do MVP que já existe.** Ficam aqui só para não se
+perderem; o efeito real deles está no relatório de impacto.
+
+| # | O que | Muda o item | Onde |
+|---|---|---|---|
+| — | **Dentição é estado por dente, não modo de exibição.** Permanente e decíduo convivem na mesma arcada; a dentição inicial sai da **idade** em 12 faixas; e há 7 operações por dente (adicionar, supranumerário, substituir, erupcionar, não-erupcionar, ausente, remover), com **tabela de efeitos** distinguindo "ausente" de "não erupcionado" de "removido" | **item 2** (odontograma) | `fontes/ice.md` §3.2 |
+| — | **A face é a unidade de seleção**, por uma roseta de 5 regiões (D/M/V/L + centro), e há **micro-superfície** abaixo dela, com faturamento na face-pai | **item 2** | §3.1, §3.3 |
+| — | **Selecionar N faces cria N linhas**, uma por dente — não uma linha com N dentes | **itens 1 e 2** | §3.3 |
+| — | **O preço se resolve por escada**, não se escolhe na linha; PPO entra como ajuste contratual | **item 1** (orçamento) | §5.2 |
+| — | **A cobrança nasce do status `Completed` do procedimento**, não da aprovação de um orçamento | **item 1** | §4.1, §5.4 |
+
+**Grupo B — itens novos candidatos ao MVP.**
+
+| # | O que | Por que agora | Onde encosta |
+|---|---|---|---|
+| **34** | **Opções de tratamento concorrentes (A/B/…) sob o mesmo diagnóstico**, em colunas, com o diagnóstico atravessando as opções e as fases clínicas como linhas (Emergency · Systemic · Acute · Disease Control · Definitive · Maintenance) | É a estrutura que transforma "orçamento" em conversa clínica com o paciente — e é o desenho que a 03.8 ia construir sem. Barato **agora**, caro depois de a entidade existir | `aba_budget` / Subetapa 03.8 |
+| **35** | **Requisitos por procedimento**, com pop-over: consentimento de tratamento, consentimento informado, pré-determinação de convênio, validação por supervisor e achado diagnóstico obrigatório — configurados **por código** | Torna a regra clínica dado, não código. O nosso `aceita_faces` da 03.6 é o primeiro membro dessa família | `aba_catalog.servicos` + 03.8 |
+| **36** | **Recusa implícita e regra de re-consentimento.** Consentir a Opção A marca a B como recusada; e mudar **dente** ou **código** exige novo termo, enquanto mudar **face**, **fase**, **opção** ou **diagnóstico** não exige | É requisito ético e jurídico, não conveniência: o registro de que o paciente escolheu A **e recusou B** | `aba_health.consentimentos` + 03.8 |
+| **37** | **Step set** — procedimento partido em etapas com status, data e consulta próprios, percentual de receita por etapa e **uma etapa faturável** | Coroa, prótese e endodontia acontecem em várias sessões; sem isto o financeiro só sabe "feito" ou "não feito" | `aba_catalog` + `aba_finance` |
+| **38** | **Consulta não agendada + prancheta** — o clínico planeja as sessões e vincula procedimentos **sem data**; a recepção agenda depois, arrastando da prancheta | Desacopla planejar de marcar, que é o gargalo real do balcão. Encosta no item 4 (sala de espera) sem se confundir com ele | `aba_scheduling` |
+| **39** | **Warnings — relatório que vira item de ação**, com mensagem diferente no painel da clínica e no do paciente, contagem, link para a lista e opção de **exigir reconhecimento** | É o mecanismo genérico por trás do item 12 (painel como lista de tarefas): em vez de codificar cada card, o painel é alimentado por relatório + regra | `aba_automations` + painel |
+| **40** | **Notas administrativas com reconhecimento forçado** — nota não clínica que aparece como bandeira nos locais escolhidos (agenda, financeiro, painel) e pode travar o trabalho até ser lida | "Este paciente não pode ser atendido sem o responsável" é informação de recepção, não de prontuário — e hoje não tem onde morar | `aba_people` |
+| **41** | **Vigência de tabela de preço** — rascunho editável, **compromisso com data**, e tarifa comprometida que não se edita mais | Reajuste vira tabela nova, e o histórico de quanto se cobrou em cada data fica correto sozinho. É o que impede um `UPDATE` de reescrever o passado do financeiro | `aba_catalog` |
+
+**Grupo C — itens novos para o futuro (`+1.0`), reportados e não planejados.**
+
+| # | O que | Observação |
+|---|---|---|
+| **42** | **Validação por supervisor** — pares de grupos ("exige validação" × "pode validar"), fila de trabalho do supervisor com tudo que o aluno lançou, e indicador vermelho/verde por item | Nasce do contexto de clínica-escola do ICE. Vale para clínica com estagiário ou dentista júnior; e é **exatamente** o mercado de faculdade de odontologia, que é um CRM-filho plausível |
+| **43** | **Adendo em evolução travada** e **atribuição de evolução a outro profissional** | Nossa `evolucoes` trava e não tem saída para "esqueci de escrever isto" a não ser evolução nova solta |
+| **44** | **Code macro** — um código que expande em vários, com dente/área padrão por item | Ganho de digitação em procedimento composto |
+| **45** | **Reconhecimento de receita diferida** — plano longo com duração estimada, receita "ganha" × "futura", e conciliação obrigatória no cancelamento | O ICE faz isso para ortodontia; a estrutura serve a qualquer tratamento longo. Encosta no item 27 (plano recorrente) |
+| **46** | **Conjunto de código como configuração**, com código próprio da clínica **mapeado** a um código oficial para herdar visual e faturamento | Generaliza o que a 03.6 fez com o SIGTAP: hoje a semente é fixa; aqui a clínica cria os próprios códigos sem sair do padrão nacional |
+| **47** | **Anexo cujo tipo governa o acesso** — o arquivo herda a permissão do domínio a que pertence (financeiro, imagem, agenda, prontuário) | Vale diretamente para a Subetapa 03.11 (caixa de entrada de exames): hoje o nosso bucket é clínico ou não é |
 
 ## 6. (d) Preço praticável
 
@@ -338,6 +425,19 @@ não compra familiaridade nenhuma aqui — só custa a identidade, que era o pre
 
 **A paleta de comandos da Versão 02 continua backlog, não caminho descartado** — e o benchmark
 reforça: nenhum concorrente odontológico tem `⌘K`, então ela é diferencial futuro, não paridade.
+
+**O que a rodada 4 acrescenta ao parecer, sem mudá-lo.** O ICE confirma os cinco pontos acima e
+levanta um sexto, que é de arquitetura de tela e não de estética:
+
+6. **O mesmo módulo precisa existir em dois tamanhos.** No ICE, o financeiro é um **painel** no
+   painel do paciente (saldo, receber, extrato, guia) **e** uma área cheia — e a recepção fecha o
+   atendimento sem nunca entrar na área cheia. A nossa sidebar por tipo de trabalho continua
+   certa; o que falta é a versão compacta de cada módulo dentro da tela do paciente. É composição,
+   não schema, e por isso é barato. Ver `fontes/ice.md` §2.
+
+**E uma advertência sobre imitar o ICE na aparência: não.** O produto é visualmente arcaico e
+sobrecarregado, e a nota de Max ao abrir a pesquisa foi explícita — **o interesse é estrutura,
+funcionalidade, caminho feliz, caminho alternativo e campo de formulário; nada de estética.**
 
 ---
 

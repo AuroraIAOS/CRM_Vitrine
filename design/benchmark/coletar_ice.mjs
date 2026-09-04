@@ -257,6 +257,43 @@ function condensarVTT(vtt) {
   return saida.join("\n");
 }
 
+/**
+ * Legenda, com escada de clientes — a SEXTA incompatibilidade medida nesta
+ * máquina, e a única que não existia em agosto.
+ *
+ * O cliente padrão do yt-dlp entrega a legenda numa chamada isolada (testado no
+ * vídeo de 50 min: 480.130 B), mas **para de entregar depois de ~30 pedidos em
+ * sequência**, com `Sign in to confirm you're not a bot`. A primeira rodada dos
+ * 32 vídeos deste canal caiu exatamente aí: 21 de 22 vídeos ficaram sem
+ * transcrição, e o download de VÍDEO continuou funcionando o tempo todo pelo
+ * `mweb` — o que faz a falha parecer específica de legenda quando é de taxa.
+ *
+ * A saída oficial que a mensagem sugere (`--cookies-from-browser`) é **recusada
+ * aqui**: usar a sessão logada de Max no YouTube é login por outro nome, e a
+ * regra de conduta desta pesquisa e do benchmark de agosto proíbe login sem
+ * exceção. Só material público.
+ *
+ * A saída medida, sem login: dos cinco clientes testados no mesmo vídeo já
+ * bloqueado — `tv` ("The page needs to be reloaded"), `ios` ("Requested format
+ * is not available"), `mweb` ("There are no subtitles for the requested
+ * languages") —, **`web_embedded` e `android` entregam a legenda normalmente.**
+ * Daí a escada abaixo, com o padrão primeiro (é o que dá a legenda original
+ * quando não está limitado) e os dois que sobrevivem ao limite em seguida.
+ */
+function baixarLegenda(dir, url) {
+  const CLIENTES = [null, "web_embedded", "android"];
+  for (const cliente of CLIENTES) {
+    try {
+      r("yt-dlp", ["--write-auto-subs", "--sub-langs", "en-orig,en", "--sub-format", "vtt",
+        "--skip-download", "-o", path.join(dir, "v.%(ext)s"), "--no-warnings",
+        ...(cliente ? ["--extractor-args", `youtube:player_client=${cliente}`] : []), url]);
+    } catch { /* tenta o próximo cliente */ }
+    const vtt = ["v.en-orig.vtt", "v.en.vtt"].map((f) => path.join(dir, f)).find(fs.existsSync);
+    if (vtt) return condensarVTT(fs.readFileSync(vtt, "utf-8"));
+  }
+  return "";   // lacuna declarada no índice, nunca suposta
+}
+
 function mosaico(frames, destino, colunas = COLUNAS) {
   const dm = fs.mkdtempSync(path.join(os.tmpdir(), "ice-mos-"));
   frames.forEach((f, k) => fs.copyFileSync(f, path.join(dm, `s_${String(k + 1).padStart(3, "0")}.jpg`)));
@@ -302,13 +339,7 @@ async function coletarVideo(filtro) {
     // ≥15 min = vídeo longo: amostragem densa (1 quadro / ~30 s) e mosaicos de 12
     const longo = (it.duration ?? 0) >= 900;
     try {
-      // legenda: cliente PADRÃO (o mweb descarta legenda); original primeiro
-      try {
-        r("yt-dlp", ["--write-auto-subs", "--sub-langs", "en-orig,en", "--sub-format", "vtt",
-          "--skip-download", "-o", path.join(dir, "v.%(ext)s"), "--no-warnings", url]);
-      } catch { /* sem legenda: declarado abaixo como lacuna, nunca suposto */ }
-      const vtt = ["v.en-orig.vtt", "v.en.vtt"].map((f) => path.join(dir, f)).find(fs.existsSync);
-      const transcricao = vtt ? condensarVTT(fs.readFileSync(vtt, "utf-8")) : "";
+      const transcricao = baixarLegenda(dir, url);
       fs.writeFileSync(path.join(dir, "transcricao.txt"), transcricao, "utf-8");
 
       // vídeo: cliente MWEB (o padrão dá 403)
@@ -357,13 +388,43 @@ async function coletarVideo(filtro) {
   console.log(`\n${falhas.length} falha(s). Matéria-prima: ${dirV}`);
 }
 
+/**
+ * Repesca só as transcrições que faltaram, sem refazer mosaico nenhum.
+ * Existe porque o limite anti-bot descrito em `baixarLegenda()` atingiu a
+ * primeira rodada no meio, e rebaixar 32 vídeos para recuperar texto seria
+ * pagar de novo o que já está em disco.
+ */
+async function repescarLegendas() {
+  const dirV = path.join(TRAB, "videos");
+  const slugs = fs.readdirSync(dirV, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name);
+  let recuperadas = 0, jaTinha = 0, semLegenda = [];
+  for (const slug of slugs) {
+    const dir = path.join(dirV, slug);
+    const arqMeta = path.join(dir, "meta.json");
+    if (!fs.existsSync(arqMeta)) continue;
+    const meta = JSON.parse(fs.readFileSync(arqMeta, "utf-8"));
+    if (meta.temTranscricao) { jaTinha++; continue; }
+    const transcricao = baixarLegenda(dir, meta.url);
+    fs.writeFileSync(path.join(dir, "transcricao.txt"), transcricao, "utf-8");
+    meta.temTranscricao = transcricao.length > 0;
+    meta.palavras = transcricao.split(/\s+/).filter(Boolean).length;
+    fs.writeFileSync(arqMeta, JSON.stringify(meta, null, 1), "utf-8");
+    if (meta.temTranscricao) { recuperadas++; console.log(`  ✓ ${slug} ${String(meta.palavras).padStart(6)} palavras`); }
+    else { semLegenda.push(slug); console.log(`  ✗ ${slug} segue sem legenda`); }
+    await dorme(1500);   // espaçar: o limite é de taxa, não de volume
+  }
+  console.log(`\n${jaTinha} já tinham · ${recuperadas} recuperadas · ${semLegenda.length} sem legenda` +
+    (semLegenda.length ? ` (${semLegenda.join(", ")}) — lacuna declarada` : ""));
+}
+
 // ──────────────────────────────────────────────────────────────────── main
 
 const [cmd, arg] = process.argv.slice(2);
 if (cmd === "site") await coletarSite();
 else if (cmd === "imagens") await coletarImagens();
 else if (cmd === "video") await coletarVideo(arg);
+else if (cmd === "legendas") await repescarLegendas();
 else {
-  console.log("uso: coletar_ice.mjs site | imagens | video [filtro]");
+  console.log("uso: coletar_ice.mjs site | imagens | video [filtro] | legendas");
   process.exit(1);
 }
