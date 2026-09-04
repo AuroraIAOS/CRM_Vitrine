@@ -447,6 +447,8 @@ O contrato é a **estrutura documental dentro da qual se registra tudo o que foi
 
 **Contrato assinado é pré-requisito de execução (D-V8):** nenhum serviço — procedimento, pacote ou plano — se executa sem contrato assinado pelas duas partes, mesmo para um trabalho único como uma limpeza. Espelha a exigência do CFO de assinatura das duas partes no prontuário a cada trabalho. **O `owner` pode desligar a exigência por processo, assumindo o risco — e o desligamento se registra**, com quem e quando. Subetapa dona: **03.8.b**.
 
+**O documento do contrato é canônico, e o PDF é só entrega (D-V10).** No aceite da proposta nasce um **HTML determinístico** — mesma entrada, mesmo byte — com **hash de conteúdo** guardado junto; é o hash que dá valor probatório, não o formato do arquivo. O **PDF se renderiza só no momento de enviar ou arquivar**, e nenhuma dependência de PDF volta ao projeto (a Subetapa 03.7 removeu a cadeia `jspdf`/`dompurify`). **E a assinatura acontece em duas etapas de projeto (D-V9):** a 03.8.b entrega o estado `assinado` com **assinatura presencial registrada** das duas partes; a **03.12** acrescenta o canal remoto por link e token sobre a **mesma** máquina de estados, sem criar um segundo estado.
+
 ### 13.3 Autoria do plano e sucessão do profissional (D-V7)
 
 - **Edita o plano só o profissional que o criou** — RBAC (`agent` + profissional) **e** IBAC (o autor). É direito de exercício profissional, não conveniência de tela.
