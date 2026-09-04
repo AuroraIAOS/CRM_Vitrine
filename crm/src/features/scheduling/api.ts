@@ -333,18 +333,18 @@ export function useAtualizarMarcador() {
 // Serviços (aba_catalog) — para preencher duração/preço padrão do
 // atendimento. Leitura só; CRUD de catálogo é a Subetapa 02.7.
 // ============================================================
-export type Servico = { id: string; nome: string; duracaoPadraoMinutos: number; precoBase: number };
+export type Procedimento = { id: string; nome: string; duracaoPadraoMinutos: number; precoBase: number };
 
-export function useServicos() {
+export function useProcedimentos() {
   const { profile } = useAuth();
   const accountId = profile?.accountId;
   return useQuery({
-    queryKey: ["servicos-agenda", accountId],
+    queryKey: ["procedimentos-agenda", accountId],
     enabled: !!accountId,
-    queryFn: async (): Promise<Servico[]> => {
+    queryFn: async (): Promise<Procedimento[]> => {
       const { data, error } = await supabase
         .schema("aba_catalog")
-        .from("servicos")
+        .from("procedimentos")
         .select("id, nome, duracao_padrao_minutos, preco_base")
         .eq("account_id", accountId!)
         .eq("ativo", true)
@@ -401,7 +401,7 @@ export function useClientesParaSelecao() {
 // (aba_finance) ao criar o agendamento. Leitura só; a venda em si é
 // escopo da Subetapa 02.8.
 // ============================================================
-export type PlanoClienteAtivo = { id: string; planoNome: string };
+export type PlanoClienteAtivo = { id: string; pacoteNome: string };
 
 export function usePlanosClienteAtivos(clienteId: string | undefined) {
   return useQuery({
@@ -410,20 +410,20 @@ export function usePlanosClienteAtivos(clienteId: string | undefined) {
     queryFn: async (): Promise<PlanoClienteAtivo[]> => {
       const { data: planosCliente, error } = await supabase
         .schema("aba_finance")
-        .from("planos_cliente")
-        .select("id, plano_id")
+        .from("pacotes_cliente")
+        .select("id, pacote_id")
         .eq("cliente_id", clienteId!)
         .eq("status", "ativo");
       if (error) throw error;
       const lista = planosCliente ?? [];
       if (lista.length === 0) return [];
 
-      const planoIds = Array.from(new Set(lista.map((p) => p.plano_id)));
-      const { data: planos, error: e2 } = await supabase.schema("aba_catalog").from("planos").select("id, nome").in("id", planoIds);
+      const pacoteIds = Array.from(new Set(lista.map((p) => p.pacote_id)));
+      const { data: planos, error: e2 } = await supabase.schema("aba_catalog").from("pacotes").select("id, nome").in("id", pacoteIds);
       if (e2) throw e2;
       const nomes = Object.fromEntries((planos ?? []).map((p) => [p.id, p.nome]));
 
-      return lista.map((p) => ({ id: p.id, planoNome: nomes[p.plano_id] ?? "Plano" }));
+      return lista.map((p) => ({ id: p.id, pacoteNome: nomes[p.pacote_id] ?? "Plano" }));
     },
   });
 }
@@ -516,7 +516,7 @@ export function useAgendamentosIntervalo(inicioISO: string, fimISO: string, prof
         db().from("profissionais").select("id, nome_exibicao, cor").in("id", profissionalIds),
         recursoIds.length ? db().from("recursos").select("id, nome").in("id", recursoIds) : Promise.resolve({ data: [], error: null }),
         marcadorIds.length ? db().from("marcadores").select("id, nome, cor").in("id", marcadorIds) : Promise.resolve({ data: [], error: null }),
-        db().from("agendamento_servicos").select("agendamento_id, servico_id, preco").in("agendamento_id", agendamentoIds),
+        db().from("agendamento_procedimentos").select("agendamento_id, procedimento_id, preco").in("agendamento_id", agendamentoIds),
       ]);
       if (pessoasRes.error) throw pessoasRes.error;
       if (profissionaisRes.error) throw profissionaisRes.error;
@@ -530,9 +530,9 @@ export function useAgendamentosIntervalo(inicioISO: string, fimISO: string, prof
       const infoMarcador = Object.fromEntries((marcadoresRes.data ?? []).map((m) => [m.id, m]));
 
       const servicosLinhas = servicosLinhasRes.data ?? [];
-      const servicoIds = Array.from(new Set(servicosLinhas.map((s) => s.servico_id)));
-      const { data: servicos, error: e6 } = servicoIds.length
-        ? await supabase.schema("aba_catalog").from("servicos").select("id, nome").in("id", servicoIds)
+      const procedimentoIds = Array.from(new Set(servicosLinhas.map((s) => s.procedimento_id)));
+      const { data: servicos, error: e6 } = procedimentoIds.length
+        ? await supabase.schema("aba_catalog").from("procedimentos").select("id, nome").in("id", procedimentoIds)
         : { data: [] as { id: string; nome: string }[], error: null };
       if (e6) throw e6;
       const nomesServico = Object.fromEntries((servicos ?? []).map((s) => [s.id, s.nome]));
@@ -540,7 +540,7 @@ export function useAgendamentosIntervalo(inicioISO: string, fimISO: string, prof
       const servicosPorAgendamento = new Map<string, { id: string; nome: string; precoTotal: number }[]>();
       for (const linha of servicosLinhas) {
         const atual = servicosPorAgendamento.get(linha.agendamento_id) ?? [];
-        atual.push({ id: linha.servico_id, nome: nomesServico[linha.servico_id] ?? "Serviço", precoTotal: Number(linha.preco) });
+        atual.push({ id: linha.procedimento_id, nome: nomesServico[linha.procedimento_id] ?? "Serviço", precoTotal: Number(linha.preco) });
         servicosPorAgendamento.set(linha.agendamento_id, atual);
       }
 
@@ -579,8 +579,8 @@ export function useCriarAgendamento() {
       inicio: string;
       fim: string;
       observacoes?: string;
-      servico?: { servicoId: string; preco: number; duracaoMinutos: number };
-      planoClienteId?: string;
+      servico?: { procedimentoId: string; preco: number; duracaoMinutos: number };
+      pacoteClienteId?: string;
     }) => {
       const { data: agendamento, error } = await db()
         .from("agendamentos")
@@ -593,7 +593,7 @@ export function useCriarAgendamento() {
           inicio: input.inicio,
           fim: input.fim,
           observacoes: input.observacoes || null,
-          plano_cliente_id: input.planoClienteId || null,
+          pacote_cliente_id: input.pacoteClienteId || null,
           valor_cobrado: input.servico?.preco ?? null,
         })
         .select("id")
@@ -602,11 +602,11 @@ export function useCriarAgendamento() {
 
       if (input.servico) {
         const { error: e2 } = await db()
-          .from("agendamento_servicos")
+          .from("agendamento_procedimentos")
           .insert({
             account_id: profile!.accountId,
             agendamento_id: agendamento.id,
-            servico_id: input.servico.servicoId,
+            procedimento_id: input.servico.procedimentoId,
             preco: input.servico.preco,
             duracao_minutos: input.servico.duracaoMinutos,
           });

@@ -9,7 +9,7 @@ import {
   useClientesParaSelecao,
   usePlanosDisponiveis,
   useCriarFaturaAvulsa,
-  useVenderPlano,
+  useVenderPacote,
   useRegistrarPagamento,
   usePlanoVendidoPorFatura,
   useEstornarSessao,
@@ -43,16 +43,16 @@ function FormularioNovoLancamento({ onFeito, onCancelar }: { onFeito: () => void
   const { data: clientes } = useClientesParaSelecao();
   const { data: planos } = usePlanosDisponiveis();
   const criarAvulsa = useCriarFaturaAvulsa();
-  const venderPlano = useVenderPlano();
+  const venderPlano = useVenderPacote();
 
   const [clienteId, setClienteId] = useState("");
   const [descricao, setDescricao] = useState("");
-  const [planoId, setPlanoId] = useState("");
+  const [pacoteId, setPlanoId] = useState("");
   const [valor, setValor] = useState("");
   const [vencimento, setVencimento] = useState("");
   const [erro, setErro] = useState<string | null>(null);
 
-  const planoSelecionado = (planos ?? []).find((p) => p.id === planoId);
+  const planoSelecionado = (planos ?? []).find((p) => p.id === pacoteId);
   const pendente = criarAvulsa.isPending || venderPlano.isPending;
 
   return (
@@ -91,8 +91,8 @@ function FormularioNovoLancamento({ onFeito, onCancelar }: { onFeito: () => void
             venderPlano.mutate(
               {
                 clienteId,
-                planoId: planoSelecionado.id,
-                planoNome: planoSelecionado.nome,
+                pacoteId: planoSelecionado.id,
+                pacoteNome: planoSelecionado.nome,
                 precoTotal: Number(valor.replace(",", ".")) || planoSelecionado.precoTotal,
                 dataVencimento: vencimento || undefined,
               },
@@ -138,7 +138,7 @@ function FormularioNovoLancamento({ onFeito, onCancelar }: { onFeito: () => void
               <select
                 required
                 className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
-                value={planoId}
+                value={pacoteId}
                 onChange={(e) => {
                   setPlanoId(e.target.value);
                   const p = (planos ?? []).find((pl) => pl.id === e.target.value);
@@ -181,7 +181,7 @@ function FormularioNovoLancamento({ onFeito, onCancelar }: { onFeito: () => void
 
         <div className="flex items-center gap-2">
           <Button type="submit" size="sm" disabled={pendente}>
-            {pendente ? "Salvando..." : tipo === "avulso" ? "Criar lançamento" : "Vender plano"}
+            {pendente ? "Salvando..." : tipo === "avulso" ? "Criar lançamento" : "Vender pacote"}
           </Button>
           <Button type="button" size="sm" variant="outline" onClick={onCancelar}>
             Cancelar
@@ -249,7 +249,7 @@ function SecaoPlanoVendido({ faturaId }: { faturaId: string }) {
   return (
     <div className="flex flex-col gap-2 border-t border-hairline pt-3">
       <span className="text-[11.5px] font-medium text-foreground">
-        Plano vendido: {plano.planoNome} <Badge tone={plano.status === "ativo" ? "success" : "neutral"}>{plano.status}</Badge>
+        Plano vendido: {plano.pacoteNome} <Badge tone={plano.status === "ativo" ? "success" : "neutral"}>{plano.status}</Badge>
       </span>
       <div className="flex flex-col gap-1.5">
         {plano.saldos.map((s) => (
@@ -265,7 +265,7 @@ function SecaoPlanoVendido({ faturaId }: { faturaId: string }) {
                 onClick={() => {
                   setErro(null);
                   estornar.mutate(
-                    { planoClienteId: plano.id, servicoId: s.servicoId },
+                    { pacoteClienteId: plano.id, procedimentoId: s.procedimentoId },
                     { onError: (err) => setErro(mensagemErroFinanceiro(err)) },
                   );
                 }}
@@ -315,7 +315,7 @@ function DetalheFatura({ fatura, onFechar }: { fatura: Fatura; onFechar: () => v
         </div>
       )}
 
-      {fatura.planoClienteId && <SecaoPlanoVendido faturaId={fatura.id} />}
+      {fatura.pacoteClienteId && <SecaoPlanoVendido faturaId={fatura.id} />}
     </Card>
   );
 }

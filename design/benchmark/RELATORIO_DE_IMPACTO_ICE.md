@@ -1,5 +1,16 @@
 # Relatório de impacto — o que a pesquisa `analise-ice` muda na Etapa 03
 
+> **⚠️ Nota de vocabulário (Subetapa 03.6.b, 2026-09-04) — este documento NÃO foi renomeado, de propósito.**
+> Ele é registro do que foi medido numa data, e `CLAUDE.md` §10 manda não reescrever registro. Onde se lê
+> `aba_catalog.servicos`, hoje é **`aba_catalog.procedimentos`**; onde se lê `aba_catalog.planos`,
+> `itens_plano`, `planos_cliente`, `saldos_plano`, `extrato_plano` e `vender_plano()`, hoje são
+> **`pacotes`**, `itens_pacote`, `pacotes_cliente`, `saldos_pacote`, `extrato_pacote` e `vender_pacote()`;
+> `servico_id` é **`procedimento_id`** e `plano_id` é **`pacote_id`**. E, mais importante que os nomes:
+> a palavra **"plano"** passou a significar **só o planejamento clínico personalizado** (decisão D-V1 de
+> Max). O que este texto chama de "plano" no sentido de combo pré-pago hoje se chama **pacote**.
+> Tabela completa dos cinco termos em `docs/02_MODELO_DE_DADOS.md` §13.1.
+
+
 Passo 6 da sequência acordada com Max. Escrito em **2026-09-03**, no branch `analise-ice`, depois
 da aprovação das evidências na PARADA 2 e com as duas instruções dadas ali já aplicadas
 (`00_PLANO_DE_ACAO_ICE.md` §8-B).

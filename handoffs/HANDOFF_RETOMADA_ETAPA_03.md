@@ -1,5 +1,16 @@
 # HANDOFF — retomada da Etapa 03 depois da pesquisa `analise-ice`
 
+> **⚠️ Nota de vocabulário (Subetapa 03.6.b, 2026-09-04) — este documento NÃO foi renomeado, de propósito.**
+> Ele é registro do que foi medido numa data, e `CLAUDE.md` §10 manda não reescrever registro. Onde se lê
+> `aba_catalog.servicos`, hoje é **`aba_catalog.procedimentos`**; onde se lê `aba_catalog.planos`,
+> `itens_plano`, `planos_cliente`, `saldos_plano`, `extrato_plano` e `vender_plano()`, hoje são
+> **`pacotes`**, `itens_pacote`, `pacotes_cliente`, `saldos_pacote`, `extrato_pacote` e `vender_pacote()`;
+> `servico_id` é **`procedimento_id`** e `plano_id` é **`pacote_id`**. E, mais importante que os nomes:
+> a palavra **"plano"** passou a significar **só o planejamento clínico personalizado** (decisão D-V1 de
+> Max). O que este texto chama de "plano" no sentido de combo pré-pago hoje se chama **pacote**.
+> Tabela completa dos cinco termos em `docs/02_MODELO_DE_DADOS.md` §13.1.
+
+
 Escrito em **2026-09-04**, em `main`, logo depois do merge de `analise-ice` ordenado por Max.
 É o passo 9 — e último — da sequência acordada na abertura daquela pesquisa.
 

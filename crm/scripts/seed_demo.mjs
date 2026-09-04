@@ -22,7 +22,7 @@
  * 3. **Nenhum dado real de cliente.** Todos os nomes são fictícios e o
  *    prefixo `[demo]` no nome da conta deixa a origem explícita.
  * 4. **Sem escrita direta em tabela protegida.** `planos_cliente` e
- *    `saldos_plano` nascem por `aba_finance.vender_plano()`, como a Qualidade
+ *    `saldos_plano` nascem por `aba_finance.vender_pacote()`, como a Qualidade
  *    da 02.8 exige — o seed usa o mesmo caminho do produto, não um atalho.
  *
  * IDEMPOTENTE. Rodar de novo não duplica: `--limpar` apaga a conta de
@@ -198,10 +198,10 @@ async function limpar() {
     ["aba_automations", ["fluxo_execucoes", "fluxos", "automacao_logs", "automacao_execucoes_pendentes", "automacoes"]],
     ["aba_messaging", ["reacoes_mensagem", "mensagens", "transmissoes", "conversas", "eventos_provedor", "contatos_canal", "modelos_mensagem", "respostas_rapidas", "provedores_canal", "configuracao_whatsapp"]],
     ["aba_health", ["log_acesso", "respostas_anamnese", "evolucoes", "consentimentos", "prontuarios", "concessoes_prontuario", "formularios_anamnese"]],
-    ["aba_finance", ["extrato_plano", "saldos_plano", "planos_cliente", "pagamentos", "envios_fatura", "itens_fatura", "faturas", "lancamentos_comissao", "regras_comissao", "parcelas_contrato", "contratos"]],
+    ["aba_finance", ["extrato_pacote", "saldos_pacote", "pacotes_cliente", "pagamentos", "envios_fatura", "itens_fatura", "faturas", "lancamentos_comissao", "regras_comissao", "parcelas_contrato", "contratos"]],
     ["aba_sales", ["oportunidades", "funis"]],
-    ["aba_scheduling", ["lembretes", "agendamento_servicos", "agendamentos", "ausencias", "horarios_profissionais", "horarios_recursos", "recursos", "profissionais"]],
-    ["aba_catalog", ["itens_plano", "variantes_servico", "planos", "servicos", "categorias"]],
+    ["aba_scheduling", ["lembretes", "agendamento_procedimentos", "agendamentos", "ausencias", "horarios_profissionais", "horarios_recursos", "recursos", "profissionais"]],
+    ["aba_catalog", ["itens_pacote", "variantes_procedimento", "pacotes", "procedimentos", "categorias"]],
     ["aba_people", ["pessoa_notas", "campos_customizados", "tags", "leads", "clientes", "fornecedores", "funcionarios", "pessoas"]],
   ];
   for (const [schema, tabelas] of ORDEM) {
@@ -353,7 +353,7 @@ async function semear() {
     { account_id: conta, nome: "Estética facial", cor: "#5b87a8", posicao: 1, ativo: true },
     { account_id: conta, nome: "Corporal e bem-estar", cor: "#8fb4a6", posicao: 2, ativo: true },
   ]);
-  const servicos = await inserir("aba_catalog", "servicos", [
+  const servicos = await inserir("aba_catalog", "procedimentos", [
     { account_id: conta, categoria_id: cats[0].id, nome: "Limpeza de pele profunda", duracao_padrao_minutos: 60, preco_base: 180, ativo: true },
     { account_id: conta, categoria_id: cats[0].id, nome: "Peeling de diamante", duracao_padrao_minutos: 60, preco_base: 220, ativo: true },
     { account_id: conta, categoria_id: cats[1].id, nome: "Massagem relaxante", duracao_padrao_minutos: 60, preco_base: 150, ativo: true },
@@ -361,24 +361,24 @@ async function semear() {
     { account_id: conta, categoria_id: cats[0].id, nome: "Microagulhamento (suspenso)", duracao_padrao_minutos: 60, preco_base: 350, ativo: false },
     { account_id: conta, categoria_id: cats[1].id, nome: "Bambuterapia (suspenso)", duracao_padrao_minutos: 60, preco_base: 190, ativo: false },
   ]);
-  await inserir("aba_catalog", "variantes_servico", [
-    { account_id: conta, servico_id: servicos[0].id, nome: "Padrão", preco: 180, duracao_minutos: 60, padrao: true, ativo: true },
-    { account_id: conta, servico_id: servicos[0].id, nome: "Com extração estendida", preco: 240, duracao_minutos: 90, padrao: false, ativo: true },
-    { account_id: conta, servico_id: servicos[2].id, nome: "Padrão", preco: 150, duracao_minutos: 60, padrao: true, ativo: true },
-    { account_id: conta, servico_id: servicos[2].id, nome: "Sessão dupla", preco: 260, duracao_minutos: 120, padrao: false, ativo: false },
-    { account_id: conta, servico_id: servicos[1].id, nome: "Peeling reforçado (suspenso)", preco: 300, duracao_minutos: 90, padrao: false, ativo: false },
+  await inserir("aba_catalog", "variantes_procedimento", [
+    { account_id: conta, procedimento_id: servicos[0].id, nome: "Padrão", preco: 180, duracao_minutos: 60, padrao: true, ativo: true },
+    { account_id: conta, procedimento_id: servicos[0].id, nome: "Com extração estendida", preco: 240, duracao_minutos: 90, padrao: false, ativo: true },
+    { account_id: conta, procedimento_id: servicos[2].id, nome: "Padrão", preco: 150, duracao_minutos: 60, padrao: true, ativo: true },
+    { account_id: conta, procedimento_id: servicos[2].id, nome: "Sessão dupla", preco: 260, duracao_minutos: 120, padrao: false, ativo: false },
+    { account_id: conta, procedimento_id: servicos[1].id, nome: "Peeling reforçado (suspenso)", preco: 300, duracao_minutos: 90, padrao: false, ativo: false },
   ]);
-  const planos = await inserir("aba_catalog", "planos", [
+  const planos = await inserir("aba_catalog", "pacotes", [
     { account_id: conta, nome: "Pacote Facial — 5 sessões", preco_total: 800, dias_validade: 180, ativo: true },
     { account_id: conta, nome: "Pacote Corporal — 10 sessões", preco_total: 1300, dias_validade: 240, ativo: true },
     { account_id: conta, nome: "Pacote Verão (encerrado)", preco_total: 600, dias_validade: 90, ativo: false },
     { account_id: conta, nome: "Pacote Detox (descontinuado)", preco_total: 720, dias_validade: 120, ativo: false },
   ]);
-  await inserir("aba_catalog", "itens_plano", [
-    { account_id: conta, plano_id: planos[0].id, servico_id: servicos[0].id, sessoes_incluidas: 5 },
-    { account_id: conta, plano_id: planos[1].id, servico_id: servicos[2].id, sessoes_incluidas: 6 },
-    { account_id: conta, plano_id: planos[1].id, servico_id: servicos[3].id, sessoes_incluidas: 4 },
-    { account_id: conta, plano_id: planos[2].id, servico_id: servicos[3].id, sessoes_incluidas: 3 },
+  await inserir("aba_catalog", "itens_pacote", [
+    { account_id: conta, pacote_id: planos[0].id, procedimento_id: servicos[0].id, sessoes_incluidas: 5 },
+    { account_id: conta, pacote_id: planos[1].id, procedimento_id: servicos[2].id, sessoes_incluidas: 6 },
+    { account_id: conta, pacote_id: planos[1].id, procedimento_id: servicos[3].id, sessoes_incluidas: 4 },
+    { account_id: conta, pacote_id: planos[2].id, procedimento_id: servicos[3].id, sessoes_incluidas: 3 },
   ]);
   log("catálogo: 2 categorias · 6 serviços (4 ativos, 2 suspensos) · 5 variantes · 4 planos (2 ativos, 2 descontinuados)");
 
