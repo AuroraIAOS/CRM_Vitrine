@@ -408,3 +408,62 @@ As duas metades da regra, e **as duas são obrigatórias**:
 - **A régua de `aba_finance` continua valendo:** a aprovação passa pelas seis operações já provadas (`db/migrations/011_aba_finance_operations.sql`), **nunca por `INSERT` direto** nas tabelas mantidas por trigger.
 - **`is_account_member` + `access.can()`** continuam sendo o mecanismo de permissão. A pesquisa mostrou um modelo aditivo por grupos de profissionais e ele foi **recusado** — `CLAUDE.md` §14: porte do Maximus, provado em produção. O que se leva é a pergunta que o modelo aditivo faz bem, não o mecanismo.
 - **A semente SIGTAP de 64 procedimentos** (03.6) sai reforçada: conjunto de código padronizado é a fundação de busca, regra, faturamento e visual no odontograma.
+
+---
+
+## 13. Vocabulário do domínio e o contrato (decisões D-V1–D-V8, 2026-09-04)
+
+Esta seção nasce de uma pergunta de precisão de Max — *"'plano' e 'convênio' são coisas distintas; verifique se o CRM não as está tratando como sinônimo"* — e da varredura que ela provocou. O achado foi maior que a pergunta: **"plano" tinha quatro donos dentro do mesmo produto** e **"convênio" não tinha nenhum**. As decisões estão em `docs/00_PLANO_E_CRITERIOS.md` → "As oito decisões de vocabulário e contrato (D-V1–D-V8)"; aqui fica o modelo de dados que elas produzem.
+
+### 13.1 Quatro palavras, quatro donos (D-V1)
+
+| Termo | O que é | Onde mora |
+|---|---|---|
+| **Procedimento** | A unidade atômica vendável e executável: "extração de siso", "restauração de dente permanente posterior". Carrega código SIGTAP, unidade de lançamento, quantidade máxima, regra de forma e os três requisitos (03.6 / 03.6.a) | `aba_catalog.procedimentos` — a tabela que se chamava `servicos` |
+| **Pacote** | Combo **padrão** ofertado a todos, geralmente promocional: "5 sessões de limpeza". Pode entrar ou não num contrato | `aba_catalog.pacotes` + `itens_pacote` — as que se chamavam `planos` / `itens_plano` |
+| **Plano** | Combo **personalizado**, criado para um paciente específico a partir da anamnese, do odontograma e do diagnóstico: "plano de restauração de 3 molares e 1 prótese". Só aparece disponível para o contrato daquele paciente | `aba_treatment` (Subetapa 03.8) |
+| **Nível** | A faixa comercial do próprio CRM — Bronze, Prata, Ouro, Diamante —, que decide a que funcionalidades a clínica tem acesso | `licensing` + a camada da Subetapa 03.9 |
+| **Convênio** | A operadora de saúde de que o paciente é signatário, e que lhe dá desconto | **Não existe (D-V5).** Ver §13.4 |
+
+E **"serviço" volta a ser o guarda-chuva**: qualquer um dos três primeiros, quando não importa qual. A execução do renome é a **Subetapa 03.6.b**.
+
+**"Plano" e "orçamento" também são coisas distintas, e as duas existem na tela** (Max, 2026-09-04): **plano** é o planejamento clínico — o conjunto de procedimentos a executar naquele paciente; **orçamento** é a vista financeira dele — o preço a pagar pela execução do que foi contratado. A recepção e o profissional veem os dois; **só o profissional autor edita o plano**, e **só `admin` mexe em parcela, desconto, juros, mora e promoção** (§13.3).
+
+### 13.2 O contrato guarda itens de três tipos — com arco exclusivo, nunca polimorfismo (D-V3)
+
+O contrato é a **estrutura documental dentro da qual se registra tudo o que foi pactuado**. Um contrato pode conter um plano personalizado, um pacote padrão, um procedimento avulso, ou N de cada, misturados.
+
+**A forma que NÃO se usa, e o motivo é medido.** O desenho intuitivo é uma coluna `tipo` (enum) mais uma coluna `id` apontando para uma das três tabelas. Isso é **referência polimórfica**, e ela **não pode ter `REFERENCES`**. As 10 chaves estrangeiras que hoje apontam para o catálogo são **todas compostas por `account_id`** (Subetapa 02.15: a integridade referencial ignora RLS por especificação — `account_id` na filha isola a linha, mas não impede que ela **aponte** para linha de outra conta). A defesa permanente contra a 11ª chave desprotegida, `public.fks_sem_isolamento_de_conta()`, filtra `WHERE con.contype = 'f'`: **uma coluna polimórfica não seria sinalizada, seria invisível**. Nada impediria a linha de um contrato de apontar para o pacote de outra clínica, e nenhum teste ficaria vermelho.
+
+**A forma que se usa:**
+
+- **`aba_finance.itens_contrato`** com `procedimento_id`, `pacote_id` e `plano_id` — as três anuláveis, cada uma chave estrangeira composta por `account_id`, e `CHECK (num_nonnulls(procedimento_id, pacote_id, plano_id) = 1)`. É o padrão de **arco exclusivo**, e a auditoria enxerga as três.
+- **Gatilho de isolamento por paciente:** `plano.cliente_id` tem de ser igual a `contrato.cliente_id`. A chave composta protege entre clínicas; **nada protege entre pacientes da mesma clínica sem esta trava**.
+- **`aba_catalog.ofertas`, uma VIEW** — o "cardápio": `UNION` dos três com uma coluna `tipo`, e o plano aparecendo só para o paciente dono dele. View, e não tabela: cardápio não guarda dado, e guardar duplicaria preço.
+- **O item de contrato guarda o valor acordado congelado, com proveniência** — nunca lê o preço do catálogo na hora de exibir. Senão reajustar a tabela reescreve contrato assinado, que é o mesmo mal que o item 41 existe para impedir.
+- **Quantidade e validade são do item de contrato, não do cardápio.** No cardápio são a oferta ("vale 180 dias"); no contrato são o fato ("comprou 3, vence em 12/03"). São tempos de vida diferentes.
+
+**Aditivo de contrato não existe no MVP (D-V4):** acréscimo de serviço ou de tempo é **contrato novo**, ligado ao anterior pelo `cliente_id` compartilhado. Aditivo como documento vinculado ao contrato-pai é versionamento futuro declarado.
+
+**Contrato assinado é pré-requisito de execução (D-V8):** nenhum serviço — procedimento, pacote ou plano — se executa sem contrato assinado pelas duas partes, mesmo para um trabalho único como uma limpeza. Espelha a exigência do CFO de assinatura das duas partes no prontuário a cada trabalho. **O `owner` pode desligar a exigência por processo, assumindo o risco — e o desligamento se registra**, com quem e quando. Subetapa dona: **03.8.b**.
+
+### 13.3 Autoria do plano e sucessão do profissional (D-V7)
+
+- **Edita o plano só o profissional que o criou** — RBAC (`agent` + profissional) **e** IBAC (o autor). É direito de exercício profissional, não conveniência de tela.
+- **O autor indica um coautor** antes de sair, no mesmo regime de troca de segredo profissional das referências e contrarreferências.
+- **Se não indicar** — inclusive por morte —, no momento em que o `owner` marca aquele profissional como **inativo**, planos e contratos dele passam **automaticamente ao `owner`**, a quem cabe executar ou redistribuir. O motivo é prático: é comum o `owner` não ser dentista.
+- **Atenção medida:** `access.can()` devolve `TRUE` para `owner` **antes** de consultar qualquer tabela (`003_core_access.sql:162`). A trava por autor precisa do **mesmo** mecanismo que a Subetapa 03.9 vai construir para a trava de nível — não de uma segunda invenção.
+- **Dinheiro é da recepção:** só `admin` altera parcelas, descontos, juros, mora e promoções. É padrão de qualidade do trabalho clínico — tira do dentista a negociação de preço na cadeira, e dá a cada lado uma resposta honesta para o paciente.
+
+### 13.4 Convênio — provisionado, não construído (D-V5)
+
+**Nada se cria agora:** nenhuma tabela, nenhuma coluna, nenhuma RLS, nenhuma view. O MVP trabalha só com os preços padronizados pelo próprio consultório, e operadora, franquia, carência, cobertura e exceção continuam **controle manual da recepção**.
+
+Esta seção existe para que o versionamento futuro **não redescubra o desenho** nem esbarre no que se decidiu agora. O modelo de referência, medido em `design/benchmark/fontes/ice.md` §5.3, tem três níveis — **operadora → unidade regional → apólice** — com quatro tipos de apólice, benefícios (co-pagamento, teto por indivíduo/família, franquia, data de aniversário em que os tetos zeram), cobertura por categoria e **exceção por código** com idade mínima e máxima. Múltiplas apólices por paciente, com a ordem definindo primária e secundária.
+
+**Os dois ganchos que o desenho de hoje já deixa prontos, e que não devem ser fechados:**
+
+1. **A escada de preço da 03.8.a começa no degrau `Paciente`.** O desconto de convênio é tabela de preço própria (varia por idade, por exemplo), e é nesse degrau que ela entra — sem reescrever a escada.
+2. **O convênio fica FORA da escada como pagador.** Quando existir, entra como **ajuste contratual** sobre a diferença — lançamento nomeado e reportável —, e "quem pagou" vira coluna própria, **nunca** um valor de `pagamentos.forma_pagamento`. Foi por isso que a 03.6.b trocou o valor `'plano'` daquele CHECK por **`'saldo_pacote'`**: aquele valor nunca foi forma de pagamento nem pagador, é liquidação contra saldo pré-pago.
+
+Convênio de verdade com TISS/TUSS, CID-10 e elegibilidade eletrônica segue sendo o **item 33** da lista de futuro `+1.0`, fora do MVP por `CLAUDE.md` §15.
