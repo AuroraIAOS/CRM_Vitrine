@@ -1,298 +1,595 @@
 /**
- * Odontograma clínico — invólucro de `react-advanced-odontogram` 2.4.0
- * (Subetapa 03.7, item 2 do MVP; biblioteca escolhida por Max em
+ * Odontograma clínico autoral — Subetapa 03.7.a (decisão D-I1 de Max,
  * 2026-09-03).
  *
  * ============================================================
- * ESTE É O ÚNICO ARQUIVO DO PRODUTO QUE IMPORTA A BIBLIOTECA
+ * POR QUE ESTE ARQUIVO FOI REESCRITO DO ZERO
  * ============================================================
- * E ele existe separado por causa disso. O núcleo pesa **436.343 B
- * gzip** medidos (`gzip -c dist/odontogram.js`, o método do §5 de
- * `design/ux/06_ORCAMENTO_DE_PESO.md`) — 2,7× o chunk de entrada inteiro
- * do Vitrine, que a Subetapa 03.3 deixou em 160.212 B. A restrição 1 da
- * Qualidade desta subetapa manda carregá-lo só atrás de `React.lazy`, e
- * aqui isso é feito em DOIS níveis:
- *
- *   1. `/prontuario` já é rota preguiçosa desde a 03.3;
- *   2. este componente é preguiçoso DENTRO dela — só é buscado quando
- *      alguém escolhe a aba "Odontograma".
- *
- * O segundo nível não é zelo: sem ele, todo dentista que abrisse uma
- * ficha para ler anamnese, anexo ou consentimento pagaria 436 KB por um
- * mapa que talvez nem olhasse. Enquanto o chunk viaja, a grade FDI leve
- * da Subetapa 02.9 (3.023 B gzip) desenha as marcações já gravadas — o
- * `fallback` do `<Suspense>` não é um spinner, é o odontograma anterior
- * funcionando em modo leitura.
+ * A versão da 03.7 era um invólucro de `react-advanced-odontogram` 2.4.0. A
+ * pesquisa `analise-ice` mediu, no sourcemap do próprio pacote, que **o clique
+ * daquela biblioteca é no DENTE, nunca na face** (`src/odontogram.ts`:
+ * `tile.addEventListener("click", (e) => onToothClick(toothNo, e))`, e
+ * `onToothClick` só manipula `selectedTeeth`), e que o único popover é
+ * exclusivo de toque. Face clicável e pop-up por dente são o coração do que a
+ * 03.8 precisa — Max decidiu construir o nosso.
  *
  * ============================================================
- * TRÊS GUARDAS, E POR QUE CADA UMA EXISTE
+ * O SVG É CONTRATO DE NOMES, NUNCA GEOMETRIA (restrição 1)
  * ============================================================
- * A biblioteca avisa no próprio README: *"One instance per page in this
- * release (engine state is a module-level singleton)"*. Num SPA isso tem
- * consequência clínica direta, e as três guardas abaixo saíram de ler o
- * código dela, não de desconfiança genérica:
+ * Max declarou que provavelmente vai redesenhar os desenhos. Este componente
+ * foi escrito para não perceber a troca:
  *
- * (a) VAZAMENTO ENTRE PACIENTES. O estado vive no módulo, não no
- *     componente. Abrir o paciente A, voltar e abrir o paciente B
- *     remontaria o componente sobre a boca do A. Por isso `chaveSessao`
- *     (`cliente:evolução`) dispara SEMPRE um `importStatus` — do payload
- *     salvo quando existe, e do PRISTINO quando não existe. Nunca "não
- *     faz nada porque não há o que carregar": não fazer nada é
- *     exatamente o bug.
- *
- * (b) `globals` SOBREVIVEM A UM IMPORT VAZIO. Lendo `jr` (importStatus)
- *     no bundle: `e.globals && (…)` — com `globals` ausente, os globais
- *     do estado anterior FICAM. E um deles, `edentulous`, é achado
- *     clínico: boca desdentada. Um `importStatus({})` para "limpar"
- *     carregaria o paciente B com a boca desdentada do A. É por isso que
- *     o reset passa o PRISTINO inteiro, com os cinco globais explícitos,
- *     e não um objeto vazio.
- *
- * (c) PERSISTÊNCIA EM `localStorage`. A biblioteca oferece
- *     `enablePersistence()`, que grava a carta inteira no navegador.
- *     Medido no bundle: ela NÃO é chamada em lugar nenhum do pacote
- *     (`Mo` nasce `null`, logo `isPersistenceEnabled()` é falso) — ou
- *     seja, é opt-in e nós simplesmente não optamos. Mesmo assim o
- *     componente desliga e limpa na montagem e na desmontagem, porque
- *     `localStorage` fica fora de TODO o regime de `aba_health`: sem
- *     RLS, sem `log_acesso`, sem revogação por coluna, e sobrevivendo ao
- *     logout. Prontuário em `localStorage` seria a única cópia de dado
- *     clínico do produto fora do banco.
- *
- * Fecha o conjunto o reset no `unmount`: sair da tela devolve o
- * singleton ao pristino antes de destruí-lo, para que a boca do
- * paciente não continue na memória do módulo enquanto o operador navega
- * por outras rotas.
+ *   · a arte vem dos 26 arquivos de `dentes/`, importados como texto no build;
+ *   · o clique resolve a região por `data-face` / `data-regiao` do próprio
+ *     alvo do evento — nunca por coordenada, nunca por ordem de path, nunca
+ *     por `id` (os 26 arquivos são instanciados nas 52 posições, e `id`
+ *     repetido no mesmo documento é HTML inválido);
+ *   · a marcação é aplicada reescrevendo `data-face="X"` para acrescentar
+ *     `data-marcado`, o que depende só do nome;
+ *   · `scripts/validar_dentes_svg.mjs` roda no `npm run build` e QUEBRA O
+ *     BUILD se um desenho perder uma região nomeada.
  *
  * ============================================================
- * CSS
+ * TRÊS GUARDAS DA 03.7 QUE DEIXARAM DE SER NECESSÁRIAS
  * ============================================================
- * O import NÃO é o `react-advanced-odontogram/style.css` do README — é a
- * versão escopada, gerada por `scripts/escopar_css_odontograma.mjs`. O
- * motivo (colisão dos tokens `--card`/`--muted`/`--accent` e uma regra
- * `.dark` de topo, que quebrariam o tema do app inteiro) está no
- * cabeçalho daquele script, com a medição.
+ * A biblioteca guardava o estado num SINGLETON DE MÓDULO, e as três guardas
+ * da 03.7 (`chaveSessao` forçando `importStatus`, forma pristina capturada ao
+ * vivo, `disablePersistence`/`clearPersistedState`) existiam por causa disso:
+ * abrir o paciente A e depois o B remontava o componente sobre a boca do A, e
+ * `importStatus({})` não limpava `globals` — inclusive `edentulous`, que é
+ * achado clínico.
  *
- * ============================================================
- * TRADUÇÃO
- * ============================================================
- * `language="pt-br"`. A restrição 2 da Qualidade previa traduzir os 11
- * idiomas do componente porque não haveria português — a medição da
- * versão 2.4.0 desmentiu: são 12 idiomas, `pt-br` incluso, com **907 de
- * 907 chaves** e vocabulário odontológico brasileiro correto ("dente
- * decíduo", "cárie", "diagnóstico registrado"). O que restou de trabalho
- * real está em `TRADUCOES_COMPLEMENTARES`, abaixo.
+ * Aqui **não há estado de módulo**. O registro clínico é `props.registros`,
+ * que vem do prontuário e é derivado da evolução exibida; trocar de paciente
+ * troca a prop, e não há memória nenhuma para vazar. **A lição não se apaga**
+ * — ela fica em `handoffs/instrucoes.md` §5, e vale para a próxima peça de
+ * terceiro que este produto embutir.
  */
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import "./odontograma.css";
+import { estadoDoMapa } from "./mapas";
 import {
-  OdontogramShell,
-  clearPersistedState,
-  destroyOdontogram,
-  disablePersistence,
-  getPlanChanges,
-  getStatusChart,
-  getToothStateSummary,
-  importStatus,
-  isPersistenceEnabled,
-  onStateChange,
-  setReadOnly,
-} from "react-advanced-odontogram";
-
-// Ordem importa: o gerado primeiro, o nosso depois — em empate de
-// especificidade, vence o último.
-import "./odontograma-escopado.css";
-import "./odontograma-integracao.css";
-import type { Marcacao } from "./mapas";
-import {
-  payloadDeMarcacoes,
-  podarPayload,
-  projetarMarcacoes,
-  type PayloadOdontograma,
+  ESTADOS_DENTICAO,
+  ESTADOS_TRABALHO,
+  ROTULO_ACHADO,
+  ROTULO_DENTICAO,
+  TIPOS_ACHADO,
+  LINHAS_ODONTOGRAMA,
+  denticaoDerivada,
+  estaNaBoca,
+  facesDoAchado,
+  facesDoTrabalho,
+  normalizarRegistro,
+  novoId,
+  posicaoDe,
+  temConteudo,
+  type AchadoDente,
+  type EstadoDenticao,
+  type EstadoTrabalho,
+  type FaceDente,
+  type PosicaoDente,
+  type RegistroDente,
+  type TipoAchado,
+  type TrabalhoDente,
 } from "./odontograma";
 
 /**
- * FORMA PRISTINA, CAPTURADA DA BIBLIOTECA INSTALADA — não cravada aqui.
+ * A arte, importada como TEXTO no build.
  *
- * Roda na importação do módulo, antes de qualquer `importStatus`, quando
- * o singleton é comprovadamente virgem. É contra ela que se decide se um
- * dente tem achado e o que a poda pode descartar; e é ela que o reset
- * entre pacientes carrega. Capturar em vez de escrever à mão é o que faz
- * a poda continuar correta quando a biblioteca subir de versão e
- * acrescentar campo — um padrão escrito por nós envelheceria em silêncio
- * e passaria a gravar dente hígido como se tivesse achado.
- *
- * `getStatusChart()` é seguro antes de `initOdontogram()`: ele percorre a
- * lista fixa de dentes usando o valor padrão para o que não está no mapa
- * (`e.get(i) ?? ge()`), e os globais são variáveis de módulo já
- * inicializadas. Verificado no código da biblioteca, não suposto.
+ * `eager` de propósito: são 26 arquivos pequenos (46 KB somados, antes do
+ * gzip) e este módulo inteiro já é preguiçoso — buscar cada dente por rede no
+ * momento em que o profissional clica seria 26 requisições para economizar
+ * alguns KB num chunk que só viaja para quem abriu a aba Odontograma.
  */
-const PRISTINO: PayloadOdontograma = JSON.parse(JSON.stringify(getStatusChart()));
+const DESENHOS = import.meta.glob("./dentes/*.svg", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+
+/** Marca aplicada a uma face: o que existe NELA. */
+type MarcaFace = "trabalho" | "achado" | "ambos";
 
 /**
- * AUDITORIA DA TRADUÇÃO `pt-br`, e o resíduo declarado.
+ * Acrescenta `data-marcado` / `data-alvo` às faces do desenho.
  *
- * A varredura comparou as 907 chaves de `pt-br` com as de `en`: 92 têm
- * valor idêntico, e a leitura uma a uma mostrou que quase todas são
- * idênticas COM RAZÃO — termo anatômico latino que não se traduz
- * (`mesial`, `distal`, `incisal`, `lingual`, `labial`), sigla clínica
- * (PD, GM, BOP, CAL, ICDAS, FDI, AAE), diagnóstico pulpar em latim, nome
- * próprio (`Zsigmondy-Palmer`, `Cairo`), marca de material (`e.max`,
- * `gradia`) e algarismo. Traduzir essas PIORARIA a tela para um dentista
- * brasileiro, que usa exatamente essas palavras.
+ * Reescrita de string em vez de manipulação do DOM depois da montagem, e o
+ * motivo é de correção, não de gosto: com 52 posições, um efeito que varre
+ * `querySelectorAll` a cada render tem uma janela em que a tela mostra a
+ * marcação do dente anterior. Aqui o desenho já nasce pintado, e o resultado
+ * é memoizável por (desenho × marcas).
  *
- * Sobram TRÊS que são inglês de verdade em rótulo de interface:
- *   · `view.odontogram`  → "Odontogram"    (deveria ser "Odontograma")
- *   · `perio.site.ML`    → "Mesio-lingual" (deveria ser "Mésio-lingual")
- *   · `perio.site.DL`    → "Disto-lingual" (acentuação idem)
- *
- * NÃO SÃO CORRIGIDAS AQUI, e o motivo é de superfície pública, não de
- * esforço: a biblioteca não expõe nenhuma via de override de tradução —
- * `index.d.ts` não declara `setTranslations`, dicionário, `i18n` nem
- * nada equivalente, e `language` é o único controle. As saídas
- * possíveis seriam reescrever texto no DOM depois da renderização
- * (agarrado a marcação de terceiro, que quebra na próxima versão sem
- * avisar) ou manter um fork do pacote. Nenhuma das duas se paga por três
- * strings, e a primeira é especialmente ruim numa tela clínica, onde
- * texto trocado por seletor frágil pode acabar trocando o rótulo errado.
- *
- * Resíduo registrado no Status da subetapa e em `handoffs/instrucoes.md`
- * — declarado, não escondido. Caminho certo se incomodar: abrir issue no
- * repositório do autor (MIT, ativo), que é onde a correção serve a todo
- * mundo em vez de só a nós.
+ * Depende SÓ do nome da face — é a mesma dependência que o validador cobra.
  */
-
-/** Lê um token de cor do tema vigente e devolve em forma consumível pela biblioteca. */
-function corDoTema(token: string, alternativa: string): string {
-  if (typeof window === "undefined") return alternativa;
-  const valor = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
-  return valor ? `hsl(${valor})` : alternativa;
+function pintar(svg: string, marcas: Record<string, MarcaFace>, alvo: FaceDente[]): string {
+  return svg.replace(/data-face="([a-z]+)"/g, (inteiro, face: string) => {
+    const marca = marcas[face] ? ` data-marcado="${marcas[face]}"` : "";
+    const selecao = alvo.includes(face as FaceDente) ? ` data-alvo="sim"` : "";
+    return `${inteiro}${marca}${selecao}`;
+  });
 }
 
 export type Props = {
-  /**
-   * `cliente:evolução`. Trocar esta chave recarrega o odontograma do
-   * zero — é a guarda (a) do cabeçalho, e o motivo de ela ser uma prop
-   * obrigatória em vez de um efeito interno esperto.
-   */
-  chaveSessao: string;
-  /** `evolucoes.marcacoes` cru, como veio de `ler_evolucoes()`. */
-  marcacoesGravadas: unknown;
-  /** Dentes que a última sessão ASSINADA deixou como `a_realizar`. */
-  aRealizarAntes: Set<string>;
+  /** Registro clínico da boca, já validado por `registrosDeMarcacoes()`. */
+  registros: RegistroDente[];
+  /** Idade do paciente em anos, para DERIVAR a dentição (A3). `null` = desconhecida. */
+  idade: number | null;
   /** Evolução assinada, ou usuário sem permissão de escrita. */
   somenteLeitura: boolean;
-  /** Tema escuro vigente — `.dark` no `<html>`. */
-  escuro: boolean;
-  /** Projeção legível + payload podado, a cada edição do profissional. */
-  onAlterar: (marcacoes: Marcacao[], payload: PayloadOdontograma) => void;
+  /** Autor de `executado` — o profissional da sessão aberta (A4, restrição 2). */
+  profissionalId: string | null;
+  onAlterar: (registros: RegistroDente[]) => void;
 };
 
 export default function OdontogramaClinico({
-  chaveSessao,
-  marcacoesGravadas,
-  aRealizarAntes,
+  registros,
+  idade,
   somenteLeitura,
-  escuro,
+  profissionalId,
   onAlterar,
 }: Props) {
-  // `importStatus` dispara `onStateChange`. Sem esta trava, carregar uma
-  // sessão salva seria indistinguível de o profissional ter editado, e a
-  // tela nasceria "suja", oferecendo salvar o que acabou de ler.
-  const carregando = useRef(false);
-  const aoAlterar = useRef(onAlterar);
-  aoAlterar.current = onAlterar;
-  const antes = useRef(aRealizarAntes);
-  antes.current = aRealizarAntes;
+  const arcadaRef = useRef<HTMLDivElement>(null);
+  const [alvo, setAlvo] = useState<{ fdi: string; topo: number; esquerda: number } | null>(null);
+  const [facesSelecionadas, setFacesSelecionadas] = useState<FaceDente[]>([]);
 
-  const tema = useMemo(
-    () => ({
-      colors: {
-        background: corDoTema("--content", escuro ? "#0f172a" : "#f3f6fb"),
-        panel: corDoTema("--card", escuro ? "#1e293b" : "#ffffff"),
-        card: corDoTema("--card", escuro ? "#1e293b" : "#ffffff"),
-        text: corDoTema("--foreground", escuro ? "#f1f5f9" : "#1e2a3a"),
-        muted: corDoTema("--muted-foreground", escuro ? "#94a3b8" : "#5b6b7d"),
-        line: corDoTema("--border", escuro ? "#334155" : "#d7e0ec"),
-        // O acento segue a cor que a conta escolheu em Configurações →
-        // Aparência (migration 032), então o odontograma não destoa do
-        // resto do produto por trazer o azul do autor da biblioteca.
-        accent: corDoTema("--primary", "#3b7bff"),
-        accent2: corDoTema("--success", "#12b981"),
-      },
-    }),
-    [escuro],
+  const porFdi = useMemo(() => new Map(registros.map((r) => [r.regiao, r])), [registros]);
+
+  const denticaoDe = useCallback(
+    (fdi: string): EstadoDenticao => porFdi.get(fdi)?.denticao ?? denticaoDerivada(fdi, idade),
+    [porFdi, idade],
   );
 
-  // ---- guarda (c): persistência em localStorage, sempre desligada ----
-  useEffect(() => {
-    if (isPersistenceEnabled()) disablePersistence();
-    clearPersistedState();
-    return () => clearPersistedState();
-  }, []);
+  /**
+   * Grava um dente. Recebe o registro JÁ montado e devolve a lista inteira —
+   * dente sem conteúdo sai da lista, porque mapa clínico registra o que foi
+   * encontrado, não as 52 posições.
+   */
+  const gravarDente = useCallback(
+    (fdi: string, muda: (atual: RegistroDente) => RegistroDente) => {
+      const atual: RegistroDente = porFdi.get(fdi) ?? {
+        regiao: fdi,
+        rotulo: `Dente ${fdi}`,
+        estado: "existente",
+        nota: "",
+      };
+      const novo = normalizarRegistro(muda(atual));
+      const resto = registros.filter((r) => r.regiao !== fdi);
+      const lista = temConteudo(novo) ? [...resto, novo] : resto;
+      onAlterar(lista.sort((a, b) => a.regiao.localeCompare(b.regiao)));
+    },
+    [porFdi, registros, onAlterar],
+  );
 
-  const emitir = useCallback(() => {
-    const bruto = getStatusChart() as PayloadOdontograma;
-    const planejados = new Set(getPlanChanges().map((p) => String(p.toothNo)));
-    const projecao = projetarMarcacoes({
-      payload: bruto,
-      pristino: PRISTINO,
-      planejados,
-      aRealizarAntes: antes.current,
-      resumo: (fdi) => getToothStateSummary(Number(fdi)),
-    });
-    aoAlterar.current(projecao, podarPayload(bruto, PRISTINO));
-  }, []);
+  // ---- clique: o alvo do evento resolve dente e região sozinho ----
+  const aoClicar = useCallback(
+    (evento: React.MouseEvent<HTMLDivElement>) => {
+      const el = (evento.target as Element).closest<HTMLElement>("[data-face], [data-regiao]");
+      const caixa = (evento.target as Element).closest<HTMLElement>("[data-dente]");
+      if (!el || !caixa || !arcadaRef.current) return;
+      const fdi = caixa.dataset.dente!;
+      const face = el.dataset.face as FaceDente | undefined;
 
-  // ---- guardas (a) e (b): carga/reset por sessão ----
-  useEffect(() => {
-    carregando.current = true;
-    try {
-      // `payloadDeMarcacoes` é chamado aqui e não no pai de propósito: o
-      // pai não deve precisar conhecer o formato interno da biblioteca.
-      const salvo = payloadDeMarcacoes(marcacoesGravadas);
-      importStatus(salvo ?? PRISTINO);
-    } finally {
-      carregando.current = false;
-    }
-    // Sem `emitir()` aqui: carregar não é editar. Emitir marcaria o
-    // rascunho como sujo e ofereceria "salvar" a quem só abriu a tela.
-  }, [chaveSessao, marcacoesGravadas]);
+      const r = caixa.getBoundingClientRect();
+      const base = arcadaRef.current.getBoundingClientRect();
+      setAlvo({ fdi, topo: r.bottom - base.top + 6, esquerda: Math.max(0, r.left - base.left - 140) });
+
+      // Clicar numa face ALTERNA a seleção; clicar na coroa ou na raiz abre o
+      // dente sem escolher face, que é como se registra o que vale para o
+      // dente inteiro (extração, coroa total, fratura de coroa).
+      setFacesSelecionadas((antes) => {
+        if (alvo?.fdi !== fdi) return face ? [face] : [];
+        if (!face) return [];
+        return antes.includes(face) ? antes.filter((f) => f !== face) : [...antes, face];
+      });
+    },
+    [alvo?.fdi],
+  );
 
   useEffect(() => {
-    return onStateChange(() => {
-      if (carregando.current) return;
-      emitir();
-    });
-  }, [emitir]);
-
-  useEffect(() => {
-    setReadOnly(somenteLeitura);
-  }, [somenteLeitura]);
-
-  // ---- reset + destruição ao sair da tela ----
-  useEffect(() => {
-    return () => {
-      carregando.current = true;
-      importStatus(PRISTINO);
-      destroyOdontogram();
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setAlvo(null);
+        setFacesSelecionadas([]);
+      }
     };
+    document.addEventListener("keydown", aoTeclar);
+    return () => document.removeEventListener("keydown", aoTeclar);
   }, []);
+
+  function Posicao({ pos }: { pos: PosicaoDente }) {
+    const registro = porFdi.get(pos.fdi);
+    const denticao = denticaoDe(pos.fdi);
+    const estado = registro ? estadoDoMapa("odontograma", registro.estado) : undefined;
+
+    const marcas: Record<string, MarcaFace> = {};
+    for (const f of facesDoAchado(registro?.achados)) marcas[f] = "achado";
+    for (const f of facesDoTrabalho(registro?.trabalhos)) {
+      marcas[f] = marcas[f] === "achado" ? "ambos" : "trabalho";
+    }
+
+    const bruto = DESENHOS[`./dentes/${pos.desenho}.svg`];
+    const svg = pintar(bruto, marcas, alvo?.fdi === pos.fdi ? facesSelecionadas : []);
+
+    return (
+      <div
+        className="od-posicao"
+        data-dente={pos.fdi}
+        data-espelhado={pos.espelhado ? "sim" : "nao"}
+        data-na-boca={estaNaBoca(denticao) ? "sim" : "nao"}
+        data-selecionado={alvo?.fdi === pos.fdi ? "sim" : "nao"}
+        {...(estado ? { "data-estado": registro!.estado } : {})}
+        title={`${pos.fdi} · ${pos.nome} · ${ROTULO_DENTICAO[denticao]}${registro?.nota ? ` · ${registro.nota}` : ""}`}
+        style={
+          estado
+            ? ({ "--od-estado-fundo": estado.fundo, "--od-estado-traco": estado.traco } as React.CSSProperties)
+            : undefined
+        }
+      >
+        <span className="od-numero">{pos.fdi}</span>
+        {/* O conteúdo vem dos nossos próprios arquivos, embutidos no build —
+            nunca de dado de usuário nem de rede. É a única forma de manter os
+            `data-face` do desenho como alvo de evento sem reimplementar um
+            parser de SVG em React. */}
+        <div className="od-desenho" dangerouslySetInnerHTML={{ __html: svg }} />
+      </div>
+    );
+  }
+
+  const posicaoAlvo = alvo ? posicaoDe(alvo.fdi) : undefined;
 
   return (
-    // A classe é o que ancora TODO o CSS da biblioteca (ver
-    // `odontograma-escopado.css`). Nenhum componente nosso mora aqui
-    // dentro: os tokens `--card`/`--muted`/`--accent` valem com os
-    // valores da biblioteca deste ponto para baixo.
-    <div className="odontograma-escopo w-full overflow-auto">
-      <OdontogramShell
-        language="pt-br"
-        numberingSystem="FDI"
-        darkMode={escuro}
-        themeConfig={tema}
-        readOnly={somenteLeitura}
-        enableNotes
-      />
+    <div className="odontograma flex min-h-0 flex-col gap-3 p-3" data-editavel={somenteLeitura ? "nao" : "sim"}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="font-mono text-[9.5px] uppercase tracking-wider text-muted-foreground">
+          52 posições · notação FDI · clique na face
+        </span>
+        <span className="text-[10px] text-muted-foreground">
+          {idade === null
+            ? "idade do paciente desconhecida — dentição permanente assumida"
+            : `${idade.toFixed(1)} anos · dentição derivada da idade, editável dente a dente`}
+        </span>
+      </div>
+
+      <div ref={arcadaRef} className="od-arcada relative" onClick={somenteLeitura ? undefined : aoClicar}>
+        {LINHAS_ODONTOGRAMA.map((linha) => (
+          <div key={linha.chave} className="od-linha" data-arcada={linha.posicoes[0].arcada} data-linha={linha.chave}>
+            {/* A folga da linha média entra no MEIO da linha, e não como duas
+                listas separadas, para que `flex: 1 1 0` distribua a largura
+                entre as 16 (ou 10) posições da linha inteira — foi assim que a
+                arcada deixou de depender de largura fixa por dente. */}
+            {linha.posicoes.slice(0, linha.posicoes.length / 2).map((pos) => (
+              <Posicao key={pos.fdi} pos={pos} />
+            ))}
+            <div className="od-meio" />
+            {linha.posicoes.slice(linha.posicoes.length / 2).map((pos) => (
+              <Posicao key={pos.fdi} pos={pos} />
+            ))}
+          </div>
+        ))}
+
+        {alvo && posicaoAlvo && (
+          <PopupDente
+            pos={posicaoAlvo}
+            registro={porFdi.get(alvo.fdi)}
+            denticao={denticaoDe(alvo.fdi)}
+            derivada={denticaoDerivada(alvo.fdi, idade)}
+            facesSelecionadas={facesSelecionadas}
+            somenteLeitura={somenteLeitura}
+            profissionalId={profissionalId}
+            posicaoTela={{ topo: alvo.topo, esquerda: alvo.esquerda }}
+            onAlternarFace={(f) =>
+              setFacesSelecionadas((antes) => (antes.includes(f) ? antes.filter((x) => x !== f) : [...antes, f]))
+            }
+            onFechar={() => {
+              setAlvo(null);
+              setFacesSelecionadas([]);
+            }}
+            onGravar={(muda) => gravarDente(alvo.fdi, muda)}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Pop-up por dente — o que está registrado e o que está planejado
+// ============================================================
+
+/**
+ * É a peça que a 03.7 não tinha e que a 03.8 exige. Ele mostra, no mesmo
+ * lugar, as TRÊS coisas que o profissional precisa ver ao decidir o que
+ * orçar naquele dente: o estado de dentição (A3), os achados com as faces
+ * onde há doença, e os trabalhos com as faces onde vai haver trabalho (A2).
+ *
+ * As duas listas são separadas na tela porque são separadas no modelo — e
+ * porque a 03.7 provou que juntá-las não dá erro, dá orçamento coerente
+ * consigo mesmo e errado quanto ao negócio.
+ */
+function PopupDente({
+  pos,
+  registro,
+  denticao,
+  derivada,
+  facesSelecionadas,
+  somenteLeitura,
+  profissionalId,
+  posicaoTela,
+  onAlternarFace,
+  onFechar,
+  onGravar,
+}: {
+  pos: PosicaoDente;
+  registro: RegistroDente | undefined;
+  denticao: EstadoDenticao;
+  derivada: EstadoDenticao;
+  facesSelecionadas: FaceDente[];
+  somenteLeitura: boolean;
+  profissionalId: string | null;
+  posicaoTela: { topo: number; esquerda: number };
+  onAlternarFace: (f: FaceDente) => void;
+  onFechar: () => void;
+  onGravar: (muda: (atual: RegistroDente) => RegistroDente) => void;
+}) {
+  const [tipoAchado, setTipoAchado] = useState<TipoAchado>("carie");
+  const [descricao, setDescricao] = useState("");
+  const listaAchados: AchadoDente[] = registro?.achados ?? [];
+  const listaTrabalhos: TrabalhoDente[] = registro?.trabalhos ?? [];
+
+  return (
+    <div
+      className="od-popup"
+      data-dente-aberto={pos.fdi}
+      style={{ top: posicaoTela.topo, left: posicaoTela.esquerda }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex flex-col">
+          <span className="text-[12px] font-medium text-foreground">Dente {pos.fdi}</span>
+          <span className="text-[10px] text-muted-foreground">{pos.nome}</span>
+        </div>
+        <button type="button" onClick={onFechar} className="text-[10px] text-muted-foreground hover:text-foreground">
+          fechar
+        </button>
+      </div>
+
+      {/* -------------------------------------------------- A3: dentição -- */}
+      <label className="flex flex-col gap-1">
+        <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Dentição</span>
+        <select
+          data-campo="denticao"
+          value={denticao}
+          disabled={somenteLeitura}
+          onChange={(e) => {
+            const valor = e.target.value as EstadoDenticao;
+            onGravar((atual) => ({ ...atual, denticao: valor }));
+          }}
+          className="h-7 rounded-md border px-1.5 text-[10.5px]"
+        >
+          {ESTADOS_DENTICAO.map((d) => (
+            <option key={d} value={d}>
+              {ROTULO_DENTICAO[d]}
+            </option>
+          ))}
+        </select>
+        {!registro?.denticao && (
+          <span className="text-[9.5px] text-muted-foreground">
+            derivado da idade ({ROTULO_DENTICAO[derivada]}) — escolher aqui afirma o estado e passa a valer
+          </span>
+        )}
+      </label>
+
+      {/* ----------------------------------------------------- faces ------ */}
+      <div className="flex flex-col gap-1">
+        <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+          Faces selecionadas
+        </span>
+        <div className="flex flex-wrap gap-1">
+          {pos.faces.map((f) => (
+            <button
+              key={f}
+              type="button"
+              className="od-chip"
+              data-face-chip={f}
+              data-ativo={facesSelecionadas.includes(f) ? "sim" : "nao"}
+              disabled={somenteLeitura}
+              onClick={() => onAlternarFace(f)}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+        <span className="text-[9.5px] text-muted-foreground">
+          {facesSelecionadas.length === 0
+            ? "nenhuma face — o que for acrescentado vale para o dente inteiro"
+            : facesSelecionadas.join(" · ")}
+        </span>
+      </div>
+
+      {/* ------------------------------------------- A2: achado × trabalho -- */}
+      <div className="flex flex-col gap-1.5 border-t pt-2">
+        <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+          Achados — onde há doença
+        </span>
+        {listaAchados.length === 0 && <span className="text-[10px] text-muted-foreground">nenhum achado</span>}
+        {listaAchados.map((a, i) => (
+          <div key={i} className="flex items-center justify-between gap-2 text-[10.5px]">
+            <span>
+              {ROTULO_ACHADO[a.tipo]}
+              {a.faces.length > 0 && (
+                <span className="font-mono text-[9.5px] text-muted-foreground"> · {a.faces.join(", ")}</span>
+              )}
+            </span>
+            {!somenteLeitura && (
+              <button
+                type="button"
+                className="text-[9.5px] text-muted-foreground hover:text-destructive"
+                onClick={() =>
+                  onGravar((atual) => ({
+                    ...atual,
+                    achados: (atual.achados ?? []).filter((_, j) => j !== i),
+                  }))
+                }
+              >
+                remover
+              </button>
+            )}
+          </div>
+        ))}
+        {!somenteLeitura && (
+          <div className="flex gap-1">
+            <select
+              data-campo="tipo-achado"
+              value={tipoAchado}
+              onChange={(e) => setTipoAchado(e.target.value as TipoAchado)}
+              className="h-7 flex-1 rounded-md border px-1.5 text-[10.5px]"
+            >
+              {TIPOS_ACHADO.map((t) => (
+                <option key={t} value={t}>
+                  {ROTULO_ACHADO[t]}
+                </option>
+              ))}
+            </select>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-[10px]"
+              data-acao="acrescentar-achado"
+              onClick={() =>
+                onGravar((atual) => ({
+                  ...atual,
+                  achados: [...(atual.achados ?? []), { faces: [...facesSelecionadas], tipo: tipoAchado }],
+                }))
+              }
+            >
+              achado
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-1.5 border-t pt-2">
+        <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+          Trabalho — onde o profissional vai trabalhar
+        </span>
+        {listaTrabalhos.length === 0 && <span className="text-[10px] text-muted-foreground">nada planejado</span>}
+        {listaTrabalhos.map((t) => (
+          <div key={t.id} className="flex flex-col gap-1 rounded-md border p-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10.5px]">{t.descricao || "procedimento"}</span>
+              {/* SÓ `proposto` se apaga. O resto sai do plano por mudança de
+                  estado e permanece no histórico — é o registro do que se
+                  propôs que protege a clínica depois (`docs/02` §12.4). */}
+              {!somenteLeitura && t.estado === "proposto" && (
+                <button
+                  type="button"
+                  className="text-[9.5px] text-muted-foreground hover:text-destructive"
+                  onClick={() =>
+                    onGravar((atual) => ({
+                      ...atual,
+                      trabalhos: (atual.trabalhos ?? []).filter((x) => x.id !== t.id),
+                    }))
+                  }
+                >
+                  remover
+                </button>
+              )}
+            </div>
+            {t.faces.length > 0 && (
+              <span className="font-mono text-[9.5px] text-muted-foreground">{t.faces.join(" · ")}</span>
+            )}
+            <select
+              data-campo="estado-trabalho"
+              data-trabalho={t.id}
+              value={t.estado}
+              disabled={somenteLeitura}
+              onChange={(e) => {
+                const estado = e.target.value as EstadoTrabalho;
+                onGravar((atual) => ({
+                  ...atual,
+                  trabalhos: (atual.trabalhos ?? []).map((x) =>
+                    x.id !== t.id
+                      ? x
+                      : {
+                          ...x,
+                          estado,
+                          // `executado` É FATO AFIRMADO (A4, restrição 2): a
+                          // data e o autor nascem no ato de afirmar, e somem
+                          // se o estado voltar atrás. A trava de finalização
+                          // de contrato da 03.8.a lê exatamente isto — e uma
+                          // data sobrevivente de um trabalho que voltou para
+                          // `planejado` afirmaria execução que não houve.
+                          ...(estado === "executado"
+                            ? {
+                                executadoEm: new Date().toISOString(),
+                                ...(profissionalId ? { executadoPor: profissionalId } : {}),
+                              }
+                            : { executadoEm: undefined, executadoPor: undefined }),
+                        },
+                  ),
+                }));
+              }}
+              className="h-7 rounded-md border px-1.5 text-[10.5px]"
+            >
+              {ESTADOS_TRABALHO.map((e) => (
+                <option key={e} value={e}>
+                  {estadoDoMapa("odontograma", e)?.rotulo ?? e}
+                </option>
+              ))}
+            </select>
+            {t.estado === "executado" && t.executadoEm && (
+              <span className="font-mono text-[9px] text-muted-foreground">
+                executado em {new Date(t.executadoEm).toLocaleString("pt-BR")}
+                {t.executadoPor ? " · autor registrado" : " · SEM AUTOR (sessão sem profissional)"}
+              </span>
+            )}
+          </div>
+        ))}
+        {!somenteLeitura && (
+          <div className="flex gap-1">
+            <input
+              data-campo="descricao-trabalho"
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              placeholder="procedimento a executar"
+              className="h-7 flex-1 rounded-md border px-2 text-[10.5px]"
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-[10px]"
+              data-acao="propor-trabalho"
+              onClick={() => {
+                onGravar((atual) => ({
+                  ...atual,
+                  trabalhos: [
+                    ...(atual.trabalhos ?? []),
+                    {
+                      id: novoId(),
+                      faces: [...facesSelecionadas],
+                      estado: "proposto" as EstadoTrabalho,
+                      ...(descricao.trim() ? { descricao: descricao.trim() } : {}),
+                    },
+                  ],
+                }));
+                setDescricao("");
+              }}
+            >
+              propor
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <span className="font-mono text-[9px] text-muted-foreground">
+        faces do trabalho: {facesDoTrabalho(listaTrabalhos).join(" · ") || "—"} · faces do achado:{" "}
+        {facesDoAchado(listaAchados).join(" · ") || "—"}
+      </span>
+      <span className="text-[9.5px] text-muted-foreground">
+        As duas listas são distintas de propósito, e é o achado A2 desta subetapa: a 03.8 orça a de cima.
+      </span>
     </div>
   );
 }

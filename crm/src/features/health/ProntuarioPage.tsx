@@ -23,29 +23,23 @@ import {
   type ProntuarioEditavel,
 } from "./api";
 import { LISTA_MAPAS, MAPAS, ehTipoMapa, marcacoesValidas, type Marcacao, type TipoMapa } from "./mapas";
-import {
-  REGIAO_ESTADO_NATIVO,
-  itemEstadoNativo,
-  payloadDeMarcacoes,
-  regioesARealizar,
-  type PayloadOdontograma,
-} from "./odontograma";
+import { idadeEmAnos, registrosDeMarcacoes, type RegistroDente } from "./odontograma";
 
 /**
- * SEGUNDO NÍVEL DE PREGUIÇA — Subetapa 03.7.
+ * SEGUNDO NÍVEL DE PREGUIÇA — Subetapa 03.7, mantido na 03.7.a.
  *
  * `/prontuario` já é rota preguiçosa desde a 03.3. Este `lazy()` aninhado
- * existe porque `react-advanced-odontogram` pesa **436.343 B gzip
- * medidos**, contra 11.070 B do chunk inteiro desta página. Deixá-lo
- * junto do resto do prontuário cobraria 436 KB de todo mundo que abre uma
- * ficha para ler anamnese, anexo ou consentimento — a maioria das
- * aberturas — por um mapa que talvez nem seja consultado. Aqui ele só
- * viaja quando alguém escolhe a aba "Odontograma".
+ * nasceu porque `react-advanced-odontogram` pesava 414 KB gzip medidos, e a
+ * 03.7.a o tirou do projeto. A fronteira preguiçosa FICA assim mesmo, e a
+ * decisão é medida, não hábito: o odontograma autoral carrega a arte das 52
+ * posições e o pop-up por dente, que continuam sendo peso que só interessa a
+ * quem abre a aba Odontograma — a maioria das aberturas de ficha é para ler
+ * anamnese, anexo ou consentimento.
  *
  * O `fallback` do `<Suspense>` não é um spinner: é a grade FDI leve da
- * Subetapa 02.9 (3.023 B gzip), desenhando as marcações já gravadas em
- * modo leitura. Quem abre o odontograma vê o estado do paciente
- * imediatamente e ganha as ferramentas de edição quando o chunk chega.
+ * Subetapa 02.9, desenhando as marcações já gravadas em modo leitura. Quem
+ * abre o odontograma vê o estado do paciente imediatamente e ganha as
+ * ferramentas de edição quando o chunk chega.
  */
 const OdontogramaClinico = lazy(() => import("./OdontogramaClinico"));
 
@@ -295,61 +289,57 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
     () => sessaoAberta ?? evolucoes.find((e) => e.travada && e.mapaTipo === mapaAtivo) ?? null,
     [sessaoAberta, evolucoes, mapaAtivo],
   );
-  const marcacoesPersistidas = useMemo(
-    () => (evolucaoExibida ? marcacoesValidas(mapaAtivo, evolucaoExibida.marcacoes) : []),
-    [evolucaoExibida, mapaAtivo],
-  );
+  /**
+   * O odontograma tem validador PRÓPRIO — e é por isso que a leitura se
+   * bifurca aqui (Subetapa 03.7.a).
+   *
+   * `marcacoesValidas()` conhece o catálogo dos QUATRO mapas: região e estado
+   * fechados, mais `nota` e `faces`. O registro do odontograma carrega três
+   * campos a mais (dentição afirmada, achados e trabalhos), com vocabulário
+   * próprio que `mapas.ts` não deve conhecer. `registrosDeMarcacoes()` valida
+   * esses três com a régua certa — e descarta em silêncio o item sentinela
+   * `estado_nativo` que a 03.7 gravava, que não é um dos 52 dentes.
+   */
+  const marcacoesPersistidas = useMemo(() => {
+    if (!evolucaoExibida) return [];
+    return mapaAtivo === "odontograma"
+      ? registrosDeMarcacoes(evolucaoExibida.marcacoes)
+      : marcacoesValidas(mapaAtivo, evolucaoExibida.marcacoes);
+  }, [evolucaoExibida, mapaAtivo]);
   const marcacoes = rascunho ?? marcacoesPersistidas;
   const sujo = rascunho !== null;
 
   // ============================================================
-  // Odontograma (Subetapa 03.7)
+  // Odontograma (Subetapa 03.7.a)
   // ============================================================
   const ehOdontograma = mapaAtivo === "odontograma";
 
   /**
-   * O payload nativo da biblioteca, recuperado do item sentinela. Vem do
-   * valor CRU (`evolucaoExibida.marcacoes`), nunca da lista já validada:
-   * `marcacoesValidas()` descarta o sentinela de propósito, porque
-   * "estado_nativo" não é um dos 32 dentes do catálogo.
+   * TRÊS ESTADOS DESTA TELA MORRERAM COM A BIBLIOTECA, e vale dizer quais.
+   *
+   * A 03.7 mantinha aqui: (a) `payloadPersistido` / `payloadRascunho`, para o
+   * item sentinela com o payload verbatim de `getStatusChart()`; (b)
+   * `aRealizarAntes`, o conjunto de dentes que a sessão assinada anterior
+   * havia planejado, que era a metade esquerda da DERIVAÇÃO de `executado`; e
+   * (c) `escuro`, observando a classe `.dark` do `<html>` por MutationObserver
+   * para repassar tema à biblioteca.
+   *
+   * Os três saem por motivos diferentes, e nenhum é cosmético: (a) o envelope
+   * deixou de ter sentinela — a projeção legível passou a ser o dado inteiro;
+   * (b) `executado` deixou de ser inferência e virou fato afirmado com data e
+   * autor (achado A4, restrição 2), porque a trava de finalização de contrato
+   * da 03.8.a se apoia nele e trava financeira não se apoia em dedução entre
+   * duas evoluções; (c) o componente autoral pinta a superfície por token do
+   * tema, então ele acompanha o modo escuro sem ninguém lhe contar.
+   *
+   * O que a tela precisa passar agora é só o que ela sabe e o odontograma não:
+   * a idade do paciente (para DERIVAR a dentição, achado A3) e o profissional
+   * da sessão (para AUTORAR o `executado`).
    */
-  const payloadPersistido = useMemo(
-    () => (ehOdontograma && evolucaoExibida ? payloadDeMarcacoes(evolucaoExibida.marcacoes) : null),
-    [ehOdontograma, evolucaoExibida],
-  );
-  const [payloadRascunho, setPayloadRascunho] = useState<PayloadOdontograma | null>(null);
-  const payloadOdontograma = payloadRascunho ?? payloadPersistido;
+  const idade = useMemo(() => idadeEmAnos(cliente?.dataNascimento), [cliente?.dataNascimento]);
 
-  /**
-   * Dentes que a última sessão ASSINADA de odontograma deixou como
-   * `a_realizar` — a metade esquerda da derivação de `executado`
-   * (ver `mapas.ts`). `evolucoes` já vem ordenada da mais recente para a
-   * mais antiga; a exibida é excluída para a sessão não se comparar
-   * consigo mesma, que devolveria "executado" para tudo que ela própria
-   * acabou de planejar.
-   */
-  const aRealizarAntes = useMemo(() => {
-    if (!ehOdontograma) return new Set<string>();
-    const anterior = evolucoes.find(
-      (e) => e.travada && e.mapaTipo === "odontograma" && e.id !== evolucaoExibida?.id,
-    );
-    return anterior ? regioesARealizar(marcacoesValidas("odontograma", anterior.marcacoes)) : new Set<string>();
-  }, [ehOdontograma, evolucoes, evolucaoExibida?.id]);
-
-  /** `.dark` no `<html>` é o sinal de tema que `lib/preferencias.tsx` mantém. */
-  const [escuro, setEscuro] = useState(
-    () => typeof document !== "undefined" && document.documentElement.classList.contains("dark"),
-  );
-  useEffect(() => {
-    const raiz = document.documentElement;
-    const obs = new MutationObserver(() => setEscuro(raiz.classList.contains("dark")));
-    obs.observe(raiz, { attributes: true, attributeFilter: ["class"] });
-    return () => obs.disconnect();
-  }, []);
-
-  const aoAlterarOdontograma = useCallback((novas: Marcacao[], payload: PayloadOdontograma) => {
+  const aoAlterarOdontograma = useCallback((novas: RegistroDente[]) => {
     setRascunho(novas);
-    setPayloadRascunho(payload);
   }, []);
 
   if (verificando) {
@@ -398,7 +388,6 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
         marcacoes: [],
       });
       setRascunho(null);
-      setPayloadRascunho(null);
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não foi possível abrir a sessão.");
     }
@@ -407,22 +396,16 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
   /**
    * O que de fato vai para `aba_health.evolucoes.marcacoes`.
    *
-   * Para os três mapas de região é a lista como está. Para o odontograma
-   * é a projeção legível MAIS o item sentinela com o payload da
-   * biblioteca — e o sentinela é acrescentado aqui, no único lugar que
-   * grava, em vez de viver dentro do estado da tela. Se ele morasse em
-   * `rascunho`, a lista lateral teria de filtrá-lo em todo lugar que a
-   * renderiza, e bastaria um ponto esquecido para desenhar um 33º dente
-   * chamado "estado_nativo".
-   *
-   * `payloadOdontograma` cai no persistido quando não há rascunho: salvar
-   * uma sessão em que só o texto da evolução mudou não pode apagar o
-   * estado do odontograma gravado antes.
+   * UMA LINHA, agora — e ela é a medida do que a Subetapa 03.7.a simplificou.
+   * A 03.7 precisava, aqui, remover o item sentinela da lista, remontá-lo com
+   * o payload verbatim da biblioteca e escolher entre o payload do rascunho e
+   * o persistido, para que salvar uma sessão em que só o texto mudou não
+   * apagasse o odontograma gravado antes. Com componente próprio, a projeção
+   * legível É o dado: a lista que a tela mostra é a lista que o banco recebe,
+   * e não há segunda representação para manter em sincronia.
    */
   function marcacoesParaGravar(): Marcacao[] {
-    if (!ehOdontograma) return marcacoes;
-    const dentes = marcacoes.filter((m) => m.regiao !== REGIAO_ESTADO_NATIVO);
-    return payloadOdontograma ? [...dentes, itemEstadoNativo(payloadOdontograma)] : dentes;
+    return marcacoes;
   }
 
   function aplicarEstado(estadoChave: string) {
@@ -449,7 +432,6 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
         marcacoes: marcacoesParaGravar(),
       });
       setRascunho(null);
-      setPayloadRascunho(null);
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não foi possível salvar as marcações.");
     }
@@ -468,7 +450,6 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
       }
       await assinarEvolucao.mutateAsync(sessaoAberta.id);
       setRascunho(null);
-      setPayloadRascunho(null);
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não foi possível assinar a sessão.");
     }
@@ -546,7 +527,6 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
                 // Marcação pertence ao mapa em que foi feita — trocar de
                 // mapa não carrega marcação de um vocabulário para outro.
                 setRascunho(null);
-                setPayloadRascunho(null);
               }}
               className={`flex items-center gap-1.5 px-2.5 py-2 text-[11.5px] ${
                 aba === m.chave
@@ -620,17 +600,18 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
                   }
                 >
                   <OdontogramaClinico
-                    /* `key` além da prop: uma sessão nova precisa de
-                       componente novo, não de um efeito reaproveitando o
-                       anterior — o estado da biblioteca é singleton de
-                       módulo, e remontar é a forma mais barata de garantir
-                       que nada do paciente anterior sobreviva. */
+                    /* A `key` fica, e o motivo mudou. Na 03.7 ela era guarda
+                       contra o singleton de módulo da biblioteca; aqui o
+                       componente não tem estado de módulo nenhum, e a `key`
+                       serve ao que ele TEM de estado local — o dente aberto no
+                       pop-up e as faces selecionadas. Trocar de sessão ou de
+                       paciente com um pop-up aberto sobre o dente 16 do
+                       anterior seria confuso; remontar zera isso de graça. */
                     key={`${clienteId}:${evolucaoExibida?.id ?? "nenhuma"}`}
-                    chaveSessao={`${clienteId}:${evolucaoExibida?.id ?? "nenhuma"}`}
-                    marcacoesGravadas={evolucaoExibida?.marcacoes}
-                    aRealizarAntes={aRealizarAntes}
+                    registros={marcacoes as RegistroDente[]}
+                    idade={idade}
                     somenteLeitura={!sessaoAberta || !podeEscrever}
-                    escuro={escuro}
+                    profissionalId={sessaoAberta?.profissionalId ?? null}
                     onAlterar={aoAlterarOdontograma}
                   />
                 </Suspense>

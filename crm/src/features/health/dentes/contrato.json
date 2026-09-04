@@ -1,0 +1,70 @@
+{
+  "_leia": [
+    "CONTRATO DE NOMES DO ODONTOGRAMA (Subetapa 03.7.a, restrição 1).",
+    "",
+    "Este arquivo é a ÚNICA fonte de verdade sobre QUAIS regiões cada dente tem.",
+    "Ele NÃO descreve geometria. A geometria vive nos .svg deste diretório e é",
+    "descartável: Max declarou que provavelmente vai redesenhar os desenhos, e o",
+    "componente foi escrito para não perceber a troca — ele resolve o clique por",
+    "`data-face` e `data-regiao`, nunca por coordenada, nunca por ordem de path.",
+    "",
+    "Três consumidores leem este arquivo, e é isso que impede que eles divirjam:",
+    "  · scripts/gerar_dentes_svg.mjs  — desenha a arte de referência a partir daqui",
+    "  · scripts/validar_dentes_svg.mjs — roda no `npm run build` e QUEBRA O BUILD",
+    "    se um .svg do diretório perder uma região que este contrato exige",
+    "  · src/features/health/odontograma.ts — monta as 52 posições e a projeção",
+    "",
+    "REDESENHAR É PERMITIDO; RENOMEAR NÃO É. Trocar um .svg por outro desenho que",
+    "mantenha os mesmos `data-face`/`data-regiao` é operação de arte e não precisa",
+    "de código. Tirar uma face do desenho é mudança de MODELO — o validador para o",
+    "build e obriga a decisão a ser tomada aqui, por escrito.",
+    "",
+    "As cinco faces são as de `db/migrations/043_catalogo_regra_do_codigo.sql`",
+    "(`faces_maximo` de 1 a 5). O centro troca de nome entre anterior (incisal) e",
+    "posterior (oclusal) — nome diferente, mesma posição, porque é assim que a face",
+    "se chama clinicamente e é o NOME que a Subetapa 03.8 vai cobrar."
+  ],
+
+  "faces": {
+    "comuns": ["mesial", "distal", "vestibular", "lingual"],
+    "centroAnterior": "incisal",
+    "centroPosterior": "oclusal"
+  },
+
+  "regioesNaoFace": ["coroa", "raiz"],
+
+  "_tipos": [
+    "Uma entrada por (dentição, arcada). O índice do array é a posição FDI menos 1",
+    "— posição 1 é o incisivo central, 8 é o terceiro molar. `raizes` e `larguras`",
+    "são os DOIS únicos parâmetros de que o gerador precisa; tudo o mais (nome,",
+    "grupo anterior/posterior, nome do centro) é derivado da posição.",
+    "Número de raízes é anatomia, não estilo: molar superior tem três, molar",
+    "inferior tem duas, e o primeiro pré-molar superior tem duas. Se o desenho novo",
+    "de Max trouxer outro número, é este arquivo que muda e o validador cobra."
+  ],
+  "tipos": {
+    "permanente-superior": { "raizes": [1, 1, 1, 2, 1, 3, 3, 3], "larguras": [36, 28, 30, 32, 32, 44, 42, 38] },
+    "permanente-inferior": { "raizes": [1, 1, 1, 1, 1, 2, 2, 2], "larguras": [26, 26, 30, 32, 34, 46, 44, 40] },
+    "decidua-superior": { "raizes": [1, 1, 1, 3, 3], "larguras": [28, 22, 26, 34, 36] },
+    "decidua-inferior": { "raizes": [1, 1, 1, 2, 2], "larguras": [22, 22, 26, 36, 38] }
+  },
+
+  "_cronologia": [
+    "Faixas em ANOS, usadas só para DERIVAR o estado de dentição inicial de cada",
+    "posição (achado A3). Derivar não é decidir: todo dente continua editável um a",
+    "um, e o que o profissional afirmar vence a derivação. É por isso que a faixa",
+    "pode ser aproximada sem risco clínico — ela é ponto de partida de tela, nunca",
+    "diagnóstico.",
+    "`erupcao` = [início, fim] da irrupção. `esfoliacao` = [início, fim] da queda do",
+    "decíduo; só a dentição decídua tem."
+  ],
+  "cronologia": {
+    "permanente": {
+      "erupcao": [[6, 8], [7, 9], [9, 12], [10, 11], [10, 12], [6, 7], [11, 13], [17, 21]]
+    },
+    "decidua": {
+      "erupcao": [[0.5, 0.9], [0.7, 1.1], [1.3, 1.7], [1.1, 1.6], [2.1, 2.8]],
+      "esfoliacao": [[6, 7], [7, 8], [10, 12], [9, 11], [10, 12]]
+    }
+  }
+}

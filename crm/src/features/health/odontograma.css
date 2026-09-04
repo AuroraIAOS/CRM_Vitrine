@@ -1,0 +1,237 @@
+/*
+ * Odontograma autoral — Subetapa 03.7.a.
+ *
+ * ============================================================
+ * O QUE ESTE ARQUIVO SUBSTITUI
+ * ============================================================
+ * `odontograma-escopado.css` (69 KB gerados por PostCSS a partir do CSS de
+ * `react-advanced-odontogram`) e `odontograma-integracao.css`. Os dois
+ * existiam para DOMAR CSS de terceiro que entrava na cascata global e
+ * sequestrava `--card`, `--muted` e `--accent` do design system — com o
+ * sintoma chegando atrasado, na primeira visita ao odontograma, e aparecendo
+ * em todas as OUTRAS telas (`handoffs/instrucoes.md` §5). Sem terceiro, não
+ * há o que domar: o que sobra é folha própria, curta, e ancorada em
+ * `.odontograma`.
+ *
+ * ============================================================
+ * COR: DUAS ORIGENS, DE PROPÓSITO
+ * ============================================================
+ * · A SUPERFÍCIE do dente (esmalte, raiz, face hígida, traço, fundo da
+ *   arcada) vem de TOKEN do tema. É cor de interface e tem de virar junto com
+ *   o modo escuro — a armadilha de `instrucoes.md` §5 ("quem liga o modo
+ *   escuro herda o passivo das telas anteriores") custou 11 telas na 02.12.
+ * · O ESTADO clínico (existente, proposto, planejado, em execução, executado,
+ *   não mais necessário) vem por variável inline, com o hexadecimal literal de
+ *   `mapas.ts`. É semântica clínica, é a MESMA cor da legenda e da grade leve,
+ *   e a 02.12 deixou a paleta dos mapas clínicos fora da varredura de hex
+ *   exatamente por isso, com pendência própria aberta.
+ */
+
+.odontograma {
+  --od-superficie: hsl(var(--card));
+  --od-traco: hsl(var(--border));
+  --od-traco-forte: hsl(var(--muted-foreground));
+  --od-raiz: hsl(var(--muted));
+  color: hsl(var(--foreground));
+}
+
+/* ---------------------------------------------------------- arcada e linhas */
+
+.od-arcada {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+
+.od-linha {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+}
+
+/* A folga da linha média é o que faz a arcada ser lida como duas metades. */
+.od-meio {
+  width: 14px;
+  flex: none;
+}
+
+.od-posicao {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1 1 0;
+  min-width: 20px;
+  max-width: 56px;
+}
+
+.od-linha[data-arcada="inferior"] .od-posicao {
+  flex-direction: column-reverse;
+}
+
+.od-numero {
+  font-family: ui-monospace, "IBM Plex Mono", monospace;
+  font-size: 9px;
+  line-height: 1;
+  color: hsl(var(--muted-foreground));
+  user-select: none;
+}
+
+.od-posicao[data-selecionado="sim"] .od-numero {
+  color: hsl(var(--primary));
+  font-weight: 600;
+}
+
+/*
+ * ALTURA COM TETO, e o teto é o que faz as QUATRO linhas caberem.
+ *
+ * `.od-posicao` distribui a largura por `flex: 1 1 0`, e o desenho tem
+ * proporção 100×240 — ou seja, largura livre vira altura 2,4× maior. Numa tela
+ * de 1680 isso dava ~134px por dente, 4 linhas passavam de 570px e a linha
+ * PERMANENTE INFERIOR caía abaixo da dobra do painel: presente no DOM,
+ * invisível na tela. É a mesma família do defeito que deixou a suíte da 03.7
+ * 27/27 verde com a arcada em 0px de largura — e a evidência desta subetapa
+ * ganhou uma asserção que mede a última linha DENTRO da área visível, não só
+ * a contagem de posições no DOM.
+ *
+ * O decíduo é menor de propósito: é menor na boca, e é o que devolve a altura.
+ */
+.od-desenho {
+  width: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.od-desenho svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 104px;
+}
+
+.od-linha[data-linha^="decidua"] .od-desenho svg {
+  max-height: 74px;
+}
+
+/* Quadrantes 2, 3, 6 e 7 são a mesma arte espelhada — mesial troca de lado na
+   tela, que é o que a anatomia manda (mesial é sempre em direção à linha
+   média). Ver `scripts/gerar_dentes_svg.mjs`. */
+.od-posicao[data-espelhado="sim"] .od-desenho {
+  transform: scaleX(-1);
+}
+
+/* ------------------------------------------------------------------ pintura */
+
+.od-desenho .od-coroa,
+.od-desenho .od-face {
+  fill: var(--od-superficie);
+  stroke: var(--od-traco-forte);
+  stroke-width: 1.4;
+}
+
+.od-desenho .od-raiz {
+  fill: var(--od-raiz);
+  stroke: var(--od-traco-forte);
+  stroke-width: 1.4;
+}
+
+.od-desenho .od-face,
+.od-desenho .od-coroa,
+.od-desenho .od-raiz {
+  transition: fill 120ms ease;
+}
+
+.odontograma[data-editavel="sim"] .od-desenho .od-face,
+.odontograma[data-editavel="sim"] .od-desenho .od-coroa,
+.odontograma[data-editavel="sim"] .od-desenho .od-raiz {
+  cursor: pointer;
+}
+
+/* O dente inteiro recebe a cor do estado dominante; a face marcada recebe a
+   cor do que há NELA. Duas camadas, porque um dente pode ter trabalho
+   planejado numa face e achado em outra — que é justamente o achado A2. */
+.od-posicao[data-estado] .od-desenho .od-coroa {
+  fill: var(--od-estado-fundo, var(--od-superficie));
+  stroke: var(--od-estado-traco, var(--od-traco-forte));
+}
+
+.od-desenho .od-face[data-marcado="trabalho"] {
+  fill: var(--od-estado-fundo, var(--od-superficie));
+  stroke: var(--od-estado-traco, var(--od-traco-forte));
+  stroke-width: 1.8;
+}
+
+/* Achado é hachura, não cor cheia: ele descreve o que ESTÁ na boca, e disputar
+   preenchimento com o trabalho tornaria as duas leituras uma só. */
+.od-desenho .od-face[data-marcado="achado"],
+.od-desenho .od-face[data-marcado="ambos"] {
+  stroke: #a8827a;
+  stroke-width: 2.2;
+  stroke-dasharray: 3 2;
+}
+
+.od-desenho .od-face[data-marcado="ambos"] {
+  fill: var(--od-estado-fundo, var(--od-superficie));
+}
+
+.od-desenho .od-face[data-alvo="sim"] {
+  stroke: hsl(var(--primary));
+  stroke-width: 2.6;
+  stroke-dasharray: none;
+}
+
+/* Posição que não está na boca (não erupcionado, ausente, removido,
+   substituído): some da leitura sem sumir do lugar — a lacuna precisa
+   continuar visível para que a contagem FDI não engane quem olha. */
+.od-posicao[data-na-boca="nao"] .od-desenho {
+  opacity: 0.28;
+}
+.od-posicao[data-na-boca="nao"] .od-desenho .od-coroa,
+.od-posicao[data-na-boca="nao"] .od-desenho .od-raiz,
+.od-posicao[data-na-boca="nao"] .od-desenho .od-face {
+  stroke-dasharray: 3 3;
+}
+
+/* ----------------------------------------------------------------- pop-up */
+
+.od-popup {
+  position: absolute;
+  z-index: 20;
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  background: hsl(var(--card));
+  box-shadow: 0 10px 30px -12px rgb(15 23 42 / 35%);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.od-chip {
+  border: 1px solid hsl(var(--border));
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  line-height: 16px;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  cursor: pointer;
+}
+
+.od-chip[data-ativo="sim"] {
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary));
+  font-weight: 600;
+}
+
+.od-chip:disabled {
+  cursor: default;
+  opacity: 0.5;
+}

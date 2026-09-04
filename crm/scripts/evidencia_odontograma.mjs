@@ -1,22 +1,51 @@
 #!/usr/bin/env node
 /**
- * Evidência ponta a ponta do odontograma (Subetapa 03.7).
+ * Evidência ponta a ponta do odontograma autoral (Subetapa 03.7.a).
  *
- * Repete o caminho de `capturar_telas.mjs` — link de acesso pela API de
- * administração, `puppeteer-core` com o Chrome local, nenhuma senha no
- * script — e exercita o CICLO CLÍNICO COMPLETO, que é onde a Subetapa
- * 02.9 já aprendeu que os defeitos aparecem: abrir → marcar → salvar →
- * recarregar → trocar de paciente. Evidência que para na primeira tela
- * verde não encontra esta classe de defeito.
+ * Reescrita da evidência da 03.7, e a regra da reescrita foi: **manter o
+ * CICLO CLÍNICO que ela já exercitava, trocar só as asserções que mediam a
+ * biblioteca.** O ciclo — abrir sessão → marcar → salvar → conferir no banco →
+ * recarregar e as marcações voltarem → abrir outro paciente e a boca estar
+ * limpa — é exatamente o que a versão autoral tem de provar, e é onde a
+ * Subetapa 02.9 já aprendeu que os defeitos aparecem. Evidência que para na
+ * primeira tela verde não encontra esta classe de defeito.
  *
- * O que ele PROVA, em vez de só ilustrar:
- *   1. o chunk do odontograma NÃO é buscado ao abrir o prontuário — só
- *      quando a aba Odontograma é escolhida (restrição 1 da Qualidade);
- *   2. o CSS da biblioteca NÃO altera os tokens do app (`--accent`,
- *      `--card`, `--muted`) nem o `<select>` fora do container;
- *   3. nada de clínico vai para `localStorage`;
- *   4. a marcação persiste e REAPARECE depois de recarregar a página;
- *   5. trocar de paciente NÃO carrega a boca do paciente anterior.
+ * ============================================================
+ * A ASSERÇÃO QUE NÃO PODE SE PERDER
+ * ============================================================
+ * A suíte da 03.7 ficou **27/27 verde com a arcada em 0px de largura** — a
+ * peça central da tela invisível — porque todas as asserções olhavam a lista
+ * lateral do prontuário, que é dado NOSSO e estava inteiramente correto.
+ * "O dado foi gravado" não é o mesmo que "a tela funciona". A asserção de
+ * LARGURA DA ARCADA e a de CONTAGEM DE DENTES NO DOM ficam, com alvo novo
+ * (`.od-arcada` e `.od-posicao`), e a pergunta que elas respondem é: se o
+ * desenho sumisse da tela agora, qual destas asserções ficaria vermelha?
+ *
+ * ============================================================
+ * O QUE SAIU, E POR QUÊ
+ * ============================================================
+ * · As três asserções de tradução `pt-br` e a do resíduo "Odontogram": mediam
+ *   as 907 chaves de tradução da biblioteca. O componente autoral nasce em
+ *   português e não tem dicionário.
+ * · As duas de governança (barra do aplicativo de demonstração escondida,
+ *   nenhum botão de exportação exposto): a moldura que elas vigiavam era da
+ *   biblioteca. Sem ela, não há o que esconder — e a exportação de prontuário
+ *   com token e segunda prova de identidade continua sendo a Subetapa 03.13.
+ * · As de token de tema (`--accent`/`--card`/`--muted`) FICAM, e mudaram de
+ *   alvo: elas vigiavam CSS de terceiro entrando na cascata global; agora
+ *   vigiam o nosso próprio `odontograma.css`, que declara `--od-*` e não pode
+ *   tocar nos tokens do design system. O modo de falha é o mesmo.
+ *
+ * ============================================================
+ * O QUE ENTROU
+ * ============================================================
+ * · CLIQUE POR FACE devolvendo dente + região — o motivo de esta subetapa
+ *   existir. `react-advanced-odontogram` só resolvia clique no dente.
+ * · A separação ACHADO × TRABALHO provada pela UI real (achado A2): marcar
+ *   cárie na oclusal e planejar restauração em mesial+distal+oclusal tem de
+ *   gravar DUAS listas de faces diferentes.
+ * · `executado` com DATA e AUTOR (achado A4, restrição 2), gravado pela tela.
+ * · As 52 posições, incluindo as 20 decíduas (achado A3).
  *
  * PRÉ-REQUISITO: app em http://localhost:3000
  *   cd crm && npm run dev -- --port 3000 --strictPort
@@ -70,14 +99,43 @@ if (erroPerfil) {
   process.exit(1);
 }
 
-const { data: clientes } = await db
+/**
+ * DOIS CLIENTES SEM SESSÃO ABERTA — e a escolha não é detalhe.
+ *
+ * A versão da 03.7 pegava os dois PRIMEIROS clientes da conta. Medido nesta
+ * subetapa: dos 10 clientes da conta de demonstração, **5 têm evolução aberta**
+ * — resíduo de execuções de evidência de subetapas anteriores —, e os dois
+ * primeiros estavam entre eles. O efeito foi silencioso e errado nos dois
+ * sentidos: "Abrir sessão" não aparecia (já havia uma aberta), então a
+ * evidência **escrevia dentro da sessão de outra pessoa**; e a limpeza por
+ * diferença de conjunto, que existe justamente para não apagar linha alheia,
+ * classificava essa linha como pré-existente e a deixava lá — com o dado de
+ * teste dentro.
+ *
+ * A lição de `handoffs/instrucoes.md` §5 sobre resíduo de fixture cobria
+ * APAGAR o que não é seu. Este caso é o simétrico: **ESCREVER no que não é
+ * seu.** Limpeza por diferença de conjunto não protege contra ele, porque o
+ * dano acontece antes de a limpeza começar a pensar.
+ */
+const { data: candidatos } = await db
   .schema("aba_people")
   .from("clientes")
   .select("id")
-  .eq("account_id", perfil.account_id)
-  .limit(2);
-if (!clientes || clientes.length < 2) {
-  console.error("A evidência exige DOIS clientes na conta de demonstração (o teste de troca de paciente).");
+  .eq("account_id", perfil.account_id);
+const { data: abertas } = await db
+  .schema("aba_health")
+  .from("evolucoes")
+  .select("cliente_id")
+  .eq("travada", false);
+const comSessaoAberta = new Set((abertas ?? []).map((e) => e.cliente_id));
+const clientes = (candidatos ?? []).filter((c) => !comSessaoAberta.has(c.id)).slice(0, 2);
+if (clientes.length < 2) {
+  console.error(
+    "A evidência exige DOIS clientes SEM sessão aberta na conta de demonstração.\n" +
+      `  Clientes na conta: ${(candidatos ?? []).length}; com sessão aberta: ${comSessaoAberta.size}.\n` +
+      "  Ela abre a própria sessão e apaga só o que criou — escrever numa sessão\n" +
+      "  pré-existente contaminaria dado que não é dela.",
+  );
   process.exit(1);
 }
 const [clienteA, clienteB] = clientes;
@@ -136,7 +194,7 @@ const browser = await puppeteer.launch({
 const pagina = await browser.newPage();
 pagina.setDefaultNavigationTimeout(60_000);
 
-/** Toda requisição de JS/CSS, para provar QUANDO o chunk pesado viaja. */
+/** Toda requisição de JS/CSS, para provar QUANDO o chunk do odontograma viaja. */
 const pedidos = [];
 pagina.on("request", (r) => {
   const u = r.url();
@@ -146,7 +204,7 @@ pagina.on("request", (r) => {
   // `/src/features/health/OdontogramaClinico.tsx?t=…`. Filtrar só por
   // `.js` faria a sonda concluir que o módulo nunca foi buscado — e a
   // conclusão errada seria a TRANQUILIZADORA, que é a pior das duas.
-  if (/\.(js|css|tsx|ts)(\?|$)/.test(u)) pedidos.push(u);
+  if (/\.(js|css|tsx|ts|svg)(\?|$)/.test(u)) pedidos.push(u);
 });
 
 const erros = [];
@@ -173,7 +231,7 @@ if (erroLink) {
 await pagina.goto(link.properties.action_link, { waitUntil: "networkidle2" });
 await esperar(3000);
 
-// Tokens do app ANTES de o CSS da biblioteca existir na página.
+// Tokens do app ANTES de o CSS do odontograma existir na página.
 const tokensAntes = await pagina.evaluate(() => {
   const s = getComputedStyle(document.documentElement);
   return {
@@ -193,97 +251,83 @@ afirmar(
   `${pedidos.length} arquivos pedidos`,
 );
 
+const clicarPorTexto = (texto) =>
+  pagina.evaluate((t) => {
+    const b = [...document.querySelectorAll("button")].find((x) => x.textContent.trim() === t);
+    if (!b || b.disabled) return false;
+    b.click();
+    return true;
+  }, texto);
+
 console.log("\n2) escolhendo a aba Odontograma");
 pedidos.length = 0;
-const clicou = await pagina.evaluate(() => {
-  const b = [...document.querySelectorAll("button")].find((x) => x.textContent.trim() === "Odontograma");
-  if (!b) return false;
-  b.click();
-  return true;
-});
-afirmar("botão 'Odontograma' encontrado e clicado", clicou);
-await esperar(5000);
+afirmar("botão 'Odontograma' encontrado e clicado", await clicarPorTexto("Odontograma"));
+await esperar(4000);
 afirmar(
   "o chunk do odontograma viaja SÓ AGORA",
   pedidos.some((u) => /OdontogramaClinico/.test(u)),
   pedidos.filter((u) => /Odontograma/.test(u)).map((u) => u.split("/").pop()).join(", "),
 );
 
-const montado = await pagina.evaluate(() => {
-  const escopo = document.querySelector(".odontograma-escopo");
-  return {
-    escopo: !!escopo,
-    dentes: document.querySelectorAll(".odontograma-escopo .tooth-tile, .odontograma-escopo [data-tooth]").length,
-    texto: (document.querySelector(".odontograma-escopo")?.textContent ?? "").slice(0, 4000),
-  };
-});
-afirmar("container escopado presente no DOM", montado.escopo);
-
 /**
- * A ARCADA ESTÁ DE FATO DESENHADA, E COM LARGURA.
+ * A ARCADA ESTÁ DE FATO DESENHADA, E COM LARGURA — a asserção herdada.
  *
- * Esta asserção nasceu de um defeito real desta subetapa: um ajuste de
- * grade deixou `.chart-column` com **0px de largura** — a arcada
- * completamente invisível — e a suíte continuou 27/27 verde, porque
- * todas as outras medições olhavam a lista lateral do prontuário, que é
- * dado nosso e estava certo. "Marcação gravada" não é o mesmo que
- * "odontograma visível", e só medindo o desenho os dois se separam.
+ * Nasceu de um defeito real da 03.7: um ajuste de grade deixou a arcada com
+ * **0px de largura**, completamente invisível, e a suíte continuou 27/27 verde
+ * porque todas as outras medições olhavam a lista lateral do prontuário. Ela
+ * troca de alvo (`.od-arcada` / `.od-posicao`) e NÃO troca de propósito.
  */
 const arcada = await pagina.evaluate(() => {
-  const c = document.querySelector(".odontograma-escopo .chart-column");
-  const s = document.querySelector(".odontograma-escopo section.chart");
+  const a = document.querySelector(".od-arcada");
   return {
-    larguraColuna: c ? Math.round(c.getBoundingClientRect().width) : 0,
-    dentes: document.querySelectorAll(".odontograma-escopo .tooth-tile").length,
-    larguraArcada: s ? Math.round(s.getBoundingClientRect().width) : 0,
+    largura: a ? Math.round(a.getBoundingClientRect().width) : 0,
+    posicoes: document.querySelectorAll(".od-posicao").length,
+    decíduas: document.querySelectorAll('.od-linha[data-linha^="decidua"] .od-posicao').length,
+    svgs: document.querySelectorAll(".od-desenho svg").length,
+    faces: document.querySelectorAll(".od-desenho [data-face]").length,
+    raizes: document.querySelectorAll('.od-desenho [data-regiao="raiz"]').length,
+    espelhados: document.querySelectorAll('.od-posicao[data-espelhado="sim"]').length,
   };
 });
+afirmar("o container do odontograma está no DOM", (await pagina.$(".odontograma")) !== null);
+afirmar("a arcada tem largura de verdade (não colapsou na grade)", arcada.largura > 600, `${arcada.largura}px`);
+afirmar("as 52 posições estão desenhadas", arcada.posicoes === 52, `${arcada.posicoes} posições`);
+afirmar("as 20 posições decíduas existem (dentição mista, achado A3)", arcada.decíduas === 20, `${arcada.decíduas}`);
+afirmar("todo desenho virou <svg> de verdade", arcada.svgs === 52, `${arcada.svgs} svg`);
+afirmar("5 faces nomeadas por posição — 260 no total", arcada.faces === 260, `${arcada.faces} faces`);
+afirmar("toda posição tem pelo menos uma raiz endereçável", arcada.raizes >= 52, `${arcada.raizes} raízes`);
 afirmar(
-  "a arcada tem largura de verdade (não colapsou na grade)",
-  arcada.larguraColuna > 600,
-  `chart-column = ${arcada.larguraColuna}px`,
+  "os quadrantes 2, 3, 6 e 7 saem espelhados (mesial em direção à linha média)",
+  arcada.espelhados === 26,
+  `${arcada.espelhados} espelhados`,
 );
-afirmar("os 32 dentes estão desenhados", arcada.dentes >= 32, `${arcada.dentes} dentes no DOM`);
 
-console.log("\n3) tradução pt-BR de fato na tela");
-const visiveis = await pagina.evaluate(() => {
-  // `textContent` inclui o que está escondido — medir por texto diria que
-  // a barra da biblioteca continua lá. O que interessa é o que se VÊ.
-  const visivel = (el) => !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
-  const raiz = document.querySelector(".odontograma-escopo");
-  const junta = (el) =>
-    [...el.querySelectorAll("*")]
-      .filter((e) => visivel(e) && e.children.length === 0)
-      .map((e) => e.textContent.trim())
-      .filter(Boolean)
-      .join(" | ");
-  return {
-    texto: junta(raiz),
-    topbarVisivel: visivel(raiz.querySelector("header.topbar") ?? document.createElement("i")),
-    exportacaoVisivel: [...raiz.querySelectorAll('[id^="btnStatus"],[id^="btnPerio"]')].some(visivel),
-  };
+/**
+ * AS QUATRO LINHAS CABEM NA AREA VISIVEL — e nao so no DOM.
+ *
+ * Esta asserção nasceu de um defeito real desta subetapa, achado por captura
+ * de tela depois de 47/48 verdes: as 52 posições estavam no DOM, a arcada
+ * tinha 1.104px de largura, e a linha PERMANENTE INFERIOR caia abaixo da dobra
+ * do painel rolavel. Contagem no DOM e largura da arcada nao pegam isso.
+ * E o mesmo modo de falha da 03.7 (27/27 verde com a arcada em 0px) num eixo
+ * diferente: la a peca era invisivel por largura, aqui por altura.
+ */
+const dobra = await pagina.evaluate(() => {
+  const caixa = document.querySelector(".od-arcada").closest("div[class*=overflow]") ?? document.body;
+  const limite = caixa.getBoundingClientRect().bottom;
+  const linhas = [...document.querySelectorAll(".od-linha")].map((l) => ({
+    linha: l.dataset.linha,
+    fim: Math.round(l.getBoundingClientRect().bottom),
+  }));
+  return { limite: Math.round(limite), linhas };
 });
-console.log("   [texto visível] " + visiveis.texto.replace(/\s+/g, " ").slice(0, 600));
-for (const termo of ["Ficha dentária", "Dentição mista", "Estado periodontal"]) {
-  afirmar(`rótulo em português visível: "${termo}"`, visiveis.texto.includes(termo));
-}
-// Resíduo conhecido e declarado: a biblioteca não expõe via de override
-// de tradução, e `view.odontogram` vem "Odontogram" de fábrica. Aferido
-// para que ele apareça no relatório em vez de passar despercebido.
 afirmar(
-  "resíduo declarado: o alternador de visão ainda diz 'Odontogram'",
-  visiveis.texto.includes("Odontogram") && !visiveis.texto.includes("| Odontograma |"),
-  "sem API de override na biblioteca — registrado no Status",
+  "as QUATRO linhas cabem na area visivel — nenhuma arcada abaixo da dobra",
+  dobra.linhas.length === 4 && dobra.linhas.every((l) => l.fim <= dobra.limite + 1),
+  dobra.linhas.map((l) => `${l.linha}=${l.fim}`).join(" ") + ` | limite=${dobra.limite}`,
 );
 
-console.log("\n3b) a moldura do aplicativo de demonstração não aparece");
-afirmar("barra superior da biblioteca escondida", !visiveis.topbarVisivel);
-afirmar(
-  "nenhum botão de exportação de prontuário exposto (governança da 03.13)",
-  !visiveis.exportacaoVisivel,
-);
-
-console.log("\n4) o CSS da biblioteca não vazou para o app");
+console.log("\n3) o CSS do odontograma não vazou para o app");
 const tokensDepois = await pagina.evaluate(() => {
   const s = getComputedStyle(document.documentElement);
   return {
@@ -299,19 +343,8 @@ for (const t of ["accent", "card", "muted"]) {
     `antes="${tokensAntes[t]}" depois="${tokensDepois[t]}"`,
   );
 }
-const selectFora = await pagina.evaluate(() => {
-  const s = [...document.querySelectorAll("select")].find((e) => !e.closest(".odontograma-escopo"));
-  if (!s) return null;
-  const cs = getComputedStyle(s);
-  return { minWidth: cs.minWidth, appearance: cs.appearance };
-});
-afirmar(
-  "<select> fora do container não foi reestilizado pela biblioteca",
-  selectFora === null || selectFora.minWidth !== "220px",
-  selectFora ? `min-width=${selectFora.minWidth}` : "nenhum select na tela",
-);
 
-console.log("\n5) nada de clínico em localStorage");
+console.log("\n4) nada de clínico em localStorage");
 const armazenado = await pagina.evaluate(() => {
   const chaves = [];
   for (let i = 0; i < localStorage.length; i++) chaves.push(localStorage.key(i));
@@ -319,39 +352,99 @@ const armazenado = await pagina.evaluate(() => {
 });
 afirmar(
   "nenhuma chave de odontograma em localStorage",
-  !armazenado.some((k) => /odontogram/i.test(k)),
+  !armazenado.some((k) => /odontogram|dente/i.test(k)),
   `chaves: ${armazenado.join(", ") || "(nenhuma)"}`,
 );
 
+// ============================================================
+// 5) CICLO CLÍNICO — abrir, clicar NA FACE, marcar, salvar, recarregar
+// ============================================================
+console.log("\n5) ciclo clínico: abrir sessão → clicar na face → marcar → salvar");
+afirmar("sessão aberta pela UI", await clicarPorTexto("Abrir sessão"));
+await esperar(2500);
+
+/** Clica numa região nomeada de um dente — sem coordenada, sem mapa de pixels. */
+const clicarRegiao = (fdi, seletor) =>
+  pagina.evaluate(
+    (f, s) => {
+      const el = document.querySelector(`[data-dente="${f}"] ${s}`);
+      if (!el) return false;
+      el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      return true;
+    },
+    fdi,
+    seletor,
+  );
+
+afirmar("clique na FACE oclusal do dente 16", await clicarRegiao("16", '[data-face="oclusal"]'));
+await esperar(600);
+
+/**
+ * O CLIQUE RESOLVEU DENTE **E** FACE — o motivo de esta subetapa existir.
+ *
+ * `react-advanced-odontogram` resolvia só o dente (`onToothClick(toothNo)`), e
+ * a face vinha de uma grade de caixas de seleção num painel lateral. Aqui o
+ * alvo do evento carrega `data-face`, e o pop-up abre já sabendo os dois.
+ */
+const aposClique = await pagina.evaluate(() => {
+  const p = document.querySelector(".od-popup");
+  return {
+    aberto: !!p,
+    dente: p?.dataset.denteAberto ?? null,
+    facesAtivas: [...document.querySelectorAll('.od-popup [data-face-chip][data-ativo="sim"]')].map(
+      (b) => b.dataset.faceChip,
+    ),
+    marcadaNoDesenho: !!document.querySelector('[data-dente="16"] [data-face="oclusal"][data-alvo="sim"]'),
+  };
+});
+afirmar("o pop-up por dente abriu", aposClique.aberto);
+afirmar("o pop-up sabe QUAL dente", aposClique.dente === "16", `dente=${aposClique.dente}`);
+afirmar(
+  "o clique resolveu a FACE sozinho, sem painel lateral",
+  aposClique.facesAtivas.length === 1 && aposClique.facesAtivas[0] === "oclusal",
+  `faces ativas: ${aposClique.facesAtivas.join(", ") || "(nenhuma)"}`,
+);
+afirmar("a face clicada aparece selecionada no próprio desenho", aposClique.marcadaNoDesenho);
+
 await pagina.screenshot({ path: path.join(DESTINO, "17_odontograma.png"), type: "png" });
 
-// ============================================================
-// 6) CICLO CLÍNICO COMPLETO — abrir, marcar, salvar, recarregar
-// ============================================================
-// A lição da Subetapa 02.9: evidência que para na primeira tela verde
-// não encontra esta classe de defeito. O ciclo inteiro é o teste.
-console.log("\n6) ciclo clínico: abrir sessão → marcar → salvar → recarregar");
+// -------- achado na oclusal (onde há doença) --------
+console.log("\n6) achado × trabalho: as duas faces são diferentes de propósito (achado A2)");
+await pagina.evaluate(() => document.querySelector('.od-popup [data-acao="acrescentar-achado"]')?.click());
+await esperar(500);
 
-const clicarPorTexto = (texto) =>
-  pagina.evaluate((t) => {
-    const b = [...document.querySelectorAll("button")].find((x) => x.textContent.trim() === t);
-    if (!b || b.disabled) return false;
-    b.click();
-    return true;
-  }, texto);
+// -------- trabalho em mesial + distal + oclusal (onde vai haver trabalho) --------
+for (const face of ["mesial", "distal"]) {
+  await pagina.evaluate((f) => document.querySelector(`.od-popup [data-face-chip="${f}"]`)?.click(), face);
+  await esperar(200);
+}
+await pagina.evaluate(() => {
+  const i = document.querySelector('.od-popup [data-campo="descricao-trabalho"]');
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+  setter.call(i, "restauração MOD");
+  i.dispatchEvent(new Event("input", { bubbles: true }));
+});
+await esperar(300);
+await pagina.evaluate(() => document.querySelector('.od-popup [data-acao="propor-trabalho"]')?.click());
+await esperar(600);
 
-afirmar("sessão aberta pela UI", await clicarPorTexto("Abrir sessão"));
-await esperar(3000);
-
-// "Dentição mista" é escolha deliberada de marcação: um clique só, e é
-// exatamente o que o Objetivo do item 2 pede que exista (permanente,
-// decídua E MISTA). Marcar face a face provaria menos e quebraria mais.
-afirmar("dentição mista aplicada no odontograma", await clicarPorTexto("Dentição mista"));
-await esperar(2000);
-
-const marcacoesNaTela = await pagina.evaluate(() =>
-  [...document.querySelectorAll("span")].filter((s) => /^Dente \d\d$/.test(s.textContent.trim())).length,
-);
+/**
+ * A contagem exclui o pop-up — e ela ja mentiu por isso.
+ *
+ * A primeira execucao desta evidencia deu "antes 2, depois 1" e parecia perda
+ * de marcacao. Nao era: o cabecalho do pop-up tambem renderiza `Dente 16`, e o
+ * pop-up estava ABERTO na primeira contagem e fechado depois do recarregamento.
+ * A asserção media a minha propria janela. `:not(.od-popup *)` fecha isso, e o
+ * que se conta passa a ser so a lista lateral do prontuario.
+ */
+const contarNaLista = () =>
+  pagina.evaluate(
+    () =>
+      [...document.querySelectorAll("span:not(.od-popup span)")].filter((s) =>
+        /^Dente \d\d$/.test(s.textContent.trim()),
+      ).length,
+  );
+const marcacoesNaTela = await contarNaLista();
 afirmar("a projeção legível apareceu na lista lateral", marcacoesNaTela > 0, `${marcacoesNaTela} dentes listados`);
 
 afirmar("rascunho salvo", await clicarPorTexto("Salvar rascunho"));
@@ -368,68 +461,116 @@ const { data: gravadas } = await db
   .limit(1);
 const linha = gravadas?.[0];
 const arr = Array.isArray(linha?.marcacoes) ? linha.marcacoes : [];
-const envelope = arr.find((m) => m?.regiao === "estado_nativo");
-const dentesGravados = arr.filter((m) => m?.regiao !== "estado_nativo");
+const dente16 = arr.find((m) => m?.regiao === "16");
+
 afirmar("a evolução gravou mapa_tipo = odontograma", linha?.mapa_tipo === "odontograma");
-afirmar("marcações de dente gravadas", dentesGravados.length > 0, `${dentesGravados.length} dentes`);
-afirmar("item sentinela com o payload nativo gravado", !!envelope?.payload?.teeth);
+afirmar("o CHECK da migration 025 continua satisfeito: marcacoes é ARRAY", Array.isArray(linha?.marcacoes));
+afirmar("o registro do dente 16 foi gravado", !!dente16, `${arr.length} item(ns) no array`);
 afirmar(
-  "a poda funcionou: o payload NÃO carrega os 32 dentes",
-  envelope && Object.keys(envelope.payload.teeth).length < 32,
-  `${envelope ? Object.keys(envelope.payload.teeth).length : "?"} dentes no payload, de 32 possíveis`,
+  "NENHUM item sentinela `estado_nativo` — o envelope da 03.7 não voltou",
+  !arr.some((m) => m?.regiao === "estado_nativo"),
 );
 afirmar(
-  "o CHECK da migration 025 continua satisfeito: marcacoes é ARRAY",
-  Array.isArray(linha?.marcacoes),
+  "a FACE DO TRABALHO é o que `faces` carrega (é o que a 03.8 orça)",
+  JSON.stringify(dente16?.faces) === JSON.stringify(["mesial", "distal", "oclusal"]),
+  JSON.stringify(dente16?.faces),
+);
+afirmar(
+  "a FACE DO ACHADO é outra lista, e é MENOR — o defeito A2 não pode voltar",
+  JSON.stringify(dente16?.achados?.[0]?.faces) === JSON.stringify(["oclusal"]),
+  JSON.stringify(dente16?.achados?.[0]?.faces),
+);
+afirmar(
+  "as duas listas de face são de fato diferentes neste caso",
+  JSON.stringify(dente16?.faces) !== JSON.stringify(dente16?.achados?.[0]?.faces),
+);
+afirmar(
+  "o trabalho nasce `proposto` — rascunho, e é o único estado que se apaga",
+  dente16?.trabalhos?.[0]?.estado === "proposto",
+  dente16?.trabalhos?.[0]?.estado,
 );
 
-console.log("\n7) a marcação reaparece depois de recarregar a página");
+// -------- `executado` é fato afirmado, com data e autor --------
+console.log("\n7) `executado` deixa de ser inferência: data e autor gravados (achado A4, restrição 2)");
+await clicarRegiao("16", '[data-face="oclusal"]');
+await esperar(600);
+await pagina.evaluate(() => {
+  const s = document.querySelector('.od-popup [data-campo="estado-trabalho"]');
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, "value").set;
+  setter.call(s, "executado");
+  s.dispatchEvent(new Event("change", { bubbles: true }));
+});
+await esperar(600);
+afirmar("rascunho salvo com o trabalho executado", await clicarPorTexto("Salvar rascunho"));
+await esperar(3000);
+
+const { data: gravadas2 } = await db
+  .schema("aba_health")
+  .from("evolucoes")
+  .select("marcacoes")
+  .eq("id", linha.id)
+  .single();
+const executado = (Array.isArray(gravadas2?.marcacoes) ? gravadas2.marcacoes : [])
+  .find((m) => m?.regiao === "16")
+  ?.trabalhos?.find((t) => t.estado === "executado");
+afirmar("o trabalho ficou `executado`", !!executado);
+afirmar(
+  "`executado` carrega DATA — a trava de finalização da 03.8.a lê daqui",
+  !!executado?.executadoEm && !Number.isNaN(Date.parse(executado.executadoEm)),
+  executado?.executadoEm ?? "(ausente)",
+);
+afirmar(
+  "`executado` carrega AUTOR — inferência entre sessões não tem a quem responsabilizar",
+  typeof executado?.executadoPor === "string" && executado.executadoPor.length > 0,
+  executado?.executadoPor ?? "(ausente)",
+);
+
+console.log("\n8) a marcação reaparece depois de recarregar a página");
 await pagina.goto(`${BASE}/prontuario/${clienteA.id}`, { waitUntil: "networkidle2" });
 await esperar(2500);
-await pagina.evaluate(() =>
-  [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === "Odontograma")?.click(),
-);
-await esperar(5000);
-const depoisDeRecarregar = await pagina.evaluate(() =>
-  [...document.querySelectorAll("span")].filter((s) => /^Dente \d\d$/.test(s.textContent.trim())).length,
-);
+await clicarPorTexto("Odontograma");
+await esperar(3500);
+const depoisDeRecarregar = await contarNaLista();
 afirmar(
   "as marcações voltaram sem o profissional refazer nada",
   depoisDeRecarregar > 0 && depoisDeRecarregar === marcacoesNaTela,
   `antes ${marcacoesNaTela}, depois ${depoisDeRecarregar}`,
 );
+const pintado = await pagina.evaluate(
+  () => document.querySelectorAll('[data-dente="16"] [data-marcado]').length,
+);
+afirmar("e o DESENHO voltou pintado, não só a lista lateral", pintado >= 3, `${pintado} faces marcadas no dente 16`);
 await pagina.screenshot({ path: path.join(DESTINO, "18_odontograma_persistido.png"), type: "png" });
 
-console.log("\n8) trocar de paciente NÃO carrega a boca do anterior");
+console.log("\n9) trocar de paciente NÃO carrega a boca do anterior");
 await pagina.goto(`${BASE}/prontuario/${clienteB.id}`, { waitUntil: "networkidle2" });
 await esperar(2500);
-await pagina.evaluate(() =>
-  [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === "Odontograma")?.click(),
-);
-await esperar(5000);
-const noOutroPaciente = await pagina.evaluate(() =>
-  [...document.querySelectorAll("span")].filter((s) => /^Dente \d\d$/.test(s.textContent.trim())).length,
+await clicarPorTexto("Odontograma");
+await esperar(3500);
+const noOutroPaciente = {
+  lista: await contarNaLista(),
+  pintados: await pagina.evaluate(() => document.querySelectorAll(".od-desenho [data-marcado]").length),
+};
+// Na 03.7 este era o teste do singleton de módulo da biblioteca. Aqui não há
+// estado de módulo nenhum — mas a asserção fica, porque quem garante isso hoje
+// é uma decisão de desenho, e decisão de desenho se desfaz sem avisar.
+afirmar(
+  "o odontograma do paciente B está limpo na lista",
+  noOutroPaciente.lista === 0,
+  `${noOutroPaciente.lista} marcações — deveria ser 0`,
 );
 afirmar(
-  "o odontograma do paciente B está limpo (singleton de módulo não vazou)",
-  noOutroPaciente === 0,
-  `${noOutroPaciente} marcações — deveria ser 0`,
+  "e limpo TAMBÉM no desenho (nenhuma face herdada do paciente A)",
+  noOutroPaciente.pintados === 0,
+  `${noOutroPaciente.pintados} faces marcadas — deveria ser 0`,
 );
 
 // ============================================================
-// 9) a faixa unificada não quebrou as outras sete abas
+// 10) a faixa unificada não quebrou as outras sete abas
 // ============================================================
-// Guarda contra regressão da reestruturação de 2026-09-03 (decisão de
-// Max): os quatro mapas viraram abas do mesmo bloco das quatro abas de
-// texto. Uma tela que mostra o odontograma perfeitamente e perdeu a
-// anamnese não está pronta — e nada mais nesta suíte olharia para lá.
-console.log("\n9) as oito abas do bloco unificado respondem");
+console.log("\n10) as oito abas do bloco unificado respondem");
 await pagina.goto(`${BASE}/prontuario/${clienteA.id}`, { waitUntil: "networkidle2" });
 await esperar(2500);
-// O texto procurado em cada mapa é um rótulo da LEGENDA, que é nó de
-// texto de verdade. O nome das regiões (`Zona T`, `Lombar`) vive em
-// `<title>` de SVG e não entra em `innerText` — procurar por ele daria
-// vermelho sem haver defeito, que é o pior tipo de teste.
 for (const [rotulo, esperado, precisaDeSvg] of [
   ["Anamnese", "Queixa principal", false],
   ["Evoluções", "Evolu", false],
@@ -438,13 +579,31 @@ for (const [rotulo, esperado, precisaDeSvg] of [
   ["Mapa facial", "achado ativo", true],
   ["Mapa corporal", "área tratada na sessão", true],
   ["Acupuntura", "ponto agulhado", true],
-  ["Odontograma", "Ficha dentária", false],
+  ["Odontograma", "52 posições", false],
 ]) {
   const ok = await clicarPorTexto(rotulo);
-  await esperar(rotulo === "Odontograma" ? 4000 : 1200);
-  const achou = await pagina.evaluate((t) => document.body.innerText.includes(t), esperado);
-  // Legenda visível sem desenho seria uma tela vazia com rodapé certo:
-  // nos três mapas esquemáticos, exigir o `<svg>` fecha essa brecha.
+  // Espera por SINAL, nao por relogio, no unico conteudo que chega por rede:
+  // o odontograma e chunk preguicoso, e um `sleep` fixo aqui transforma
+  // latencia em falha vermelha sem defeito nenhum atras dela.
+  if (rotulo === "Odontograma") {
+    await pagina.waitForSelector(".od-arcada", { timeout: 20_000 }).catch(() => {});
+  } else {
+    await esperar(1200);
+  }
+  // COMPARACAO SEM CAIXA, e o motivo foi medido aqui: `innerText` devolve o
+  // texto RENDERIZADO, entao um rotulo com `text-transform: uppercase` chega
+  // em maiuscula e um `includes()` literal fica vermelho sem defeito nenhum
+  // atras dele. Foi o que aconteceu com "52 posicoes", que o cabecalho do
+  // odontograma desenha em versalete. E a mesma familia da armadilha ja
+  // registrada nesta suite (procurar texto que nao e no de texto de verdade):
+  // o que se afirma tem de ser o que a tela DIZ, nao como ela o pinta.
+  const achou = await pagina.evaluate(
+    (t) => document.body.innerText.toLocaleLowerCase("pt-BR").includes(t.toLocaleLowerCase("pt-BR")),
+    esperado,
+  );
+  const trecho = achou
+    ? ""
+    : await pagina.evaluate(() => document.body.innerText.replace(/\s+/g, " ").slice(0, 220));
   const desenhou = precisaDeSvg
     ? await pagina.evaluate(() => {
         const s = document.querySelector('main svg[role="img"]');
@@ -454,11 +613,11 @@ for (const [rotulo, esperado, precisaDeSvg] of [
   afirmar(
     `aba "${rotulo}" abre e mostra o conteúdo dela`,
     ok && achou && desenhou,
-    `procurado: "${esperado}"${precisaDeSvg ? " + svg do mapa" : ""}`,
+    `procurado: "${esperado}"${precisaDeSvg ? " + svg do mapa" : ""}${trecho ? ` | tela: ${trecho}` : ""}`,
   );
 }
 
-console.log("\n10) erros de página");
+console.log("\n11) erros de página");
 afirmar("nenhum erro de JavaScript não tratado", erros.length === 0, erros.slice(0, 2).join(" | "));
 
 await browser.close();

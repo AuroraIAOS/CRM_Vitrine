@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 240"
+     role="img" aria-label="Segundo molar decíduo inferior"
+     data-tipo="decidua-inferior" data-posicao="5" data-arcada="inferior">
+  <title>Segundo molar decíduo inferior — faces: mesial, distal, vestibular, lingual, oclusal</title>
+  <g class="od-dente">
+    <g class="od-regiao-raiz">
+      <path id="raiz-1" data-regiao="raiz" data-indice="1" class="od-raiz" d="M 31.00 122.00 C 28.80 164.00, 33.80 188.00, 36.04 224.00 C 41.80 188.00, 46.80 164.00, 49.00 122.00 Z" />
+      <path id="raiz-2" data-regiao="raiz" data-indice="2" class="od-raiz" d="M 51.00 122.00 C 53.20 164.00, 58.20 188.00, 63.96 224.00 C 66.20 188.00, 71.20 164.00, 69.00 122.00 Z" />
+    </g>
+    <g class="od-regiao-coroa">
+      <path id="coroa" data-regiao="coroa" class="od-coroa" d="M 31.00 128.00 L 34.00 74.00 Q 50.00 66.00 66.00 74.00 L 69.00 128.00 Z" />
+    </g>
+    <g class="od-regiao-faces">
+      <path id="face-distal" data-face="distal" class="od-face" d="M 30.91 53.09 A 27 27 0 0 1 30.91 14.91 L 41.60 25.60 A 11.88 11.88 0 0 0 41.60 42.40 Z" />
+      <path id="face-lingual" data-face="lingual" class="od-face" d="M 30.91 14.91 A 27 27 0 0 1 69.09 14.91 L 58.40 25.60 A 11.88 11.88 0 0 0 41.60 25.60 Z" />
+      <path id="face-mesial" data-face="mesial" class="od-face" d="M 69.09 14.91 A 27 27 0 0 1 69.09 53.09 L 58.40 42.40 A 11.88 11.88 0 0 0 58.40 25.60 Z" />
+      <path id="face-vestibular" data-face="vestibular" class="od-face" d="M 69.09 53.09 A 27 27 0 0 1 30.91 53.09 L 41.60 42.40 A 11.88 11.88 0 0 0 58.40 42.40 Z" />
+      <circle id="face-oclusal" data-face="oclusal" class="od-face" cx="50.00" cy="34.00" r="11.88" />
+    </g>
+  </g>
+</svg>

@@ -73,7 +73,19 @@ export function usePodeAcessarClinico(clienteId: string | null, acao: AcaoClinic
 // Clientes com acesso clínico — a lista da esquerda da tela `1h`
 // ============================================================
 
-export type ClienteClinico = { id: string; nome: string };
+export type ClienteClinico = {
+  id: string;
+  nome: string;
+  /**
+   * Data de nascimento, de `aba_people.pessoas` (Subetapa 03.7.a).
+   *
+   * Entra aqui pelo mesmo caminho e pelo mesmo motivo que o nome: é dado
+   * CADASTRAL, e `aba_health` não tem — nem deve ter — cópia de dado cadastral
+   * de paciente. O odontograma a usa só para DERIVAR o estado de dentição de
+   * cada posição (achado A3); derivar não é decidir, e nada disso é gravado.
+   */
+  dataNascimento: string | null;
+};
 
 /**
  * Lista de clientes da conta. Vem de `aba_people` (nome é dado cadastral,
@@ -99,16 +111,23 @@ export function useClientesDaConta() {
       const { data: pessoas, error: pessoasErr } = await supabase
         .schema("aba_people")
         .from("pessoas")
-        .select("id, nome_exibicao")
+        .select("id, nome_exibicao, data_nascimento")
         .in(
           "id",
           clientes.map((c) => c.id),
         );
       if (pessoasErr) throw pessoasErr;
 
-      const nomePorId = new Map((pessoas ?? []).map((p) => [p.id as string, p.nome_exibicao as string]));
+      const porId = new Map((pessoas ?? []).map((p) => [p.id as string, p]));
       return clientes
-        .map((c) => ({ id: c.id as string, nome: nomePorId.get(c.id as string) ?? "(sem nome)" }))
+        .map((c) => {
+          const p = porId.get(c.id as string);
+          return {
+            id: c.id as string,
+            nome: (p?.nome_exibicao as string) ?? "(sem nome)",
+            dataNascimento: (p?.data_nascimento as string) ?? null,
+          };
+        })
         .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
     },
   });

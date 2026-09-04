@@ -497,27 +497,36 @@ describe("aba_health — marcação de mapa clínico segue o mesmo regime (Subet
 });
 
 /**
- * Subetapa 03.7 — P-sub do odontograma.
+ * Subetapa 03.7.a — P-sub do odontograma autoral.
  *
- * O QUE MUDA O NÍVEL DE RISCO E EXIGE CASOS NOVOS. Até a 02.9, uma
- * marcação era `{regiao, rotulo, estado, nota}` — quatro campos rasos
- * sobre uma região de um mapa esquemático. Com o odontograma, a MESMA
- * coluna passa a guardar o quadro clínico da boca inteira: cárie por
- * face, diagnóstico pulpar, diagnóstico apical, endodontia, prótese,
- * ortodontia, sondagem periodontal e o plano de tratamento proposto. O
- * regime de proteção não mudou; o valor do que ele protege, sim. Estes
- * casos existem para que a fronteira continue provada com a carga nova,
- * e não apenas com a carga antiga que passou nos testes de 2026-08.
+ * O QUE MUDA O NÍVEL DE RISCO E EXIGE CASOS NOVOS. Até a 02.9, uma marcação
+ * era `{regiao, rotulo, estado, nota}` — quatro campos rasos sobre uma região
+ * de um mapa esquemático. Com o odontograma, a MESMA coluna passa a guardar o
+ * quadro clínico da boca inteira. O regime de proteção não mudou; o valor do
+ * que ele protege, sim. Estes casos existem para que a fronteira continue
+ * provada com a carga nova, e não apenas com a carga antiga de 2026-08.
  *
- * O terceiro caso é o mais importante e o menos óbvio: ele guarda a
- * DECISÃO DE DESENHO desta subetapa. O payload da biblioteca é um
- * OBJETO; a coluna exige ARRAY (migration 025). A ponte é um item
- * sentinela dentro do array. Se uma sessão futura resolver "simplificar"
- * gravando o objeto direto, o banco recusa — e é este teste que garante
- * que a recusa continue existindo e que ninguém a afrouxe sem perceber
- * que está mexendo na invariante da coluna.
+ * A 03.7 (biblioteca) gravava um ITEM SENTINELA com o payload verbatim do
+ * componente de terceiro, porque o payload dele era um OBJETO e a coluna exige
+ * ARRAY (migration `025`). A 03.7.a trocou a peça por um componente autoral, e
+ * o sentinela deixou de existir: a projeção legível passou a ser o dado
+ * inteiro. Os seis ataques da 03.7 continuam valendo palavra por palavra —
+ * eles testam o BANCO, não o componente —, e a esta revisão cabe:
+ *
+ *   · revalidá-los com a carga NOVA (envelope sem sentinela), porque uma
+ *     fronteira provada com o payload antigo não está provada com este;
+ *   · acrescentar os casos que só o envelope novo torna possível errar: o
+ *     registro clínico do dente atravessando `ler_evolucoes()` sem perda
+ *     (é dele que sai a trava de finalização de contrato da 03.8.a), a
+ *     separação entre face de ACHADO e face de TRABALHO (achado A2), e as
+ *     posições decíduas no mesmo regime.
+ *
+ * O terceiro caso da 03.7 era o mais importante e o menos óbvio, e ele FICA
+ * com outro texto: a coluna exige array, e quem "simplificar" gravando o mapa
+ * de dentes como objeto tem de ser recusado pelo banco. O que mudou é só qual
+ * objeto alguém plausivelmente tentaria gravar.
  */
-describe("aba_health — odontograma segue o mesmo regime da marcação (Subetapa 03.7)", () => {
+describe("aba_health — odontograma segue o mesmo regime da marcação (Subetapa 03.7.a)", () => {
   const admin = adminClient();
   let ctx: TestContext;
   let clienteId: string;
@@ -525,37 +534,85 @@ describe("aba_health — odontograma segue o mesmo regime da marcação (Subetap
   let evolucaoId: string;
 
   /**
-   * Recorte fiel do payload real de `getStatusChart()` v2.20, já podado:
-   * dois dentes com achado, um deles decíduo (dentição mista) e um plano
-   * divergente. É dado clínico de verdade em miniatura — o teste não
-   * prova nada se a carga for `{a: 1}`.
+   * Recorte fiel do envelope real da 03.7.a: três posições, uma delas DECÍDUA
+   * (dentição mista), com achado e trabalho de faces DIFERENTES no mesmo
+   * dente, um trabalho `executado` com data e autor, e um dente cuja única
+   * informação é a dentição afirmada. É dado clínico de verdade em miniatura —
+   * o teste não prova nada se a carga for `{a: 1}`.
    */
-  const PAYLOAD_ODONTOGRAMA = {
-    version: "2.20",
-    globals: { wisdomVisible: true, showBase: true, occlusalVisible: true, showHealthyPulp: false, edentulous: false },
-    teeth: {
-      "16": { toothSelection: "tooth-base", caries: ["occlusal", "mesial"], cariesActiveDepth: "deep", note: "dor à percussão" },
-      "55": { toothSelection: "milktooth", caries: ["distal"] },
-    },
-    plan: {
-      "16": { toothSelection: "tooth-base", fillingSurfaces: ["occlusal", "mesial"], fillingMaterial: "composite" },
-    },
+  type TrabalhoFixture = {
+    id: string;
+    faces: string[];
+    estado: string;
+    descricao?: string;
+    executadoEm?: string;
+    executadoPor?: string;
+  };
+  type RegistroFixture = {
+    regiao: string;
+    rotulo: string;
+    estado: string;
+    nota: string;
+    faces?: string[];
+    denticao?: string;
+    achados?: { faces: string[]; tipo: string }[];
+    trabalhos?: TrabalhoFixture[];
   };
 
-  const MARCACOES_ODONTOGRAMA = [
-    { regiao: "16", rotulo: "Dente 16", estado: "a_realizar", nota: "Cárie: oclusal, mesial", faces: ["mesial", "occlusal"] },
-    { regiao: "55", rotulo: "Dente 55", estado: "existente", nota: "Dente decíduo", faces: ["distal"] },
-    { regiao: "estado_nativo", rotulo: "Estado nativo do odontograma", estado: "estado_nativo", nota: "", payload: PAYLOAD_ODONTOGRAMA },
+  const MARCACOES_ODONTOGRAMA: RegistroFixture[] = [
+    {
+      regiao: "16",
+      rotulo: "Dente 16",
+      estado: "planejado",
+      nota: "cárie (oclusal) · restauração mesial, distal, oclusal",
+      // A FACE DO TRABALHO, que é o que a Subetapa 03.8 orça — e que aqui é
+      // deliberadamente MAIOR que a face do achado (restauração MOD sobre
+      // cárie só na oclusal). Sob o modelo da 03.7 as duas eram a mesma lista.
+      faces: ["mesial", "distal", "oclusal"],
+      denticao: "erupcionado",
+      achados: [{ faces: ["oclusal"], tipo: "carie" }],
+      trabalhos: [
+        { id: "t1", faces: ["mesial", "distal", "oclusal"], estado: "planejado", descricao: "restauração MOD" },
+      ],
+    },
+    {
+      regiao: "55",
+      rotulo: "Dente 55",
+      estado: "executado",
+      nota: "selante",
+      faces: ["oclusal"],
+      denticao: "erupcionado",
+      trabalhos: [
+        {
+          id: "t2",
+          faces: ["oclusal"],
+          estado: "executado",
+          descricao: "selante",
+          // Data e autor são o que faz `executado` ser FATO AFIRMADO e não
+          // inferência (achado A4). A trava de finalização de contrato da
+          // 03.8.a lê exatamente estes dois campos.
+          executadoEm: "2026-09-04T12:00:00.000Z",
+          executadoPor: "00000000-0000-0000-0000-000000000000",
+        },
+      ],
+    },
+    { regiao: "38", rotulo: "Dente 38", estado: "existente", nota: "não erupcionado", denticao: "nao_erupcionado" },
   ];
+
+  /** O objeto que alguém "simplificando" tentaria gravar no lugar do array. */
+  const MAPA_COMO_OBJETO = {
+    "16": { estado: "planejado", faces: ["mesial", "distal", "oclusal"] },
+    "55": { estado: "executado", faces: ["oclusal"] },
+  };
 
   beforeAll(async () => {
     ctx = await loadContext();
-    clienteId = await criarClienteFixture(admin, ctx.accountId, "Cliente Fictício Odontograma 03.7");
+    clienteId = await criarClienteFixture(admin, ctx.accountId, "Cliente Fictício Odontograma 03.7.a");
 
     const { data: profissional, error: profErr } = await admin
       .schema("aba_scheduling")
       .from("profissionais")
-      .insert({ account_id: ctx.accountId, nome_exibicao: "Profissional Fictício Odontograma 03.7", ativo: false })
+      .insert({ account_id: ctx.accountId, nome_exibicao: "Profissional Fictício Odontograma 03.7.a", ativo: false })
       .select("id")
       .single();
     if (profErr) throw profErr;
@@ -590,9 +647,9 @@ describe("aba_health — odontograma segue o mesmo regime da marcação (Subetap
   it("ATAQUE: o quadro clínico da boca não sai por select direto — nem para o owner", async () => {
     const owner = await clientAs("owner");
     const { error } = await owner.schema("aba_health").from("evolucoes").select("marcacoes").eq("id", evolucaoId);
-    // O alvo aqui não é "a coluna está revogada" (a 02.9 já provava
-    // isso), é que o payload INTEIRO do odontograma herda a revogação
-    // sem que nada tenha sido acrescentado ao banco por esta subetapa.
+    // O alvo aqui não é "a coluna está revogada" (a 02.9 já provava isso), é
+    // que o registro INTEIRO do odontograma herda a revogação sem que nada
+    // tenha sido acrescentado ao banco por esta subetapa.
     expect(ehErroRls(error)).toBe(true);
   });
 
@@ -602,18 +659,18 @@ describe("aba_health — odontograma segue o mesmo regime da marcação (Subetap
     expect(ehErroRls(error)).toBe(true);
   });
 
-  it("ATAQUE: gravar o payload nativo como OBJETO é recusado — a coluna é array (guarda do desenho do envelope)", async () => {
+  it("ATAQUE: gravar o mapa de dentes como OBJETO é recusado — a coluna é array (guarda do desenho do envelope)", async () => {
     const owner = await clientAs("owner");
     const { error } = await owner
       .schema("aba_health")
       .from("evolucoes")
-      .update({ marcacoes: PAYLOAD_ODONTOGRAMA })
+      .update({ marcacoes: MAPA_COMO_OBJETO })
       .eq("id", evolucaoId);
     expect(error).not.toBeNull();
     expect(error?.code).toBe("23514");
   });
 
-  it("ATAQUE: agent sem alcance clínico não recebe o odontograma — nem o payload, nem os dentes", async () => {
+  it("ATAQUE: agent sem alcance clínico não recebe o odontograma — nem o registro, nem os dentes", async () => {
     const antes = await contarLog(admin, clienteId, ctx.userIds.agent, "leitura");
 
     const agent = await clientAs("agent");
@@ -625,7 +682,7 @@ describe("aba_health — odontograma segue o mesmo regime da marcação (Subetap
     expect(await contarLog(admin, clienteId, ctx.userIds.agent, "leitura")).toBe(antes);
   });
 
-  it("CONTROLE POSITIVO: ler_evolucoes() devolve o payload íntegro e grava o log na mesma transação", async () => {
+  it("CONTROLE POSITIVO: ler_evolucoes() devolve o registro íntegro e grava o log na mesma transação", async () => {
     const antes = await contarLog(admin, clienteId, ctx.userIds.owner, "leitura");
 
     const owner = await clientAs("owner");
@@ -635,15 +692,53 @@ describe("aba_health — odontograma segue o mesmo regime da marcação (Subetap
     expect(data![0].mapa_tipo).toBe("odontograma");
 
     const marcacoes = data![0].marcacoes as typeof MARCACOES_ODONTOGRAMA;
-    const envelope = marcacoes.find((m) => m.regiao === "estado_nativo");
-    // Ida e volta sem perda: é isto que faz a marcação REAPARECER na
-    // sessão seguinte com cárie por face, e não só com o rótulo.
-    expect(envelope?.payload).toEqual(PAYLOAD_ODONTOGRAMA);
-    // E a projeção legível continua legível — é dela que a Subetapa 03.8
-    // vai tirar dente e face para a linha do orçamento.
-    expect(marcacoes.find((m) => m.regiao === "16")?.faces).toEqual(["mesial", "occlusal"]);
+    // Ida e volta SEM PERDA e sem envelope: na 03.7 o que atravessava era um
+    // item sentinela com o payload verbatim da biblioteca; aqui a projeção
+    // legível É o dado, e o que se confere é o array inteiro.
+    expect(marcacoes).toEqual(MARCACOES_ODONTOGRAMA);
 
     expect(await contarLog(admin, clienteId, ctx.userIds.owner, "leitura")).toBe(antes + 1);
+  });
+
+  it("A FACE DO TRABALHO NÃO É A FACE DO ACHADO — o defeito A2, agora testável no dado", async () => {
+    const owner = await clientAs("owner");
+    const { data } = await owner.schema("aba_health").rpc("ler_evolucoes", { p_cliente_id: clienteId });
+    const dente16 = (data![0].marcacoes as typeof MARCACOES_ODONTOGRAMA).find((m) => m.regiao === "16")!;
+
+    // `faces` é o campo que a Subetapa 03.8 lê para montar a linha do
+    // orçamento. Ele carrega ONDE O PROFISSIONAL VAI TRABALHAR.
+    expect(dente16.faces).toEqual(["mesial", "distal", "oclusal"]);
+    // O achado — ONDE HÁ DOENÇA — é menor, e mora em outro lugar. Sob o
+    // modelo da 03.7 as duas listas eram a mesma, e o orçamento cobraria uma
+    // face onde as outras duas seriam feitas. Não daria erro nenhum: geraria
+    // um orçamento coerente consigo mesmo e errado quanto ao negócio.
+    expect(dente16.achados![0].faces).toEqual(["oclusal"]);
+    expect(dente16.faces).not.toEqual(dente16.achados![0].faces);
+  });
+
+  it("`executado` chega com DATA e AUTOR — é fato afirmado, e é o que a trava da 03.8.a vai ler", async () => {
+    const owner = await clientAs("owner");
+    const { data } = await owner.schema("aba_health").rpc("ler_evolucoes", { p_cliente_id: clienteId });
+    const dente55 = (data![0].marcacoes as typeof MARCACOES_ODONTOGRAMA).find((m) => m.regiao === "55")!;
+    const executado = dente55.trabalhos!.find((t) => t.estado === "executado")!;
+
+    expect(executado.executadoEm).toBe("2026-09-04T12:00:00.000Z");
+    expect(executado.executadoPor).toBe("00000000-0000-0000-0000-000000000000");
+    // A 03.7 derivava `executado` comparando duas evoluções. Uma trava
+    // financeira apoiada em dedução entre sessões não tem a quem responsabilizar
+    // e não tem quando — estes dois campos são a diferença.
+  });
+
+  it("dentição mista: posição DECÍDUA e estado por dente atravessam o mesmo regime", async () => {
+    const owner = await clientAs("owner");
+    const { data } = await owner.schema("aba_health").rpc("ler_evolucoes", { p_cliente_id: clienteId });
+    const marcacoes = data![0].marcacoes as typeof MARCACOES_ODONTOGRAMA;
+
+    // A 03.7 modelava dentição como MODO da tela; a 03.7.a a modela como
+    // estado por posição (achado A3), e as 20 posições decíduas passaram a
+    // existir de verdade no dado — sem migration, porque a coluna é `jsonb`.
+    expect(marcacoes.find((m) => m.regiao === "55")).toBeTruthy();
+    expect(marcacoes.find((m) => m.regiao === "38")!.denticao).toBe("nao_erupcionado");
   });
 
   it("ATAQUE: odontograma de sessão ASSINADA não se reescreve — histórico clínico não se conserta depois", async () => {
