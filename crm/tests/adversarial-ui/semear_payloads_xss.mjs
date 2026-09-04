@@ -135,7 +135,7 @@ async function semear() {
   registrar("aba_catalog.categorias.nome (atributo)", categoria);
 
   if (categoria.data) {
-    registrar("aba_catalog.servicos.nome (img)", await db.schema("aba_catalog").from("servicos").insert({
+    registrar("aba_catalog.servicos.nome (img)", await db.schema("aba_catalog").from("procedimentos").insert({
       account_id: conta, categoria_id: categoria.data.id, nome: `${MARCA} ${PAYLOADS.img}`,
       descricao: `${MARCA} ${PAYLOADS.script}`, duracao_padrao_minutos: 30, preco_base: 10,
     }));
@@ -159,7 +159,7 @@ async function limpar() {
   const alvos = [
     ["aba_ai", "ia_documentos_conhecimento", "titulo"],
     ["aba_automations", "automacoes", "nome"],
-    ["aba_catalog", "servicos", "nome"],
+    ["aba_catalog", "procedimentos", "nome"],
     ["aba_catalog", "categorias", "nome"],
     ["aba_people", "tags", "nome"],
     ["aba_people", "pessoas", "nome_exibicao"],

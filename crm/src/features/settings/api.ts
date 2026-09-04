@@ -261,9 +261,9 @@ export function useResumoServicosAgenda() {
         supabase.schema(schema).from(tabela).select("id", { count: "exact", head: true }).eq("account_id", accountId!);
 
       const [servicos, categorias, planos, profissionais, recursos, grades] = await Promise.all([
-        contar("aba_catalog", "servicos").eq("ativo", true),
+        contar("aba_catalog", "procedimentos").eq("ativo", true),
         contar("aba_catalog", "categorias"),
-        contar("aba_catalog", "planos").eq("ativo", true),
+        contar("aba_catalog", "pacotes").eq("ativo", true),
         contar("aba_scheduling", "profissionais").eq("ativo", true),
         contar("aba_scheduling", "recursos").eq("ativo", true),
         supabase

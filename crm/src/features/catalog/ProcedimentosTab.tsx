@@ -3,16 +3,16 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  useServicos,
+  useProcedimentos,
   useCategorias,
-  useCriarServico,
-  useAlternarAtivoServico,
+  useCriarProcedimento,
+  useAlternarAtivoProcedimento,
   useCriarVariante,
   useDefinirVariantePadrao,
   useSemearProcedimentosSigtap,
   ROTULO_UNIDADE,
   ROTULO_REGIAO,
-  type Servico,
+  type Procedimento,
   type UnidadeLancamento,
   type RegiaoDentaria,
 } from "./api";
@@ -21,7 +21,7 @@ const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currenc
 
 function FormularioNovoServico({ onCriado, onCancelar }: { onCriado: () => void; onCancelar: () => void }) {
   const { data: categorias } = useCategorias();
-  const criar = useCriarServico();
+  const criar = useCriarProcedimento();
   const [categoriaId, setCategoriaId] = useState("");
   const [nome, setNome] = useState("");
   const [duracao, setDuracao] = useState(60);
@@ -44,7 +44,7 @@ function FormularioNovoServico({ onCriado, onCancelar }: { onCriado: () => void;
 
   return (
     <Card className="flex flex-col gap-2.5 p-4">
-      <span className="text-[12.5px] font-medium text-foreground">Novo serviço</span>
+      <span className="text-[12.5px] font-medium text-foreground">Novo procedimento</span>
       <form
         className="flex flex-col gap-2.5"
         onSubmit={(e) => {
@@ -89,7 +89,7 @@ function FormularioNovoServico({ onCriado, onCancelar }: { onCriado: () => void;
               exigeConsentimentoInformado,
               exigeAchadoDiagnostico,
             },
-            { onSuccess: onCriado, onError: (err) => setErro((err as { message?: string })?.message ?? "Falha ao criar serviço") },
+            { onSuccess: onCriado, onError: (err) => setErro((err as { message?: string })?.message ?? "Falha ao criar procedimento") },
           );
         }}
       >
@@ -113,7 +113,7 @@ function FormularioNovoServico({ onCriado, onCancelar }: { onCriado: () => void;
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-secondary-foreground">Nome do serviço</label>
+            <label className="text-[11px] font-medium text-secondary-foreground">Nome do procedimento</label>
             <input
               required
               className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
@@ -284,7 +284,7 @@ function FormularioNovoServico({ onCriado, onCancelar }: { onCriado: () => void;
 
         <div className="flex items-center gap-2">
           <Button type="submit" size="sm" disabled={criar.isPending}>
-            {criar.isPending ? "Criando..." : "Criar serviço"}
+            {criar.isPending ? "Criando..." : "Criar procedimento"}
           </Button>
           <Button type="button" size="sm" variant="outline" onClick={onCancelar}>
             Cancelar
@@ -296,7 +296,7 @@ function FormularioNovoServico({ onCriado, onCancelar }: { onCriado: () => void;
   );
 }
 
-function FormularioNovaVariante({ servicoId, onCriada }: { servicoId: string; onCriada: () => void }) {
+function FormularioNovaVariante({ procedimentoId, onCriada }: { procedimentoId: string; onCriada: () => void }) {
   const criar = useCriarVariante();
   const [nome, setNome] = useState("");
   const [preco, setPreco] = useState("");
@@ -308,7 +308,7 @@ function FormularioNovaVariante({ servicoId, onCriada }: { servicoId: string; on
       onSubmit={(e) => {
         e.preventDefault();
         criar.mutate(
-          { servicoId, nome, preco: Number(preco.replace(",", ".")) || 0, duracaoMinutos: duracao },
+          { procedimentoId, nome, preco: Number(preco.replace(",", ".")) || 0, duracaoMinutos: duracao },
           { onSuccess: () => { setNome(""); setPreco(""); onCriada(); } },
         );
       }}
@@ -344,50 +344,50 @@ function FormularioNovaVariante({ servicoId, onCriada }: { servicoId: string; on
   );
 }
 
-function DetalheServico({ servico }: { servico: Servico }) {
+function DetalheProcedimento({ procedimento }: { procedimento: Procedimento }) {
   const definirPadrao = useDefinirVariantePadrao();
 
   return (
     <Card className="flex flex-col gap-3 p-4">
-      <span className="text-[12.5px] font-medium text-foreground">Variantes de {servico.nome}</span>
+      <span className="text-[12.5px] font-medium text-foreground">Variantes de {procedimento.nome}</span>
 
-      {(servico.aceitaFaces ||
-        servico.unidadeLancamento ||
-        servico.quantidadeMaxima ||
-        servico.codigoSigtap ||
-        servico.regiaoDentaria ||
-        servico.exigeConsentimentoTratamento ||
-        servico.exigeConsentimentoInformado ||
-        servico.exigeAchadoDiagnostico) && (
+      {(procedimento.aceitaFaces ||
+        procedimento.unidadeLancamento ||
+        procedimento.quantidadeMaxima ||
+        procedimento.codigoSigtap ||
+        procedimento.regiaoDentaria ||
+        procedimento.exigeConsentimentoTratamento ||
+        procedimento.exigeConsentimentoInformado ||
+        procedimento.exigeAchadoDiagnostico) && (
         <div className="flex flex-wrap gap-x-4 gap-y-1 rounded-md bg-content px-3 py-2 text-[10.5px] text-secondary-foreground">
-          {servico.codigoSigtap && (
+          {procedimento.codigoSigtap && (
             <span>
-              SIGTAP: <code className="font-mono">{servico.codigoSigtap}</code>
+              SIGTAP: <code className="font-mono">{procedimento.codigoSigtap}</code>
             </span>
           )}
-          {servico.unidadeLancamento && <span>Lançado {ROTULO_UNIDADE[servico.unidadeLancamento].toLowerCase()}</span>}
-          {servico.quantidadeMaxima != null && <span>Máximo de {servico.quantidadeMaxima} por unidade</span>}
+          {procedimento.unidadeLancamento && <span>Lançado {ROTULO_UNIDADE[procedimento.unidadeLancamento].toLowerCase()}</span>}
+          {procedimento.quantidadeMaxima != null && <span>Máximo de {procedimento.quantidadeMaxima} por unidade</span>}
           {/* Regra de forma do código (03.6.a) — `aceitaFaces` continua
               sendo lida aqui; o que mudou é que ela agora é derivada
               do intervalo de faces, não digitada. */}
-          {servico.facesMaximo != null && (
+          {procedimento.facesMaximo != null && (
             <span>
-              {servico.facesMinimo === servico.facesMaximo
-                ? `Exatamente ${servico.facesMaximo} face${servico.facesMaximo === 1 ? "" : "s"}`
-                : `De ${servico.facesMinimo} a ${servico.facesMaximo} faces`}
+              {procedimento.facesMinimo === procedimento.facesMaximo
+                ? `Exatamente ${procedimento.facesMaximo} face${procedimento.facesMaximo === 1 ? "" : "s"}`
+                : `De ${procedimento.facesMinimo} a ${procedimento.facesMaximo} faces`}
             </span>
           )}
-          {servico.regiaoDentaria && <span>{ROTULO_REGIAO[servico.regiaoDentaria]}</span>}
-          {servico.aceitaFaces && <Badge tone="neutral">Aceita marcação por face</Badge>}
-          {servico.exigeConsentimentoTratamento && <Badge tone="warning">Exige consentimento</Badge>}
-          {servico.exigeConsentimentoInformado && <Badge tone="warning">Exige consentimento informado</Badge>}
-          {servico.exigeAchadoDiagnostico && <Badge tone="warning">Exige achado diagnóstico</Badge>}
+          {procedimento.regiaoDentaria && <span>{ROTULO_REGIAO[procedimento.regiaoDentaria]}</span>}
+          {procedimento.aceitaFaces && <Badge tone="neutral">Aceita marcação por face</Badge>}
+          {procedimento.exigeConsentimentoTratamento && <Badge tone="warning">Exige consentimento</Badge>}
+          {procedimento.exigeConsentimentoInformado && <Badge tone="warning">Exige consentimento informado</Badge>}
+          {procedimento.exigeAchadoDiagnostico && <Badge tone="warning">Exige achado diagnóstico</Badge>}
         </div>
       )}
 
       <div className="flex flex-col gap-1.5">
-        {servico.variantes.length === 0 && <span className="text-[11.5px] text-muted-foreground">Nenhuma variante ainda — o preço base do serviço vale sozinho.</span>}
-        {servico.variantes.map((v) => (
+        {procedimento.variantes.length === 0 && <span className="text-[11.5px] text-muted-foreground">Nenhuma variante ainda — o preço base do serviço vale sozinho.</span>}
+        {procedimento.variantes.map((v) => (
           <div key={v.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
             <div className="flex items-center gap-2.5">
               <span className="text-[11.5px] font-medium text-foreground">{v.nome}</span>
@@ -404,7 +404,7 @@ function DetalheServico({ servico }: { servico: Servico }) {
           </div>
         ))}
       </div>
-      <FormularioNovaVariante servicoId={servico.id} onCriada={() => {}} />
+      <FormularioNovaVariante procedimentoId={procedimento.id} onCriada={() => {}} />
     </Card>
   );
 }
@@ -442,13 +442,13 @@ function BotaoSemearSigtap() {
   );
 }
 
-export function ServicosTab() {
-  const { data: servicos } = useServicos();
-  const alternarAtivo = useAlternarAtivoServico();
+export function ProcedimentosTab() {
+  const { data: procedimentos } = useProcedimentos();
+  const alternarAtivo = useAlternarAtivoProcedimento();
   const [mostrarNovo, setMostrarNovo] = useState(false);
   const [selecionadoId, setSelecionadoId] = useState<string | null>(null);
 
-  const lista = servicos ?? [];
+  const lista = procedimentos ?? [];
   const destaque = lista.filter((s) => s.ativo).slice(0, 3);
   const selecionado = lista.find((s) => s.id === selecionadoId) ?? null;
 
@@ -462,7 +462,7 @@ export function ServicosTab() {
         <div className="flex flex-col items-end gap-2">
           <BotaoSemearSigtap />
           <Button size="sm" onClick={() => setMostrarNovo((v) => !v)}>
-            {mostrarNovo ? "Cancelar" : "+ Novo serviço"}
+            {mostrarNovo ? "Cancelar" : "+ Novo procedimento"}
           </Button>
         </div>
       </div>
@@ -495,7 +495,7 @@ export function ServicosTab() {
 
       <Card className="flex flex-col overflow-hidden">
         <div className="grid grid-cols-[1.6fr_1fr_0.7fr_0.7fr_1fr_0.7fr] gap-2.5 border-b border-hairline px-3.5 py-2.5 font-mono text-[9.5px] uppercase tracking-wider text-muted-foreground">
-          <span>Serviço</span>
+          <span>Procedimento</span>
           <span>Categoria</span>
           <span>Duração</span>
           <span>Preço</span>
@@ -544,10 +544,10 @@ export function ServicosTab() {
             </button>
           );
         })}
-        {lista.length === 0 && <div className="p-6 text-center text-[11.5px] text-muted-foreground">Nenhum serviço cadastrado ainda.</div>}
+        {lista.length === 0 && <div className="p-6 text-center text-[11.5px] text-muted-foreground">Nenhum procedimento cadastrado ainda.</div>}
       </Card>
 
-      {selecionado && <DetalheServico servico={selecionado} />}
+      {selecionado && <DetalheProcedimento procedimento={selecionado} />}
     </div>
   );
 }

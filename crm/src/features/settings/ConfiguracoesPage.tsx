@@ -31,7 +31,7 @@ const SECOES = [
   { chave: "modulos", rotulo: "Módulos e licença", componente: ModulosELicenca },
   { chave: "permissoes", rotulo: "Perfis e permissões", componente: PerfisEPermissoes },
   { chave: "equipe", rotulo: "Equipe", componente: EquipePage },
-  { chave: "servicos", rotulo: "Serviços e agenda", componente: ServicosEAgenda },
+  { chave: "procedimentos", rotulo: "Serviços e agenda", componente: ServicosEAgenda },
   { chave: "formularios", rotulo: "Formulários clínicos", componente: FormulariosClinicos },
   { chave: "integracoes", rotulo: "Integrações", componente: Integracoes },
   { chave: "ia", rotulo: "Chaves de IA", componente: ChavesDeIA },

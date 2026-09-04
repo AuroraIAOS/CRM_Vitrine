@@ -63,7 +63,7 @@ const SUPERFICIE: Array<{ schema: string; tabela: string }> = [
   { schema: "access", tabela: "module_permissions" },
   { schema: "licensing", tabela: "account_limits" },
   { schema: "aba_people", tabela: "pessoas" },
-  { schema: "aba_catalog", tabela: "servicos" },
+  { schema: "aba_catalog", tabela: "procedimentos" },
   { schema: "aba_scheduling", tabela: "agendamentos" },
   { schema: "aba_finance", tabela: "faturas" },
   { schema: "aba_health", tabela: "prontuarios" },
@@ -127,7 +127,7 @@ describe("V2 — acesso direto fora da RLS", () => {
     const internas = [
       { schema: "aba_finance", fn: "recalcular_valor_fatura" },
       { schema: "aba_finance", fn: "marcar_faturas_vencidas" },
-      { schema: "aba_finance", fn: "expirar_planos" },
+      { schema: "aba_finance", fn: "expirar_pacotes" },
       { schema: "aba_health", fn: "registrar_escrita_clinica" },
       { schema: "aba_scheduling", fn: "carimbar_conclusao" },
     ];

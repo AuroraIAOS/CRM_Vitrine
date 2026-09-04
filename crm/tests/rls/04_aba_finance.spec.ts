@@ -24,7 +24,7 @@ async function apagarCliente(admin: ReturnType<typeof adminClient>, clienteId: s
   await admin.schema("aba_people").from("pessoas").delete().eq("id", clienteId);
 }
 
-/** Plano de catálogo com um item — o mínimo que finance.vender_plano() exige. */
+/** Plano de catálogo com um item — o mínimo que finance.vender_pacote() exige. */
 async function criarPlanoFixture(admin: ReturnType<typeof adminClient>, accountId: string) {
   const { data: categoria, error: catErr } = await admin
     .schema("aba_catalog")
@@ -36,7 +36,7 @@ async function criarPlanoFixture(admin: ReturnType<typeof adminClient>, accountI
 
   const { data: servico, error: servErr } = await admin
     .schema("aba_catalog")
-    .from("servicos")
+    .from("procedimentos")
     .insert({ account_id: accountId, categoria_id: categoria.id, nome: "Serviço Fictício 01.3 Finance" })
     .select("id")
     .single();
@@ -44,7 +44,7 @@ async function criarPlanoFixture(admin: ReturnType<typeof adminClient>, accountI
 
   const { data: plano, error: planoErr } = await admin
     .schema("aba_catalog")
-    .from("planos")
+    .from("pacotes")
     .insert({ account_id: accountId, nome: "Plano Fictício 01.3", preco_total: 500 })
     .select("id")
     .single();
@@ -52,17 +52,17 @@ async function criarPlanoFixture(admin: ReturnType<typeof adminClient>, accountI
 
   const { error: itemErr } = await admin
     .schema("aba_catalog")
-    .from("itens_plano")
-    .insert({ account_id: accountId, plano_id: plano.id, servico_id: servico.id, sessoes_incluidas: 5 });
+    .from("itens_pacote")
+    .insert({ account_id: accountId, pacote_id: plano.id, procedimento_id: servico.id, sessoes_incluidas: 5 });
   if (itemErr) throw itemErr;
 
-  return { categoriaId: categoria.id as string, servicoId: servico.id as string, planoId: plano.id as string };
+  return { categoriaId: categoria.id as string, procedimentoId: servico.id as string, pacoteId: plano.id as string };
 }
 
-async function apagarPlanoFixture(admin: ReturnType<typeof adminClient>, categoriaId: string, servicoId: string, planoId: string) {
-  await admin.schema("aba_catalog").from("itens_plano").delete().eq("plano_id", planoId);
-  await admin.schema("aba_catalog").from("planos").delete().eq("id", planoId);
-  await admin.schema("aba_catalog").from("servicos").delete().eq("id", servicoId);
+async function apagarPlanoFixture(admin: ReturnType<typeof adminClient>, categoriaId: string, procedimentoId: string, pacoteId: string) {
+  await admin.schema("aba_catalog").from("itens_pacote").delete().eq("pacote_id", pacoteId);
+  await admin.schema("aba_catalog").from("pacotes").delete().eq("id", pacoteId);
+  await admin.schema("aba_catalog").from("procedimentos").delete().eq("id", procedimentoId);
   await admin.schema("aba_catalog").from("categorias").delete().eq("id", categoriaId);
 }
 
@@ -137,12 +137,12 @@ describe("aba_finance — cadeia contrato → cliente → pessoa e RLS (Subetapa
   });
 });
 
-describe("aba_finance — vender_plano() (Subetapa 01.3)", () => {
+describe("aba_finance — vender_pacote() (Subetapa 01.3)", () => {
   const admin = adminClient();
   let ctx: TestContext;
   let clienteId: string;
   let fx: Awaited<ReturnType<typeof criarPlanoFixture>>;
-  let planoClienteId: string | undefined;
+  let pacoteClienteId: string | undefined;
 
   beforeAll(async () => {
     ctx = await loadContext();
@@ -151,31 +151,31 @@ describe("aba_finance — vender_plano() (Subetapa 01.3)", () => {
   });
 
   afterAll(async () => {
-    if (planoClienteId) {
-      await admin.schema("aba_finance").from("saldos_plano").delete().eq("plano_cliente_id", planoClienteId);
-      await admin.schema("aba_finance").from("planos_cliente").delete().eq("id", planoClienteId);
+    if (pacoteClienteId) {
+      await admin.schema("aba_finance").from("saldos_pacote").delete().eq("pacote_cliente_id", pacoteClienteId);
+      await admin.schema("aba_finance").from("pacotes_cliente").delete().eq("id", pacoteClienteId);
     }
-    await apagarPlanoFixture(admin, fx.categoriaId, fx.servicoId, fx.planoId);
+    await apagarPlanoFixture(admin, fx.categoriaId, fx.procedimentoId, fx.pacoteId);
     await apagarCliente(admin, clienteId);
   });
 
   it("agent vende o plano e o saldo nasce com as sessões do item", async () => {
     const client = await clientAs("agent");
-    const { data, error } = await client.schema("aba_finance").rpc("vender_plano", {
+    const { data, error } = await client.schema("aba_finance").rpc("vender_pacote", {
       p_cliente_id: clienteId,
-      p_plano_id: fx.planoId,
+      p_pacote_id: fx.pacoteId,
     });
     expect(error).toBeNull();
     expect(data).toBeTruthy();
-    planoClienteId = data as string;
+    pacoteClienteId = data as string;
 
     const { data: saldos } = await admin
       .schema("aba_finance")
-      .from("saldos_plano")
-      .select("servico_id, sessoes_totais, sessoes_usadas")
-      .eq("plano_cliente_id", planoClienteId);
+      .from("saldos_pacote")
+      .select("procedimento_id, sessoes_totais, sessoes_usadas")
+      .eq("pacote_cliente_id", pacoteClienteId);
     expect(saldos).toHaveLength(1);
-    expect(saldos?.[0].servico_id).toBe(fx.servicoId);
+    expect(saldos?.[0].procedimento_id).toBe(fx.procedimentoId);
     expect(saldos?.[0].sessoes_totais).toBe(5);
     expect(saldos?.[0].sessoes_usadas).toBe(0);
   });

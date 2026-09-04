@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useCategorias, useCriarCategoria, useAlternarAtivoCategoria, useServicos, usePlanos } from "./api";
-import { ServicosTab } from "./ServicosTab";
-import { PlanosTab } from "./PlanosTab";
+import { useCategorias, useCriarCategoria, useAlternarAtivoCategoria, useProcedimentos, usePacotes } from "./api";
+import { ProcedimentosTab } from "./ProcedimentosTab";
+import { PacotesTab } from "./PacotesTab";
 
 function PainelCategorias() {
   const { data: categorias } = useCategorias();
@@ -64,10 +64,10 @@ function PainelCategorias() {
 }
 
 export function CatalogoPage() {
-  const [aba, setAba] = useState<"servicos" | "planos">("servicos");
+  const [aba, setAba] = useState<"procedimentos" | "pacotes">("procedimentos");
   const [mostrarCategorias, setMostrarCategorias] = useState(false);
-  const { data: servicos } = useServicos();
-  const { data: planos } = usePlanos();
+  const { data: procedimentos } = useProcedimentos();
+  const { data: planos } = usePacotes();
 
   return (
     <div className="flex flex-col gap-3">
@@ -75,17 +75,17 @@ export function CatalogoPage() {
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => setAba("servicos")}
-            className={`rounded-[5px] px-3 py-1.5 text-[11px] font-medium ${aba === "servicos" ? "bg-content text-primary" : "text-secondary-foreground"}`}
+            onClick={() => setAba("procedimentos")}
+            className={`rounded-[5px] px-3 py-1.5 text-[11px] font-medium ${aba === "procedimentos" ? "bg-content text-primary" : "text-secondary-foreground"}`}
           >
-            Serviços · {servicos?.length ?? 0}
+            Procedimentos · {procedimentos?.length ?? 0}
           </button>
           <button
             type="button"
-            onClick={() => setAba("planos")}
-            className={`rounded-[5px] px-3 py-1.5 text-[11px] font-medium ${aba === "planos" ? "bg-content text-primary" : "text-secondary-foreground"}`}
+            onClick={() => setAba("pacotes")}
+            className={`rounded-[5px] px-3 py-1.5 text-[11px] font-medium ${aba === "pacotes" ? "bg-content text-primary" : "text-secondary-foreground"}`}
           >
-            Planos · {planos?.length ?? 0}
+            Pacotes · {planos?.length ?? 0}
           </button>
         </div>
         <Button size="sm" variant="outline" onClick={() => setMostrarCategorias((v) => !v)}>
@@ -95,7 +95,7 @@ export function CatalogoPage() {
 
       {mostrarCategorias && <PainelCategorias />}
 
-      {aba === "servicos" ? <ServicosTab /> : <PlanosTab />}
+      {aba === "procedimentos" ? <ProcedimentosTab /> : <PacotesTab />}
     </div>
   );
 }

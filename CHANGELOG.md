@@ -2,6 +2,13 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+0.1] - 2026-09-04 (Subetapa 03.6.b — cada coisa com o seu nome)
+
+- **"Plano" agora quer dizer uma coisa só: o planejamento clínico do paciente.** Antes a mesma palavra nomeava quatro coisas diferentes dentro do CRM, e duas delas já apareciam juntas na tela. Agora: **procedimento** é o serviço unitário (extração, restauração); **pacote** é o combo padrão vendido a todos ("10 limpezas"); **plano** é a proposta personalizada que o profissional monta para um paciente; e **nível** é a faixa do CRM que a clínica contratou. "Serviço" continua valendo como a palavra guarda-chuva para qualquer um deles.
+- **Onde isso aparece:** a aba "Serviços" do Catálogo virou **"Procedimentos"** e a aba "Planos" virou **"Pacotes"**; "Vender plano" virou "Vender pacote"; e o check-in do atendimento agora diz "Consumir sessão do pacote".
+- **Nada mudou de comportamento, e nenhum dado se perdeu.** Foi renome, não reconstrução: os mesmos registros, os mesmos preços, os mesmos saldos, as mesmas permissões.
+- Correção de segurança encontrada de passagem: uma rotina interna do banco estava com permissão mais aberta do que devia. Não era explorável, e foi fechada.
+
 ## [+0.1] - 2026-09-04 (Subetapa 03.6.a — a regra de cada código de procedimento)
 - **Cada procedimento do catálogo agora carrega a própria regra.** Além do código SIGTAP, da unidade de lançamento e do teto de quantidade que a 03.6 trouxe, dá para declarar **quantas faces** aquele código aceita (de 1 a 5) e se ele vale **só em dente anterior, só em posterior ou nos dois**. Uma "resina de 2 faces em dente posterior" passa a ser uma regra que o banco conhece, não um combinado que só existe na cabeça de quem cadastrou.
 - **A caixa "aceita marcação por face" sumiu do formulário — e isso é melhoria, não perda.** Ela agora é deduzida sozinha: quem preenche o intervalo de faces já está dizendo que o procedimento aceita face. Um a menos para marcar, e um a menos para esquecer de marcar (ou marcar errado).
