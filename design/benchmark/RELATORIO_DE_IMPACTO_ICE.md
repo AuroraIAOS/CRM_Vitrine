@@ -26,8 +26,8 @@ linha citados.
 | **03.4** Agenda: espera, marcadores, cadeiras | ✅ CONCLUÍDA | **intacta**, com **2 acréscimos** sugeridos | baixa |
 | **03.5** Ações dos usuários + consentimento | ✅ CONCLUÍDA | **intacta**, com **1 regra** a herdar | baixa |
 | **03.6** Catálogo: faces, unidade, SIGTAP | ✅ CONCLUÍDA | **REABRE** — `aceita_faces` é insuficiente | **média** |
-| **03.7** Odontograma | ✅ CONCLUÍDA | **REABRE** — três achados, um deles grave | **ALTA** |
-| **03.8** Orçamento como entidade | ⏸️ não iniciada | **REDESENHA POR INTEIRO** — inclusive o nome | **ALTA** |
+| **03.7** Odontograma | ✅ CONCLUÍDA | **REABRE** — quatro achados, um deles grave. **D-I1 decidida: componente autoral**, com o anterior arquivado | **ALTA** |
+| **03.8** Orçamento como entidade | ⏸️ não iniciada | **REDESENHA POR INTEIRO**. **D-I2 decidida: `aba_treatment`** | **ALTA** |
 | **03.9** Multiunidade + trava de plano | não iniciada | **reforçada**, não redesenhada | baixa |
 | **03.10-03.15** Token e comunicação externa | não iniciadas | **1 acréscimo** (item 47) | baixa |
 | **03.16** Alertas clínicos | não iniciada | **redesenha** — vira *health facts* | média |
@@ -81,15 +81,73 @@ face é um `<path>` próprio, com id nomeado — `mesial-shape`, `distal-shape`,
 | **(b)** | **Trocar** por outra biblioteca | **Alto e sem alvo conhecido.** O benchmark de agosto já varreu 4 repositórios: o único adotável era este; o de HOF **não tem licença** (`RELATORIO.md` §5.1). Trocar exige nova varredura, nova licença lida, novo peso medido | Perde o `src/fhir/` (HL7 FHIR R4, `iso3950`, ICDAS) que veio de brinde e que a 03.7 registrou como ativo; e perde o periodontograma do item 48 |
 | **(c)** | **Construir o nosso** | **Medido nesta pesquisa, e é menor do que parece.** A amostra da NOTA 04 (3 dentes, 5 faces + coroa + 1-3 raízes cada) pesa **2,6-2,9 KB por dente** contra ~80 KB por dente da biblioteca, é **paramétrica** (as 32 permanentes e as 20 decíduas saem da mesma função, por espelhamento e escala) e passou **18/18 asserções em navegador real**, com 24 cliques devolvendo região e dente corretos | **Perde tudo que veio de brinde**: FHIR, periodontograma, os desenhos especializados de implante/coroa/núcleo/endodontia/faceta, e as 907 chaves de tradução pt-BR que a 03.7 auditou. E reabre do zero as três armadilhas que a 03.7 pagou |
 
-**Recomendação do CODE: (a), com a guarda de id.** É o único caminho que não joga fora o trabalho
-da 03.7 nem o que veio de brinde, e o teste que protege contra a regressão de `npm update` custa
-uma asserção no script de evidência que **já existe e já roda**. A amostra da NOTA 04 fica como
-**prova de que (c) é viável** — que é o que Max pediu que fosse provado — e como plano B com custo
-conhecido, não como recomendação.
+**Recomendação do CODE era (a), com a guarda de id.**
 
-**Se Max escolher (c), a amostra não é descartável:** ela já resolve o vocabulário
-(`data-face`/`data-regiao`), o ciclo de três estados e a serialização do estado dentro do próprio
-SVG, e a captura `svg_prova_captura.png` mostra os três estados pintados.
+> ### ✅ D-I1 DECIDIDA por Max, 2026-09-03: **(c) construir o nosso**
+>
+> *"Vamos construir o nosso (opção 2) de forma a ter um desenho totalmente autoral e de fácil
+> remodelagem (provavelmente eu irei redesenhar os SVG). Contudo, não apaguem o que já foi feito
+> com base no TOOL_Odontogram01. Deixe esse conteúdo salvo em um 'branch arquivo' para eu poder
+> seguir consultando ele e, aos poucos, ir compreendendo melhor e trazendo suas referências para o
+> nosso projeto autoral. Até porque, já que iremos deixar o periodonto para os versionamentos
+> futuros, não faria tanto sentido apresentar estruturas e desenhos que, por enquanto, não fariam
+> parte do MVP."*
+>
+> **O argumento de Max derruba metade do custo que o CODE havia levantado, e o CODE não o tinha
+> feito.** A recomendação (a) tratava o periodontograma, o FHIR e os desenhos especializados como
+> **ativo perdido**. Eles não são ativo enquanto não forem escopo: o periodontograma é o **item
+> 48, futuro** (decisão do próprio Max nesta sessão), e uma tela clínica que exibe estrutura que o
+> produto não entrega **promete o que não cumpre** — para o cliente e para quem vende. Perder o
+> que não se ia mostrar não é perda.
+>
+> **O arquivamento está feito, e em duas redes independentes:**
+>
+> | | Onde | Aponta para |
+> |---|---|---|
+> | Branch | `arquivo/odontograma-tool01` | `7f15dc5` — o topo do branch da Etapa 03, com a 03.7 inteira |
+> | Tag anotada | `odontograma-tool01` | o mesmo commit; sobrevive ao branch ser apagado por engano |
+>
+> Ambos empurrados para `origin`. O commit exato da 03.7 é `1412628` (17 arquivos, 2.364 linhas).
+> **Nada foi apagado.**
+
+**Três consequências da decisão, que mudam o desenho da 03.7 refeita:**
+
+**1. O SVG vira contrato de nomes, e a arte fica intercambiável.** Max declarou que
+*"provavelmente irei redesenhar os SVG"*. Isso é requisito, não observação: o componente **não pode
+depender da geometria**, só dos identificadores. A amostra da NOTA 04 já nasce assim — a marcação
+é `data-marcado` no elemento com `data-face`/`data-regiao`, e o `gerar_dentes_svg.mjs` produz a
+**referência**, não a verdade. Quem trocar o desenho respeita os ids e o componente não percebe.
+
+**Recomendação concreta:** um **validador de SVG** que roda no build e falha se um dente perder
+uma região nomeada — o mesmo padrão de `escopar_css_odontograma.mjs --verificar` e de
+`conferir_precache.mjs`, que a 03.7 já provou funcionar. Sem ele, um redesenho silencioso quebra
+o orçamento e ninguém vê.
+
+**2. As três armadilhas da 03.7 deixam de existir — mas as lições ficam.** CSS global sequestrando
+token, precache desfazendo a divisão por rota e estado em singleton de módulo eram todas
+consequência de **embutir componente de terceiro**. Com componente próprio, nenhuma se aplica.
+`conferir_precache.mjs` **fica assim mesmo**: o teto de precache protege contra a próxima
+dependência pesada, seja qual for. E as entradas de `handoffs/instrucoes.md` §5 não se apagam —
+`CLAUDE.md` §10.
+
+**3. O orçamento de peso melhora muito, e isso precisa ser medido.** O `OdontogramaClinico` isolado
+mede hoje **414.738 B gzip** + 10.459 B de CSS. A amostra da NOTA 04 pesa **2,6-2,9 KB por dente**;
+52 posições (32 permanentes + 20 decíduas) com geometria paramétrica ficam em outra ordem de
+grandeza. O precache cai junto — os `globIgnores` da 03.7 para o odontograma, o `jspdf` e o
+`html2canvas` provavelmente saem, e as **959 KiB de fontes Unicode de chinês e árabe** somem com a
+biblioteca que as trazia. **Tudo isso é hipótese até ser medido** (`CLAUDE.md` §11): a 03.7 refeita
+mede antes e depois pelo método do §5 de `design/ux/06_ORCAMENTO_DE_PESO.md`, como a 03.3 fez.
+
+**Duas perdas reais, declaradas sem atenuação:**
+
+- **As 907 chaves de tradução pt-BR** que a 03.7 auditou. Perda pequena: o nosso componente nasce
+  em português e o vocabulário que ele precisa é uma fração daquele — a biblioteca traduzia
+  periodontia, ortodontia, materiais protéticos e exportação, nada disso no MVP.
+- **O `src/fhir/`** (HL7 FHIR R4, `iso3950`, ICDAS), registrado como ativo na 03.7. **Atenuação
+  honesta:** FHIR é padrão **aberto e público**, não propriedade da biblioteca. Quando o item 33
+  (certificação SBIS/CFM, `+1.0`) chegar, o vocabulário se reimplementa a partir da especificação
+  — o que se perde é a implementação pronta, não o acesso ao padrão. E a `iso3950` é a numeração
+  FDI, que `crm/src/features/health/mapas.ts:126` já tem desde a 02.9.
 
 #### Achado A2 — `facesDoDente()` lê a face do ACHADO, não a face do TRABALHO *(gravidade ALTA)*
 
@@ -164,17 +222,35 @@ finalização depende de "o profissional executou em todas as faces planejadas",
 vira um fato que alguém afirma**, com data e autor — não uma inferência entre duas evoluções.
 Inferência não sustenta a trava de finalização de um contrato pago.
 
-#### O que da 03.7 **sobrevive intacto**, e é muito
+#### O que da 03.7 **sobrevive**, mesmo com a decisão (c)
 
 - **A decisão de gravar em `aba_health.evolucoes.marcacoes`** (migration `025`), herdando RLS, log,
-  privilégio de coluna e trava de evolução assinada — o ICE não dá nenhuma razão para mudar, e
-  `CLAUDE.md` §5 dá todas para não mudar.
-- **A escopagem de CSS por PostCSS** (`escopar_css_odontograma.mjs`) e o **teto de precache**
-  (`conferir_precache.mjs`): valem para qualquer caminho, inclusive (c).
-- **O reset entre pacientes pela forma pristina** — enquanto a biblioteca ficar, isso fica.
-- **Os 6 casos de ataque** de `05_aba_health.spec.ts` e as 37 asserções de
-  `evidencia_odontograma.mjs`: nenhuma é invalidada; ganham asserções novas.
-- **O `src/fhir/`** como ativo registrado.
+  privilégio de coluna e trava de evolução assinada. **Sobrevive inteira e é o que mais importa**:
+  o ICE não dá nenhuma razão para mudar, `CLAUDE.md` §5 dá todas para não mudar, e com componente
+  próprio o envelope fica **mais simples** — o item sentinela com o payload verbatim da biblioteca
+  deixa de ser necessário, e a projeção legível passa a ser o dado inteiro.
+- **Os 6 casos de ataque** de `crm/tests/rls/05_aba_health.spec.ts`. **Nenhum é invalidado** —
+  eles testam o banco, não o componente: o quadro clínico não sai por `select` direto nem por
+  `select('*')` nem para o `owner`; payload como objeto é recusado com `23514`; `agent` sem alcance
+  recebe conjunto vazio **e nenhuma linha de log**; odontograma de sessão assinada não se
+  reescreve. Continuam valendo com qualquer desenho.
+- **`crm/scripts/evidencia_odontograma.mjs`** (37 asserções) como **método**: o ciclo clínico
+  completo que ele exercita — abrir sessão, marcar, salvar, conferir no banco, recarregar, abrir
+  outro paciente e a boca estar limpa — é exatamente o que a versão autoral tem de provar. As
+  asserções que medem a biblioteca trocam de alvo; as que medem o ciclo ficam.
+- **`crm/scripts/conferir_precache.mjs`** e o teto de 1.400 KiB. Não é sobre o odontograma: é
+  sobre a **próxima** dependência pesada, seja qual for.
+- **A divisão por rota da 03.3** e a fronteira preguiçosa dentro do prontuário.
+
+#### O que da 03.7 **sai**, e para onde vai
+
+- **`crm/scripts/escopar_css_odontograma.mjs`** e `odontograma-escopado.css` — existiam para
+  domar o CSS global de terceiro. Sem terceiro, não há o que domar. **A lição fica** em
+  `handoffs/instrucoes.md` §5 e §6, e o arquivo fica no branch arquivo.
+- **`OdontogramaClinico.tsx`** na forma atual (adaptador para a biblioteca), a forma pristina, o
+  `chaveSessao`/`key` de reset e os `globIgnores` específicos do pacote.
+- **Tudo isso continua consultável** em `arquivo/odontograma-tool01` e na tag
+  `odontograma-tool01`, que é exatamente o que Max pediu ao decidir D-I1.
 
 ### 2.2 Subetapa 03.6 (catálogo) — reabertura menor e bem delimitada
 
@@ -239,6 +315,21 @@ espera; o schema guarda o que a coisa é.
 > curto, já está escrito em `docs/00` e em `CLAUDE.md` §2 seria o décimo schema com um nome que
 > qualquer pessoa entende. Se Max preferir manter `aba_budget`, **nada nesta pesquisa quebra** —
 > a estrutura de fases e opções cabe igual dentro dele. É decisão de nome, não de modelo.
+
+> ### ✅ D-I2 DECIDIDA por Max, 2026-09-03: **`aba_treatment`, chave `treatment`, label "Planos de tratamento"**
+>
+> **O que isso obriga a mudar quando a Etapa 03 for retomada** — nenhuma dessas mudanças é desta
+> sessão, que não toca em `docs/`:
+>
+> | Onde | O que muda |
+> |---|---|
+> | `CLAUDE.md` §2 | a lista de schemas de módulo ganha `aba_treatment` (não `aba_budget`) |
+> | `access.modules` | a chave é `treatment`, label "Planos de tratamento" |
+> | `docs/00_PLANO_E_CRITERIOS.md`, Subetapa 03.8 | a decisão de Max de 2026-09-03 sobre `aba_budget` **não se apaga**: ganha ao lado o registro da revisão, com a data e o motivo (`CLAUDE.md` §8 e §10) |
+> | `docs/02_MODELO_DE_DADOS.md` §11 | idem |
+>
+> **"Orçamento" continua sendo a palavra da interface.** O paciente e a recepção esperam essa
+> palavra, e o schema não aparece na tela.
 
 #### B2 — O preço não é campo da linha *(gravidade ALTA)*
 
@@ -422,14 +513,19 @@ e três delas saem reforçadas:
 
 ## 6. O que precisa de decisão de Max
 
-| # | Decisão | Recomendação do CODE |
-|---|---|---|
-| **D-I1** | O caminho do odontograma: **(a) estender · (b) trocar · (c) construir** | **(a) estender**, com a guarda de id no script de evidência que já roda no build |
-| **D-I2** | O nome do schema: manter **`aba_budget`** ou passar a **`aba_treatment`** | `aba_treatment` / "Planos de tratamento", com "Orçamento" mantido na interface. **Mas nada quebra se ficar `aba_budget`** — é decisão de nome |
-| **D-I3** | Partir a 03.8 em **03.8 (clínica)** + **03.8.a (financeira)** | Sim — o redesenho a deixou grande demais para 5 tentativas |
-| **D-I4** | Reabrir formalmente a **03.7** e a **03.6**, com Status revisto | Sim, e no padrão que `docs/00` já fixou: **o Status antigo não se apaga, ganha o registro da revisão ao lado** |
-| **D-I5** | Quais dos itens 34-49 entram no MVP | Ver o quadro do §4 |
-| **D-I6** | Se quer as **pesquisas dedicadas** de periodontia (item 48) e ortodontia (item 49) | Disponíveis, **sem nova coleta** — o bruto está em disco. 10 das 20 páginas do tema já foram lidas |
+| # | Decisão | Recomendação do CODE | Resposta |
+|---|---|---|---|
+| **D-I1** | O caminho do odontograma: **(a) estender · (b) trocar · (c) construir** | (a) estender | ✅ **Max, 2026-09-03: (c) construir o nosso**, com o trabalho anterior arquivado em branch e tag. Ver §2.1 — o argumento dele derrubou metade do custo que o CODE havia levantado |
+| **D-I2** | O nome do schema: manter **`aba_budget`** ou passar a **`aba_treatment`** | `aba_treatment` | ✅ **Max, 2026-09-03: `aba_treatment`**, chave `treatment`, label "Planos de tratamento". Ver §3.1 |
+| **D-I3** | Partir a 03.8 em **03.8 (clínica)** + **03.8.a (financeira)** | Sim — o redesenho a deixou grande demais para 5 tentativas | ⏳ em aberto |
+| **D-I4** | Reabrir formalmente a **03.7** e a **03.6**, com Status revisto | Sim, e no padrão que `docs/00` já fixou: **o Status antigo não se apaga, ganha o registro da revisão ao lado**. *(D-I1 já implica a reabertura da 03.7 na prática; falta a forma.)* | ⏳ em aberto |
+| **D-I5** | Quais dos itens 34-49 entram no MVP | Ver o quadro do §4 | ⏳ em aberto |
+| **D-I6** | Se quer as **pesquisas dedicadas** de periodontia (item 48) e ortodontia (item 49) | Disponíveis, **sem nova coleta** — o bruto está em disco. 10 das 20 páginas do tema já foram lidas | ⏳ em aberto |
+
+**As três decisões tomadas em 2026-09-03** — aprovação deste relatório, D-I1 e D-I2 — estão
+aplicadas nas seções acima. As quatro em aberto não bloqueiam o merge: **D-I3 a D-I6 são decisões
+de planejamento da Etapa 03**, e o lugar natural delas é a sessão de retomada, com `docs/00` aberto
+na frente.
 
 ---
 
@@ -466,8 +562,22 @@ negócio. Ele foi encontrado porque a pesquisa obrigou a olhar o nosso código c
 vinda de fora. É a quarta vez na Etapa 03 que confrontar a premissa com o repositório derruba algo
 (03.5, 03.6, 03.8 e agora esta), e a única em que o que caiu era código já escrito e verde.
 
-**O segundo maior é que o retrabalho é menor do que a gravidade sugere.** A geometria por face já
-está no SVG que instalamos; a separação achado/procedimento é mudança de projeção, não de schema;
-e a 03.8 não tem uma linha para desfazer. **Nenhuma migration precisa ser revertida.**
+**O segundo maior é que o retrabalho é menor do que a gravidade sugere.** A separação
+achado/procedimento é mudança de projeção, não de schema; a 03.8 não tem uma linha para desfazer;
+e o que a 03.7 deixou de mais valioso — a coluna em `evolucoes`, os 6 casos de ataque, o método do
+script de evidência, o teto de precache — **não depende de qual componente desenha a boca.**
+**Nenhuma migration precisa ser revertida.**
 
-**O CODE entrega o parecer e para** (`CLAUDE.md` §13).
+**Uma nota sobre a decisão D-I1, porque ela derrubou a recomendação do CODE por um argumento
+melhor.** O parecer tratava periodontograma, FHIR e desenhos especializados como ativo a preservar.
+Max apontou que **ativo que não é escopo não é ativo** — e que exibir estrutura clínica que o MVP
+não entrega promete o que não se cumpre. O CODE havia pesado o custo de construir contra o custo de
+descartar, e não pesou o custo de **mostrar**. Fica registrado como aprendizado de método, não como
+concessão: ao comparar "estender terceiro" com "construir o nosso", **o que o terceiro traz de
+brinde só conta como ganho se estiver no escopo contratado** — do contrário é superfície a
+esconder, e esconder também custa (a própria 03.7 já teve de esconder a moldura do aplicativo de
+demonstração por governança).
+
+**O CODE entrega o parecer e para** (`CLAUDE.md` §13). **O merge é ordem exclusiva de Max**, e as
+decisões D-I3 a D-I6 não o bloqueiam — são planejamento da Etapa 03, e o lugar delas é a sessão de
+retomada.
