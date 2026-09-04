@@ -10,7 +10,8 @@ registrar aprendizado de método (`CLAUDE.md` §10). O que a pesquisa concluir s
 **relatório de impacto** submetido a Max, e o merge em `main` é ordem exclusiva dele
 (`CLAUDE.md` §13).
 
-**Status: ⏸️ aguardando aprovação de Max (passo 3 da sequência).**
+**Status: ✅ APROVADO por Max em 2026-09-03** (passo 3 da sequência), com a decisão **D-ICE-1**
+respondida — ver §8. Execução do passo 4 autorizada.
 
 ---
 
@@ -299,6 +300,10 @@ partir de **34** — o primeiro número livre da sequência única —, e a coli
 como nota no `RELATORIO.md` sem renumerar nada, ficando `25-MVP`/`26-MVP` distintos de
 `25-futuro`/`26-futuro`. **O CODE não decide isso sozinho:** a lista canônica é de Max
 (`docs/00` §"não reabrir a lista"), e renumerar quebraria referência já escrita em subetapa.
+
+> **✅ RESOLVIDA — Max, 2026-09-03.** Recomendação aceita: **os itens novos do ICE entram a partir
+> de 34**, nada é renumerado, e a colisão 25/26 vira nota registrada no `RELATORIO.md`. O plano
+> foi aprovado na mesma resposta, e a execução do passo 4 autorizada.
 
 ---
 
