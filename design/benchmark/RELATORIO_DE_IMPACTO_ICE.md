@@ -319,14 +319,16 @@ espera; o schema guarda o que a coisa é.
 > ### ✅ D-I2 DECIDIDA por Max, 2026-09-03: **`aba_treatment`, chave `treatment`, label "Planos de tratamento"**
 >
 > **O que isso obriga a mudar quando a Etapa 03 for retomada** — nenhuma dessas mudanças é desta
-> sessão, que não toca em `docs/`:
+> sessão, que não toca em `docs/`. **Os lugares foram contados no branch da Etapa 03, não supostos**
+> (`grep` em 2026-09-04):
 >
-> | Onde | O que muda |
-> |---|---|
-> | `CLAUDE.md` §2 | a lista de schemas de módulo ganha `aba_treatment` (não `aba_budget`) |
-> | `access.modules` | a chave é `treatment`, label "Planos de tratamento" |
-> | `docs/00_PLANO_E_CRITERIOS.md`, Subetapa 03.8 | a decisão de Max de 2026-09-03 sobre `aba_budget` **não se apaga**: ganha ao lado o registro da revisão, com a data e o motivo (`CLAUDE.md` §8 e §10) |
-> | `docs/02_MODELO_DE_DADOS.md` §11 | idem |
+> | Onde | Ocorrências de `aba_budget` | O que fazer |
+> |---|---|---|
+> | `docs/00_PLANO_E_CRITERIOS.md:618` | **1** | a decisão de Max de 2026-09-03 **não se apaga**: ganha ao lado o registro da revisão, com data e motivo (`CLAUDE.md` §8 e §10) |
+> | `docs/00a_PLANO_ETAPA_03.md:217` | **1** | idem — é a mesma frase, duplicada nos dois planos |
+> | `CLAUDE.md` §2 | **0** | nunca foi escrito lá, porque a 03.8 pausou antes. Basta **acrescentar** `aba_treatment` à lista de schemas quando a subetapa nascer — não há correção a fazer |
+> | `docs/02_MODELO_DE_DADOS.md` §11 | **0** | o nome não está lá. **Mas a §11.2 muda por outro motivo:** a nota da 03.8 registra `variantes_servico` como tabela de preço **na linha**, e a pesquisa mostra que o preço se resolve por escada (§3.1-B2). É correção de desenho, não de nome |
+> | `access.modules` | — | chave `treatment`, label "Planos de tratamento", na migration da 03.8 |
 >
 > **"Orçamento" continua sendo a palavra da interface.** O paciente e a recepção esperam essa
 > palavra, e o schema não aparece na tela.
