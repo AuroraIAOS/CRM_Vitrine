@@ -8,6 +8,43 @@ depois vá às fontes que ele aponta — ele resume, não substitui.
 
 ---
 
+> ## ✅ CONSUMIDO em 2026-09-04, pela Subetapa 03.0.a
+>
+> **Este handoff cumpriu a função dele e fica como registro** — nada aqui se apaga. O que ele
+> mandou fazer foi feito, e as quatro decisões que ele deixou em aberto foram respondidas por Max.
+>
+> **A tarefa 1 (o merge) foi executada** — commit `6f694a2`. O conflito em `handoffs/instrucoes.md`
+> ocorreu exatamente onde este documento previu, e a resolução manteve as duas listas inteiras:
+> `82 (branch) + 75 (main) − 72 (base) = 85` entradas, sem perda nem duplicata, com
+> `grep -c '^# INSTRUÇÕES'` devolvendo `1`. **Nenhum outro arquivo colidiu**, como previsto.
+>
+> **As quatro decisões, respondidas por Max em 2026-09-04:**
+>
+> | # | Resposta |
+> |---|---|
+> | **D-I3** | **Sim, partir a 03.8** em 03.8 (clínica) + 03.8.a (financeira). E, junto: **a 03.7 NÃO se parte** — remover a biblioteca e entregar metade do substituto deixa `/prontuario` quebrado; o teto sobe de 5 para 6 |
+> | **D-I4** | **Numerar `03.6.a` e `03.7.a`**, sem tocar no Status das originais. Reescrever no lugar exigiria um quinto marcador em `CLAUDE.md` §8, e nenhum dos quatro serve |
+> | **D-I5** | **Entram quatro: 34, 35, 36 e 41**, todos absorvidos por subetapas existentes. **O MVP passa de 26 para 30 itens.** Os demais (37, 38, 39, 40, 42-49) ficam no Backlog de versionamento |
+> | **D-I6** | **Não agora.** O material bruto foi medido e continua em disco (`~/.claude/jobs/analise-ice/`, **95 MB**) — virou pendência vigiada, porque o diretório vive fora do controle de versão |
+>
+> **As duas pendências pequenas do §7 foram varridas.** O `README.md` estava desatualizado em três
+> pontos (não dois): "24 itens", "24 subetapas" e "Próximo passo: Subetapa 03.4". E a contagem
+> errada estava em **mais um lugar** do que este handoff previu — o cabeçalho de
+> `docs/00a_PLANO_ETAPA_03.md` dizia "as 24 subetapas" com 26 linhas na tabela abaixo. Todos
+> corrigidos, e a lição virou entrada em `handoffs/instrucoes.md` §5.
+>
+> **Uma correção de precisão neste documento**, medida e registrada em vez de silenciada: a tabela
+> do §4 (D-I2) conta as ocorrências de `aba_budget` em quatro lugares e conclui "nenhum outro". O
+> `grep` sobre o repositório inteiro achou **três a mais** — `design/benchmark/RELATORIO.md:337`
+> (ponteiro **vivo** do item 34, corrigido para `aba_treatment`) e duas em
+> `design/benchmark/00_PLANO_DE_ACAO_ICE.md`, que são registro histórico e **não** se corrigem.
+>
+> **O plano revisado está em `docs/00_PLANO_E_CRITERIOS.md`** (Subetapa 03.0.a e as subetapas
+> 03.6.a, 03.7.a, 03.8 e 03.8.a), com o recorte enxuto sincronizado em `docs/00a_PLANO_ETAPA_03.md`
+> e o desenho de `aba_treatment` em `docs/02_MODELO_DE_DADOS.md` §12.
+
+---
+
 ## 1. Onde estamos
 
 | | |

@@ -709,6 +709,21 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Regra que fica:** **contagem de ocorrência em bundle é hipótese, não medição** (`CLAUDE.md` §11). Para saber se uma biblioteca *faz* algo, ache o handler, não a palavra. E, antes de renderizar para descobrir: **verifique se há sourcemap com `sourcesContent`** — é a leitura mais barata e mais conclusiva disponível, e nenhuma das duas coisas exige subir a aplicação.
 - **Fonte:** pesquisa `analise-ice`, 2026-09-03.
 
+### Reabrir subetapa concluída sem apagar o Status: a numeração `.a` resolve o que o marcador de status não resolve
+- **Gatilho:** Subetapa 03.0.a, 2026-09-04. A pesquisa `analise-ice` reabriu duas subetapas já marcadas `✅ CONCLUÍDA` (03.6 e 03.7), e era preciso registrar a revisão **sem apagar o Status antigo** (`CLAUDE.md` §8 e §10).
+- **O caminho óbvio, e por que ele não serve:** reescrever o bloco no lugar exige um marcador novo — algo como `🔁 REABERTA` — e o `CLAUDE.md` §8 fixa **quatro** símbolos, nenhum dos quais serve. `⚠️ PENDENTE` é o candidato natural e **mente**: a definição dele é *"sem ser um bloqueio para seguir adiante"*, e a 03.7 refeita **bloqueia** a 03.8 pela corrente obrigatória `catálogo → odontograma → plano`. Escolher o marcador errado é pior que não ter marcador: quem lê o `grep` de status decide o que fazer a seguir a partir dele.
+- **A saída, e ela já existia no projeto:** dar à revisão um **número próprio** com o sufixo `.a` — `03.6.a` e `03.7.a` —, no precedente que a própria Etapa 03 abriu com 03.13.a, 03.16.a e 03.21.a (*inserir sem renumerar*). O bloco antigo fica intacto e ganha **uma linha** ao lado do Status apontando para a revisão, com data e motivo. Nenhum Status é apagado, nenhum símbolo novo é inventado, e a ordem de execução fica legível no próprio sumário.
+- **O risco de leitura, e como se neutraliza:** `.a` sugere "acréscimo", e uma substituição não é acréscimo. Resolve-se no título: `### Subetapa 03.7.a — Odontograma autoral (substitui a implementação da 03.7)`. Quem lê só a linha do `###` já sabe.
+- **Regra que fica:** **quando um vocabulário fechado não tem a palavra de que você precisa, procure primeiro uma convenção que já exista no projeto — estender o vocabulário é a última saída, não a primeira.** Marcador de status é lido por `grep` e por sessão futura sem contexto; um símbolo a mais custa para sempre, e um símbolo errado custa mais ainda.
+- **Fonte:** Subetapa 03.0.a, 2026-09-04 (decisão D-I4 de Max).
+
+### Documento derivado herda o número errado, e a contagem é o campo que mais envelhece
+- **Gatilho:** Subetapa 03.0.a, ao varrer `"24 itens"` antes de fechar a revisão do plano.
+- **O que a varredura achou:** a contagem de itens do MVP estava desatualizada em **quatro documentos ao mesmo tempo** e de formas diferentes — `README.md` ("24 itens" e "24 subetapas", além de "Próximo passo: Subetapa 03.4", três subetapas atrás), `docs/00_PLANO_E_CRITERIOS.md` (CHECKLIST item 16), `docs/00a_PLANO_ETAPA_03.md` (o cabeçalho dizia "as **24** subetapas" enquanto a tabela logo abaixo dele já tinha **26 linhas** — medido por `grep -c '^| 03\.'`) e `design/benchmark/RELATORIO.md` §5(c). Nenhum deles estava errado quando foi escrito.
+- **Por que a contagem é o pior campo:** ela é **derivada** de uma lista que muda, mas é **escrita como constante**. Quem acrescenta o item lembra de acrescentar na lista; ninguém lembra dos quatro lugares que citam o tamanho dela. E o número errado não gera erro nenhum — é lido como fato.
+- **Ação:** os quatro corrigidos no mesmo commit, e a contagem passou a vir sempre acompanhada da **data e do motivo da mudança** (`26 em 2026-09-03, 30 em 2026-09-04, por D-I5`), em vez de só do número — de modo que a próxima leitura veja se está velha.
+- **Regra que fica:** **ao mudar o tamanho de uma lista canônica, varrer por `grep` todos os lugares que citam o tamanho, não só a lista.** E, quando o número for escrito num documento derivado, escrevê-lo **com a data** — número sem data não denuncia que envelheceu. Irmã da entrada da 03.8 sobre "convênio" virar "plano": documento derivado é cópia de cópia, e o que se degrada primeiro é o que ninguém revisa por não parecer conteúdo.
+- **Fonte:** Subetapa 03.0.a, 2026-09-04.
 ---
 
 ## 6. Armadilhas conhecidas (não repetir)

@@ -6,7 +6,8 @@ Regras permanentes lidas pelo Claude CODE em toda sessão deste projeto. Não re
 - Português/BR em toda comunicação, commit e comentário de código, salvo termos técnicos (nomes de biblioteca, palavra-chave de linguagem, etc.).
 
 ## 2. Convenção de nomenclatura no banco (leia `docs/02_MODELO_DE_DADOS.md` §1 antes de criar qualquer tabela)
-- Schemas de módulo: prefixo em **inglês** — `aba_people`, `aba_catalog`, `aba_scheduling`, `aba_finance`, `aba_health`, `aba_messaging`, `aba_sales`, `aba_automations`, `aba_ai`.
+- Schemas de módulo: prefixo em **inglês** — `aba_people`, `aba_catalog`, `aba_scheduling`, `aba_finance`, `aba_health`, `aba_messaging`, `aba_sales`, `aba_automations`, `aba_ai`, `aba_treatment`.
+- `aba_treatment` (chave de módulo `treatment`, label **"Planos de tratamento"**) é o décimo schema — acrescentado por decisão de Max de 2026-09-03 (D-I2), com a edição deste arquivo autorizada por ele em 2026-09-04. Nasce na Subetapa 03.8. **"Orçamento" continua sendo a palavra da interface** — o paciente e a recepção esperam essa palavra, e o schema não aparece na tela.
 - Dentro de cada schema: tabelas, colunas, funções, triggers, cron — **snake_case em português/BR**.
 - Exceção: núcleo herdado (`public.accounts`, `public.profiles`, `public.account_invitations`, `public.api_keys`, `public.webhook_endpoints`, `public.notifications`, `public.member_presence`) e os schemas `access`/`licensing`/`analytics` ficam em inglês, sem prefixo `aba_`.
 - Nunca misturar as duas convenções dentro do mesmo schema de módulo.

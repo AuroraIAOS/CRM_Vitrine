@@ -132,7 +132,7 @@ duplicações foram fundidas e cinco itens mudaram de MVP para futuro ou o contr
 canônicas são [`fontes/MVP.xlsx`](fontes/MVP.xlsx) e [`fontes/FUTURO.xlsx`](fontes/FUTURO.xlsx);
 o que segue é a transcrição delas, com as observações técnicas que a revisão levantou.
 
-**A lista foi reaberta duas vezes desde então, e as duas estão registradas aqui.**
+**A lista foi reaberta três vezes desde então, e as três estão registradas aqui.**
 
 **(1) 2026-09-03, por Max:** o MVP passou de 24 para **26 itens**, com **25 — Resumo do paciente**
 e **26 — Prescrições de medicamento** (`docs/00_PLANO_E_CRITERIOS.md`, ETAPA 2 DO ROTEIRO). Eles
@@ -149,6 +149,14 @@ estão transcritos ao fim da tabela "Agora".
 **(2) 2026-09-03, pela pesquisa `analise-ice`:** os itens que o ICE revelou entram **a partir de
 34** — o primeiro número livre da sequência —, na seção §5.4 abaixo. **Todos entram como
 reportados, nenhum como planejado** (`CLAUDE.md` §15): quem decide o que vira escopo é Max.
+
+**(3) 2026-09-04, por Max (decisão D-I5, Subetapa 03.0.a):** dos 16 itens da §5.4, **quatro
+entraram no MVP** — **34** (opções de tratamento concorrentes), **35** (requisitos por
+procedimento), **36** (recusa implícita e re-consentimento) e **41** (vigência de tabela de
+preço). **O MVP passou de 26 para 30 itens.** Nenhum deles criou subetapa nova: 34 e 36 são a
+forma da entidade da Subetapa 03.8, 35 foi absorvido pela 03.6.a e 41 pela 03.8.a. Os demais
+(**37, 38, 39, 40 e 42-49**) seguem **reportados e não planejados**, registrados no Backlog de
+versionamento de `docs/00_PLANO_E_CRITERIOS.md` com o vínculo à fonte preservado.
 
 Fontes: os recursos que Max colheu nos sites, **56 vídeos** dos concorrentes, **4 repositórios**,
 **14 capturas** dele e o **acervo de gestão pública** — detalhe em
@@ -332,9 +340,14 @@ perderem; o efeito real deles está no relatório de impacto.
 
 **Grupo B — itens novos candidatos ao MVP.**
 
+> **Decidido em 2026-09-04 (D-I5, Max).** Dos oito abaixo, **entraram no MVP: 34, 35, 36 e 41**.
+> **Ficaram fora, reportados e não planejados: 37, 38, 39 e 40** — todos no Backlog de
+> versionamento de `docs/00_PLANO_E_CRITERIOS.md`, com o motivo de cada um. O Grupo C inteiro
+> (42-49) segue no futuro.
+
 | # | O que | Por que agora | Onde encosta |
 |---|---|---|---|
-| **34** | **Opções de tratamento concorrentes (A/B/…) sob o mesmo diagnóstico**, em colunas, com o diagnóstico atravessando as opções e as fases clínicas como linhas (Emergency · Systemic · Acute · Disease Control · Definitive · Maintenance) | É a estrutura que transforma "orçamento" em conversa clínica com o paciente — e é o desenho que a 03.8 ia construir sem. Barato **agora**, caro depois de a entidade existir | `aba_budget` / Subetapa 03.8 |
+| **34** | **Opções de tratamento concorrentes (A/B/…) sob o mesmo diagnóstico**, em colunas, com o diagnóstico atravessando as opções e as fases clínicas como linhas (Emergency · Systemic · Acute · Disease Control · Definitive · Maintenance) | É a estrutura que transforma "orçamento" em conversa clínica com o paciente — e é o desenho que a 03.8 ia construir sem. Barato **agora**, caro depois de a entidade existir | `aba_treatment` / Subetapa 03.8 |
 | **35** | **Requisitos por procedimento**, com pop-over: consentimento de tratamento, consentimento informado, pré-determinação de convênio, validação por supervisor e achado diagnóstico obrigatório — configurados **por código** | Torna a regra clínica dado, não código. O nosso `aceita_faces` da 03.6 é o primeiro membro dessa família | `aba_catalog.servicos` + 03.8 |
 | **36** | **Recusa implícita e regra de re-consentimento.** Consentir a Opção A marca a B como recusada; e mudar **dente** ou **código** exige novo termo, enquanto mudar **face**, **fase**, **opção** ou **diagnóstico** não exige | É requisito ético e jurídico, não conveniência: o registro de que o paciente escolheu A **e recusou B** | `aba_health.consentimentos` + 03.8 |
 | **37** | **Step set** — procedimento partido em etapas com status, data e consulta próprios, percentual de receita por etapa e **uma etapa faturável** | Coroa, prótese e endodontia acontecem em várias sessões; sem isto o financeiro só sabe "feito" ou "não feito" | `aba_catalog` + `aba_finance` |
