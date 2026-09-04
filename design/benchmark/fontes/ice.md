@@ -447,7 +447,63 @@ de paciente; aceita cobrança nova do mesmo grupo de clínicas).
 **Pré-determinação** é o orçamento submetido ao convênio **antes** do tratamento — e por padrão a
 tela só lista os procedimentos que a apólice **exige** que passem por ela.
 
-### 5.6 Ortodontia como regime financeiro próprio
+### 5.6 O momento em que a cobrança nasce — e por que o Brasil inverte isso
+
+**Instrução de Max, 2026-09-03, na aprovação da PARADA 2.** Registrada aqui como **divergência de
+mercado**, não como achado do ICE: é a regra do negócio brasileiro, e ela contradiz o padrão da
+fonte.
+
+**No ICE, a cobrança nasce da EXECUÇÃO.** O status `Completed` do procedimento — marcado quando o
+profissional executou o trabalho no dente e na face — é o que cria a cobrança (§4.1). O plano de
+tratamento, por mais completo que esteja, não gera lançamento nenhum enquanto ninguém trabalhar.
+É coerente com o mercado norte-americano, onde o convênio paga depois do ato e o paciente paga a
+coparticipação no check-out.
+
+**No Brasil, é comum o inverso:** o paciente **paga adiantado** o tratamento, e a fatura sai da
+**apresentação e aprovação do plano — da assinatura do contrato**, não da execução. Quem espera o
+dentista marcar a face trabalhada no odontograma para faturar não fatura nunca, porque o dinheiro
+já entrou semanas antes.
+
+**O que o ICE já tem que serve, e é [verificado]:**
+
+- `PL Planned` — *"Procedure appears on the odontogram and general procedure list. **Does not
+  create financial charge, but you can accept pre-payment for it**."* (§4.1)
+- Saldo **`Total Prepayment`** — *"The amount paid and allocated to **planned procedures** and
+  future payment plan charges."* (§5.1)
+- Plano de pagamento não-ortodôntico — *"Created for **planned** or completed procedures, or
+  administrative charges."* (§5.5)
+
+Ou seja: **o ICE modela pré-pagamento alocado a procedimento planejado**. O que ele não faz é
+tornar isso o caminho padrão — lá o pré-pagamento é a exceção, aqui é a regra.
+
+**O que o ICE não tem, e por isso não pode ser copiado:** o ICE **não tem contrato**. Não há
+entidade que o paciente assine e que passe a governar o que pode ser cobrado e quando o trabalho
+está terminado. Ele tem *termo de consentimento* (que é clínico e ético, §4.4) e *plano de
+pagamento* (que é financeiro, §5.5), e nenhum dos dois fecha o ciclo do outro.
+
+**A regra que Max fixou, e que a Subetapa 03.8 tem de cumprir — as duas metades juntas:**
+
+1. **A cobrança se solta na aprovação do plano/contrato, antes de qualquer execução.** Faturar,
+   receber e dar quitação não podem depender de o procedimento estar `executado`.
+2. **O contrato não se finaliza enquanto as duas condições não forem verdadeiras ao mesmo
+   tempo:** (a) o paciente pagou **tudo**, e (b) o profissional executou o trabalho em **todas as
+   faces de todos os dentes planejados**.
+
+A segunda metade é o que impede a primeira de virar buraco. Sem ela, um contrato pago e
+parcialmente executado ficaria indistinguível de um contrato cumprido — e é exatamente o caso em
+que o paciente já pagou e ainda tem trabalho a receber, que é o risco jurídico e reputacional
+maior do modelo brasileiro.
+
+> **Consequência de modelagem, para o relatório de impacto:** o estado de um contrato passa a ser
+> derivado de **duas fontes independentes** — o saldo em `aba_finance` e a cobertura de execução
+> em `aba_health` (a marcação por face do odontograma). Nenhuma das duas sozinha responde
+> "terminou?". É a mesma classe de invariante que a 03.6 criou com `quantidade_maxima` (validação
+> de banco, não rótulo) e que `handoffs/instrucoes.md` §5 já registrou como armadilha na 02.10: o
+> agendador zerou o KPI "Vencido" porque a fatura saía do contador exatamente quando virava
+> pendência. Aqui o risco simétrico é um contrato se declarar concluído no momento do último
+> pagamento, ignorando as faces que faltam.
+
+### 5.7 Ortodontia como regime financeiro próprio
 
 `treatment/create-an-orthodontic-treatment-plan` · `check-the-revenue-schedule` ·
 `activate-…` · `complete-…` · `cancel-…`. **[verificado]**
@@ -461,6 +517,42 @@ efetivamente feito, editando os valores "Actual" até baterem.
 
 > Fora do MVP do Vitrine, mas registrado: é a modelagem de **reconhecimento de receita** que
 > qualquer tratamento longo (não só ortodontia) precisaria, e que o nosso `aba_finance` não tem.
+> **Registrado como candidato a versionamento futuro por decisão de Max de 2026-09-03** — item 49
+> do `RELATORIO.md` §5.4, com a fonte (ICE) preservada no vínculo.
+
+### 5.8 Periodontia — o que existe na fonte, e por que não foi aprofundado
+
+`gather/periodontal-overview` · `enter-perio-findings` · `manage-periodontal-chart-settings` ·
+`use-perio-keyboard-shortcuts` · `configure/practice-settings-charting` (Periodontal Settings).
+**[verificado]** — `vid_overview_03`, 22-25 min.
+
+Lido na estrutura, **não aprofundado**, porque está fora do MVP odontológico do Vitrine. O que a
+fonte mostra, para o vínculo ideia↔fonte não se perder:
+
+- **Duas representações do mesmo dado:** o *Periodontal Odontogram* (gráfico) e a *Perio Data
+  Entry* (numérica), e o que se digita na segunda desenha na primeira.
+- **Medidas por sítio:** profundidade de bolsa, margem gengival, **CAL calculado** a partir das
+  duas, sangramento, supuração e placa.
+- **Ordem de tabulação configurável** — o cursor avança sozinho na ordem em que o profissional
+  mede, com **cinco opções** vindas de um grupo de trabalho de periodontia, definidas por prática
+  e sobrescritíveis por profissional no perfil.
+- **Atalhos de teclado** para sangramento/supuração/placa, e botões para marcar sangramento ou
+  placa em **todos** os sítios de uma vez.
+- **Entrada de dois dígitos** como modo, porque o avanço automático do cursor precisa saber se
+  espera um ou dois caracteres.
+- **Limiar de profundidade** configurável (padrão 4), acima do qual o valor aparece em vermelho.
+- **Trava temporal:** *"Any new data is locked at midnight and data from a previous day cannot be
+  edited"* — o periograma é um exame datado, não um campo editável.
+- **A dentição governa o periograma:** dente não erupcionado, ausente ou extraído **não aceita**
+  medida periodontal, e deixa lacuna; dente removido não deixa nem lacuna (§3.2).
+
+> **Registrado como candidato a versionamento futuro por decisão de Max de 2026-09-03** — item 48
+> do `RELATORIO.md` §5.4. **E a biblioteca que a Subetapa 03.7 já adotou traz periodontograma
+> junto**: o sourcemap do pacote instalado contém `PerioChart.tsx` (108.155 caracteres de fonte),
+> `perioGraphic.ts`, `perioClassification.ts`, `perioExport.ts`, `perioPdf.ts` e
+> `fhir/toFhirPerio.ts` — **medido, não suposto**. Se essa superfície está exposta ou escondida na
+> nossa tela é pergunta para a 03.7 e entra no relatório de impacto; o que está medido aqui é que
+> o código veio no pacote e já foi pago em bytes.
 
 ---
 
@@ -628,10 +720,19 @@ Nunca preenchidas por inferência (`CLAUDE.md` §11, "Se esgotar" do plano):
 5. **73 páginas de `release` e 34 de `video` foram coletadas mas não lidas por inteiro** — são
    notas de versão e páginas que só embutem os vídeos já analisados. Estão no bruto
    (`~/.claude/jobs/analise-ice/site.json`) e podem ser lidas sob demanda.
-6. **Periodontia lida só na estrutura.** O ICE tem periograma completo (profundidade de bolsa,
-   margem gengival, CAL calculado, sangramento, supuração, placa, ordem de tabulação configurável,
-   trava à meia-noite). Está fora do MVP odontológico do Vitrine e por isso não foi aprofundado —
-   registrado como existente, não analisado.
+6. **Periodontia e ortodontia lidas na estrutura, não aprofundadas.** Estão fora do MVP
+   odontológico do Vitrine, e por isso foram fichadas em §5.8 e §5.7 sem varredura página a
+   página. **Por decisão de Max de 2026-09-03 as duas viraram candidatas a versionamento futuro**
+   — itens **48** e **49** do `RELATORIO.md` §5.4 —, justamente para que o vínculo entre a ideia e
+   a fonte que a originou não se perca. **Uma pesquisa dedicada a cada uma está disponível a
+   pedido e não exige nova coleta:** as 424 páginas e as 31 transcrições seguem em
+   `~/.claude/jobs/analise-ice/`. **Contado, não estimado:** o help center tem **4 páginas** de
+   periodontia (`gather/periodontal-overview`, `enter-perio-findings`,
+   `manage-periodontal-chart-settings`, `use-perio-keyboard-shortcuts`) mais a seção *Periodontal
+   Settings* de `configure/practice-settings-charting`, e **16 páginas** de ortodontia (9 em
+   `treatment/`, 7 em `financials/`). Das 20, **10 já foram lidas por inteiro** nesta rodada; as
+   outras 10 estão coletadas e disponíveis. **Periodontia é a mais rasa das duas na fonte** — o
+   que ela tem de profundo está no periodontograma do produto, e não em texto de ajuda.
 
 ---
 

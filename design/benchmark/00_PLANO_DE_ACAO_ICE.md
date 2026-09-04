@@ -307,6 +307,41 @@ como nota no `RELATORIO.md` sem renumerar nada, ficando `25-MVP`/`26-MVP` distin
 
 ---
 
+## 8-B. Duas instruções de Max na PARADA 2 (2026-09-03)
+
+Dadas junto com a aprovação das evidências, e **aplicadas antes de o relatório de impacto ser
+escrito** — não deixadas para a sessão seguinte.
+
+### M1 — O faturamento brasileiro é antecipado, e isso contradiz a fonte
+
+> *"No Brasil, é comum o paciente pagar adiantado pelo procedimento, portanto, muitas faturas saem
+> após a apresentação e aprovação do plano/contrato (assinatura do contrato) e não quando o
+> profissional executa o procedimento e 'marca o procedimento na face trabalhada do dente' lá no
+> odontograma. […] de forma que a cobrança e pagamento estejam livres antes mesmo do procedimento
+> mas que, ao mesmo instante, que o sistema não permita marcar o contrato como finalizado enquanto
+> o paciente não pagar tudo e enquanto o profissional não executar o trabalho em todas as faces de
+> dentes planejadas."*
+
+**Onde ficou registrado:** `fontes/ice.md` §5.6 (com o que o ICE já tem que serve e o que ele não
+tem) e `RELATORIO.md` §5.4, em destaque antes do Grupo B. **Entra no relatório de impacto como
+restrição de desenho da Subetapa 03.8**, e não como achado do ICE — é regra de mercado brasileiro,
+e a fonte diz o contrário.
+
+### M2 — Periodontia e ortodontia entram desde já como versionamento futuro
+
+> *"incluir os serviços e estruturas específicos para periodonto e ortodonto são, de fato, grandes
+> interesses para os versionamentos futuros […] registre ambas as ideias como possibilidades
+> futuras desde já, para que não percamos o link entre as ideias (periodonto + orto) e a fonte
+> (ICE) que originou as ideias."*
+
+**Onde ficou registrado:** itens **48** (periodontia) e **49** (ortodontia) do `RELATORIO.md`
+§5.4, cada um apontando para a seção da fonte que o originou — `fontes/ice.md` §5.8 e §5.7. A
+lacuna declarada nº 6 de `ice.md` foi reescrita para deixar de ser "não analisado" e passar a ser
+"fichado, com pesquisa dedicada disponível a pedido". **Nenhum dos dois é planejado**
+(`CLAUDE.md` §15) — são registro de ideia com fonte preservada, que é exatamente o que Max pediu.
+
+---
+
 ## 9. Fora de escopo
 
 - **Nenhuma implantação.** Nada em `crm/`, `db/`, `supabase/`, `docs/`. Nem correção do que o CODE

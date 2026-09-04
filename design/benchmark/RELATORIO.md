@@ -299,6 +299,37 @@ perderem; o efeito real deles está no relatório de impacto.
 | — | **O preço se resolve por escada**, não se escolhe na linha; PPO entra como ajuste contratual | **item 1** (orçamento) | §5.2 |
 | — | **A cobrança nasce do status `Completed` do procedimento**, não da aprovação de um orçamento | **item 1** | §4.1, §5.4 |
 
+> ### ⚠️ A inversão brasileira — instrução de Max de 2026-09-03, e ela contradiz a fonte
+>
+> **No ICE a cobrança nasce da EXECUÇÃO** (status `Completed` do procedimento, §4.1 de
+> `fontes/ice.md`). **No Brasil é comum o inverso:** o paciente **paga adiantado**, e a fatura sai
+> da **apresentação e aprovação do plano — da assinatura do contrato**, não de o dentista marcar a
+> face trabalhada no odontograma. Quem esperar a execução para faturar não fatura nunca.
+>
+> **A regra fixada por Max, nas duas metades, e as duas são obrigatórias:**
+>
+> 1. **A cobrança se solta na aprovação do plano/contrato**, livre e antes de qualquer execução.
+> 2. **O contrato não se finaliza** enquanto não forem verdadeiras ao mesmo tempo: (a) o paciente
+>    pagou **tudo** e (b) o profissional executou o trabalho em **todas as faces de todos os
+>    dentes planejados**.
+>
+> **O que o ICE já tem que serve** — e é o que impede isso de virar invenção: `PL Planned` *"does
+> not create financial charge, **but you can accept pre-payment for it**"*; o saldo
+> `Total Prepayment` é definido como *"the amount paid and allocated to **planned procedures**"*;
+> e o plano de pagamento não-ortodôntico é criado para *"**planned** or completed procedures"*.
+> O mecanismo existe na fonte; o que muda é qual caminho é o padrão.
+>
+> **O que o ICE não tem, e por isso não se copia:** o ICE **não tem contrato**. Tem termo de
+> consentimento (clínico) e plano de pagamento (financeiro), e nenhum dos dois fecha o ciclo do
+> outro.
+>
+> **Consequência de modelagem para a Subetapa 03.8:** o estado "terminou?" passa a ser derivado de
+> **duas fontes independentes** — o saldo em `aba_finance` e a cobertura de execução por face em
+> `aba_health`. Nenhuma responde sozinha, e declarar concluído no último pagamento ignoraria as
+> faces que faltam. É a mesma classe de armadilha que a 02.10 já pagou (`instrucoes.md` §5): o
+> agendador zerou o KPI "Vencido" porque a fatura saía do contador exatamente quando virava
+> pendência.
+
 **Grupo B — itens novos candidatos ao MVP.**
 
 | # | O que | Por que agora | Onde encosta |
@@ -322,6 +353,8 @@ perderem; o efeito real deles está no relatório de impacto.
 | **45** | **Reconhecimento de receita diferida** — plano longo com duração estimada, receita "ganha" × "futura", e conciliação obrigatória no cancelamento | O ICE faz isso para ortodontia; a estrutura serve a qualquer tratamento longo. Encosta no item 27 (plano recorrente) |
 | **46** | **Conjunto de código como configuração**, com código próprio da clínica **mapeado** a um código oficial para herdar visual e faturamento | Generaliza o que a 03.6 fez com o SIGTAP: hoje a semente é fixa; aqui a clínica cria os próprios códigos sem sair do padrão nacional |
 | **47** | **Anexo cujo tipo governa o acesso** — o arquivo herda a permissão do domínio a que pertence (financeiro, imagem, agenda, prontuário) | Vale diretamente para a Subetapa 03.11 (caixa de entrada de exames): hoje o nosso bucket é clínico ou não é |
+| **48** | **PERIODONTIA como especialidade completa** — periodontograma gráfico + entrada numérica espelhados; medidas por sítio (profundidade de bolsa, margem gengival, **CAL calculado**, sangramento, supuração, placa); **ordem de tabulação configurável** por prática e por profissional (5 opções, vindas de um grupo de trabalho de periodontia); atalhos de teclado e marcação em massa; entrada de dois dígitos como modo; limiar de profundidade que pinta o valor de vermelho; **trava à meia-noite** (o periograma é exame datado, não campo editável); e a dentição governando quais sítios existem | **Registrado a pedido de Max, 2026-09-03**, para o vínculo ideia↔fonte não se perder. Fonte: `fontes/ice.md` §5.8. **E há um ativo já pago:** o sourcemap de `react-advanced-odontogram` (adotado na 03.7) traz `PerioChart.tsx`, `perioGraphic.ts`, `perioClassification.ts`, `perioExport.ts`, `perioPdf.ts` e `fhir/toFhirPerio.ts` — medido, não suposto. Uma **pesquisa dedicada de periodontia sobre a fonte ICE** está disponível a pedido: o material bruto (424 páginas, 32 vídeos) segue em disco e não exige nova coleta |
+| **49** | **ORTODONTIA como especialidade completa** — plano ortodôntico com ciclo `rascunho → ativo → concluído \| cancelado` irreversível a partir de ativo; duração estimada obrigatória para ativar; **agenda de receita diferida** (receita *ganha* × *futura* calculada pela duração); conclusão antecipada lançando a receita futura como ganha; **cancelamento que obriga a conciliar** o faturado com o executado; lançamento de dados por visita com cópia da visita anterior e pré-lançamento da próxima; plano de pagamento ortodôntico próprio (aceita conta de convênio, não aceita cobrança nova); e guia com o valor integral do procedimento | **Registrado a pedido de Max, 2026-09-03**, mesmo motivo. Fonte: `fontes/ice.md` §5.7. É também a modelagem de **reconhecimento de receita** que serve a qualquer tratamento longo, não só ortodontia — e que o nosso `aba_finance` não tem. Mesma oferta de pesquisa dedicada |
 
 ## 6. (d) Preço praticável
 
