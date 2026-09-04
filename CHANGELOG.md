@@ -2,6 +2,17 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-09-04 (Subetapa 03.8 — o plano de tratamento nasce, e é uma matriz)
+
+- **O CRM ganhou o plano de tratamento — e ele não é uma lista de itens com preço.** É uma matriz: cada **linha** é uma fase clínica (Emergência, Sistêmica, Aguda, Controle de doença, Definitiva, Manutenção — configuráveis pela clínica), e cada **coluna** é uma opção de tratamento concorrente. O ordenamento é clínico, não comercial: é a ordem em que o tratamento acontece, não a ordem em que se vende.
+- **Duas alternativas para a mesma cárie ficam lado a lado.** O diagnóstico atravessa as colunas e o procedimento mora dentro de uma delas — é essa forma que transforma o orçamento numa conversa clínica com o paciente, em vez de uma folha de preços.
+- **O que o paciente escolheu e o que ele recusou ficam os dois registrados.** Consentir a Opção A move os procedimentos dela de "proposto" para "planejado" **e marca como recusados os da Opção B para o mesmo diagnóstico** — só os do mesmo diagnóstico, porque o que trata outra coisa ninguém recusou. O registro da recusa é o que protege a clínica depois, e por isso ele não se apaga: só uma proposta ainda não recusada pode ser removida.
+- **As regras que o catálogo declarava passaram a valer de verdade.** Um código que só vale em dente posterior é recusado num incisivo; um código de até três faces é recusado com quatro; um código lançado por dente é recusado sem dente; e um código com teto de quantidade é recusado no lançamento que passa do teto. Nada disso depende de a tela lembrar — é o banco que recusa.
+- **Procedimento que exige termo de consentimento não sai de "proposto" sem ele**, e um termo revogado não serve. Os dois requisitos que o catálogo distingue — consentimento comum e consentimento informado, para procedimento de risco significativo — passaram a exigir termos diferentes, e "Consentimento informado" virou um tipo próprio na aba de Consentimentos.
+- **Trocar o dente ou o código exige termo novo; trocar face, fase, opção ou diagnóstico não.** A regra está gravada no banco, não espalhada pela tela, e ela devolve o procedimento para "proposto" no momento em que o dente muda.
+- **Ainda não há tela.** Esta entrega é a fundação — modelo, regras e operações. A tela da matriz chega junto com o preço, na próxima entrega. E como ainda não há tela, o módulo "Planos" aparece na configuração de permissões e não aparece no menu.
+- Nada de dinheiro entrou aqui: sem preço, sem contrato, sem fatura. O plano é o planejamento clínico; o orçamento é a vista financeira dele, e vem depois.
+
 ## [+1.0] - 2026-09-04 (Subetapa 03.7.a — odontograma autoral, com a face clicável)
 
 - **Agora se clica na FACE do dente, e um pop-up abre ali mesmo.** O odontograma anterior só aceitava clique no dente inteiro: para dizer em qual face estava a cárie, era preciso ir a um painel lateral e marcar caixinhas. Agora a mesial, a distal, a vestibular, a lingual e a oclusal (ou incisal, nos dentes da frente) são cinco áreas clicáveis do próprio desenho, e a coroa e cada raiz também.

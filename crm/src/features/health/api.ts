@@ -520,12 +520,34 @@ export function useProfissionais() {
 // Consentimentos (`aba_health.consentimentos`)
 // ============================================================
 
-export const TIPOS_CONSENTIMENTO = ["tratamento_dados", "procedimento", "uso_imagem"] as const;
+/**
+ * QUATRO TIPOS desde a Subetapa 03.8 — `procedimento_informado` entrou com
+ * a migration `045`.
+ *
+ * O catálogo de procedimentos declara DOIS requisitos de termo desde a
+ * 03.6.a (`exige_consentimento_tratamento` e `exige_consentimento_informado`,
+ * este último para procedimento de risco significativo), e a trava do plano
+ * de tratamento cobra um termo VIGENTE do tipo certo para deixar o
+ * procedimento sair de `proposto`. Sem este quarto valor a recepção não teria
+ * como coletar o termo que a trava exige — a regra existiria no banco e seria
+ * inalcançável pela tela, que é a pior das duas metades.
+ *
+ * `estado novo num CHECK exige revisar quem filtrava pelo estado antigo`
+ * (`handoffs/instrucoes.md` §5): os consumidores são estes dois — a lista e o
+ * seletor de `ConsentimentosTab`, ambos dirigidos por esta constante.
+ */
+export const TIPOS_CONSENTIMENTO = [
+  "tratamento_dados",
+  "procedimento",
+  "procedimento_informado",
+  "uso_imagem",
+] as const;
 export type TipoConsentimento = (typeof TIPOS_CONSENTIMENTO)[number];
 
 export const ROTULO_CONSENTIMENTO: Record<TipoConsentimento, string> = {
   tratamento_dados: "Tratamento de dados",
   procedimento: "Procedimento",
+  procedimento_informado: "Consentimento informado",
   uso_imagem: "Uso de imagem",
 };
 
