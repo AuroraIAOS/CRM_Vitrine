@@ -1,0 +1,47 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>NOTA 04 — prova de clique por face</title>
+<style>
+  body { font: 14px system-ui, sans-serif; margin: 24px; color: #0f172a; background: #fff; }
+  .linha { display: flex; gap: 32px; align-items: flex-start; }
+  #log { margin-top: 20px; font-family: ui-monospace, monospace; font-size: 13px;
+         white-space: pre; background: #f1f5f9; padding: 12px; border-radius: 6px; min-height: 60px; }
+</style>
+<h1>Amostra da NOTA 04 — face, raiz e coroa clicáveis</h1>
+<p>Clique em qualquer região. O identificador sai de <code>data-face</code> ou
+   <code>data-regiao</code> do próprio alvo do evento — sem cálculo de coordenada,
+   sem painel lateral, sem mapa de pixels.</p>
+<div class="linha" id="dentes"></div>
+<div id="log">(nenhum clique ainda)</div>
+<script>
+const ARQUIVOS = ["svg_1_incisivo_11.svg","svg_2_premolar_14.svg","svg_3_molar_16.svg"];
+const alvo = document.getElementById("dentes");
+const log = document.getElementById("log");
+const registro = [];
+Promise.all(ARQUIVOS.map(f => fetch(f).then(r => r.text()))).then(svgs => {
+  svgs.forEach(s => { const d = document.createElement("div"); d.innerHTML = s; alvo.appendChild(d); });
+  alvo.addEventListener("click", e => {
+    const el = e.target.closest("[data-face], [data-regiao]");
+    if (!el) return;
+    const svg = el.closest("svg");
+    const item = {
+      dente: svg.dataset.dente,
+      regiao: el.dataset.face || el.dataset.regiao,
+      indice: el.dataset.indice || null,
+      id: el.id,
+    };
+    // Ciclo de três estados, o mesmo vocabulário da Subetapa 03.7.
+    const ordem = ["", "a_realizar", "executado", "existente"];
+    const atual = el.getAttribute("data-marcado") || "";
+    const proximo = ordem[(ordem.indexOf(atual) + 1) % ordem.length];
+    if (proximo) el.setAttribute("data-marcado", proximo); else el.removeAttribute("data-marcado");
+    item.marcado = proximo || null;
+    registro.push(item);
+    window.__cliques = registro;
+    log.textContent = registro.slice(-8).map(r =>
+      `dente ${r.dente} · ${r.regiao}${r.indice ? " #" + r.indice : ""} · ${r.marcado || "(limpo)"}`
+    ).join("\n");
+  });
+  window.__pronto = true;
+});
+</script>

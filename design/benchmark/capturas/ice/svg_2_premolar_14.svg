@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 260" width="120" height="260"
+     role="img" aria-label="Primeiro pré-molar superior direito — dente 14" data-dente="14" data-tipo="premolar">
+  <title>Primeiro pré-molar superior direito (FDI 14) — faces: mesial, distal, vestibular, lingual, oclusal</title>
+  <style>
+    .raiz  { fill: #e7e0d3;    stroke: #334155; stroke-width: 1.6; }
+    .coroa { fill: #f8fafc; stroke: #334155; stroke-width: 1.6; }
+    .face  { fill: #e2e8f0; stroke: #334155; stroke-width: 1.2; }
+    .raiz, .coroa, .face { cursor: pointer; }
+    .rotulo { font: 600 11px system-ui, sans-serif; fill: #334155;
+              text-anchor: middle; pointer-events: none; user-select: none; }
+    .num    { font: 600 13px system-ui, sans-serif; fill: #334155;
+              text-anchor: middle; pointer-events: none; }
+    /* A marcação é um atributo de dado, não uma classe de estilo solta: quem lê
+       o SVG salvo sabe o que está marcado sem interpretar cor. */
+    [data-marcado="a_realizar"] { fill: #fde68a; }
+    [data-marcado="executado"]  { fill: #86efac; }
+    [data-marcado="existente"]  { fill: #93c5fd; }
+  </style>
+  <g id="dente-14">
+    <g id="regiao-raiz">
+    <path id="raiz-1" data-regiao="raiz" data-indice="1" class="raiz" d="M 45.5 118 C 48.5 76, 51.0 44, 58.8 24 C 57.0 44, 59.5 76, 62.5 118 Z" />
+    <path id="raiz-2" data-regiao="raiz" data-indice="2" class="raiz" d="M 57.5 118 C 54.5 76, 63.0 44, 61.2 24 C 69.0 44, 77.5 76, 74.5 118 Z" />
+    </g>
+    <g id="regiao-coroa">
+    <path id="coroa" data-regiao="coroa" class="coroa" d="M 41 114 L 44 172 Q 60 184 76 172 L 79 114 Z" />
+    </g>
+    <text class="num" x="60" y="200">14</text>
+    <g id="regiao-faces" transform="translate(0, 14)">
+    <path id="face-distal" data-face="distal" class="face" d="M 41.62 234.38 A 26 26 0 0 1 41.62 197.62 L 52.28 208.28 A 10.92 10.92 0 0 0 52.28 223.72 Z" />
+    <text class="rotulo" x="41.3" y="220.0">D</text>
+    <path id="face-vestibular" data-face="vestibular" class="face" d="M 41.62 197.62 A 26 26 0 0 1 78.38 197.62 L 67.72 208.28 A 10.92 10.92 0 0 0 52.28 208.28 Z" />
+    <text class="rotulo" x="60.0" y="201.3">V</text>
+    <path id="face-mesial" data-face="mesial" class="face" d="M 78.38 197.62 A 26 26 0 0 1 78.38 234.38 L 67.72 223.72 A 10.92 10.92 0 0 0 67.72 208.28 Z" />
+    <text class="rotulo" x="78.7" y="220.0">M</text>
+    <path id="face-lingual" data-face="lingual" class="face" d="M 78.38 234.38 A 26 26 0 0 1 41.62 234.38 L 52.28 223.72 A 10.92 10.92 0 0 0 67.72 223.72 Z" />
+    <text class="rotulo" x="60.0" y="238.7">L</text>
+    <circle id="face-oclusal" data-face="oclusal" class="face" cx="60" cy="216" r="10.92" />
+    </g>
+  </g>
+</svg>

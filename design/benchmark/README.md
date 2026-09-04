@@ -26,6 +26,18 @@ UX adotar continua sendo escolha de Max (`CLAUDE.md` §13).
 | ★ | [`../../handoffs/HANDOFF_PLANO_MVP.md`](../../handoffs/HANDOFF_PLANO_MVP.md) | **Abertura da próxima sessão** — vive em `handoffs/`, o diretório natural. Traz o roteiro de 7 etapas, a espinha do MVP, as 5 armadilhas medidas e as 6 decisões que o Plano precisa tomar. |
 | | [`capturar.mjs`](capturar.mjs) · [`assistir.mjs`](assistir.mjs) · [`frames_video.mjs`](frames_video.mjs) | Os coletores: sites, vídeos e quadros em alta resolução. |
 
+### Rodada 4 — o ICE Health System (2026-09-03)
+
+| | Arquivo | O que responde |
+|---|---|---|
+| ★ | [`fontes/ice.md`](fontes/ice.md) | **A fonte detalhada.** 424 páginas de help center e 32 vídeos do ICE Health System, com a URL de origem de cada bloco: o odontograma, o plano de tratamento, o financeiro, o convênio, os papéis e as lacunas declaradas. |
+| | [`00_PLANO_DE_ACAO_ICE.md`](00_PLANO_DE_ACAO_ICE.md) | O `[Goal]` que rege a pesquisa, com as **sete medições feitas antes de escrevê-lo** e as quatro paradas para aprovação de Max. |
+| | [`capturas/ice/INDICE.md`](capturas/ice/INDICE.md) | As **54 evidências visuais**, cada uma com a tese que sustenta, a URL e a data — mais a amostra SVG da NOTA 04, que é nossa. |
+| ★ | [`RELATORIO_DE_IMPACTO_ICE.md`](RELATORIO_DE_IMPACTO_ICE.md) | **O que muda na Etapa 03**, subetapa por subetapa, separando *reabre trabalho concluído* de *redesenha trabalho não iniciado* de *acrescenta item novo*. |
+| | [`coletar_ice.mjs`](coletar_ice.mjs) | O coletor da rodada 4 — site por HTTP puro, vídeo sem depender da skill `/watch`. |
+| | [`curar_capturas_ice.mjs`](curar_capturas_ice.mjs) | A curadoria: 1.023 imagens brutas → 54 com tese declarada, e o `INDICE.md` gerado no mesmo passo. |
+| | [`gerar_dentes_svg.mjs`](gerar_dentes_svg.mjs) · [`provar_dentes_svg.mjs`](provar_dentes_svg.mjs) | A amostra da NOTA 04 e a prova dela em navegador real (18/18 verdes). |
+
 ## Como esta pesquisa foi construída
 
 **Search-first sem exceção** (`CLAUDE.md` §11). Nada foi escrito de memória — nem preço, nem
