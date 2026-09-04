@@ -65,6 +65,18 @@ export function useAlternarAtivoCategoria() {
 // à mão que não seja da tabela SIGTAP.
 export type UnidadeLancamento = "dente" | "sextante" | "arcada" | "sessao" | "elemento";
 
+// `regiao_dentaria` — Subetapa 03.6.a, item 35. Metade da REGRA DE
+// FORMA do código: em que região da arcada ele vale. "Região" e não
+// "arco": arcada superior/inferior é outro conceito anatômico, e
+// `arcada` já é valor de `unidade_lancamento` aqui do lado.
+export type RegiaoDentaria = "anterior" | "posterior" | "ambas";
+
+export const ROTULO_REGIAO: Record<RegiaoDentaria, string> = {
+  anterior: "Só dente anterior",
+  posterior: "Só dente posterior",
+  ambas: "Anterior e posterior",
+};
+
 export const ROTULO_UNIDADE: Record<UnidadeLancamento, string> = {
   dente: "Por dente",
   sextante: "Por sextante",
@@ -84,10 +96,25 @@ export type Servico = {
   requerProfissional: boolean;
   requerRecurso: boolean;
   ativo: boolean;
+  /**
+   * DERIVADA no banco (Subetapa 03.6.a): o gatilho
+   * `aba_catalog.derivar_aceita_faces()` a mantém igual a
+   * `faces_maximo IS NOT NULL`. Continua sendo lida à vontade — só não
+   * se escreve nela. Para ligar, declare a regra de forma.
+   */
   aceitaFaces: boolean;
   unidadeLancamento: UnidadeLancamento | null;
   quantidadeMaxima: number | null;
   codigoSigtap: string | null;
+  // Regra de forma do código (03.6.a): quantas faces aceita e onde vale.
+  facesMinimo: number | null;
+  facesMaximo: number | null;
+  regiaoDentaria: RegiaoDentaria | null;
+  // Os três requisitos por código (item 35). A trava que os cobra é da
+  // Subetapa 03.8 — aqui eles são declarados, não exigidos.
+  exigeConsentimentoTratamento: boolean;
+  exigeConsentimentoInformado: boolean;
+  exigeAchadoDiagnostico: boolean;
   variantes: Variante[];
 };
 
@@ -104,7 +131,7 @@ export function useServicos() {
         db()
           .from("servicos")
           .select(
-            "id, categoria_id, nome, descricao, duracao_padrao_minutos, preco_base, requer_profissional, requer_recurso, ativo, aceita_faces, unidade_lancamento, quantidade_maxima, codigo_sigtap",
+            "id, categoria_id, nome, descricao, duracao_padrao_minutos, preco_base, requer_profissional, requer_recurso, ativo, aceita_faces, unidade_lancamento, quantidade_maxima, codigo_sigtap, faces_minimo, faces_maximo, regiao_dentaria, exige_consentimento_tratamento, exige_consentimento_informado, exige_achado_diagnostico",
           )
           .eq("account_id", accountId!)
           .order("nome"),
@@ -136,6 +163,12 @@ export function useServicos() {
         unidadeLancamento: s.unidade_lancamento as UnidadeLancamento | null,
         quantidadeMaxima: s.quantidade_maxima,
         codigoSigtap: s.codigo_sigtap,
+        facesMinimo: s.faces_minimo,
+        facesMaximo: s.faces_maximo,
+        regiaoDentaria: s.regiao_dentaria as RegiaoDentaria | null,
+        exigeConsentimentoTratamento: s.exige_consentimento_tratamento,
+        exigeConsentimentoInformado: s.exige_consentimento_informado,
+        exigeAchadoDiagnostico: s.exige_achado_diagnostico,
         variantes: (variantes ?? [])
           .filter((v) => v.servico_id === s.id)
           .map((v) => ({
@@ -164,10 +197,15 @@ export function useCriarServico() {
       precoBase: number;
       requerProfissional: boolean;
       requerRecurso: boolean;
-      aceitaFaces?: boolean;
       unidadeLancamento?: UnidadeLancamento;
       quantidadeMaxima?: number;
       codigoSigtap?: string;
+      facesMinimo?: number;
+      facesMaximo?: number;
+      regiaoDentaria?: RegiaoDentaria;
+      exigeConsentimentoTratamento?: boolean;
+      exigeConsentimentoInformado?: boolean;
+      exigeAchadoDiagnostico?: boolean;
     }) => {
       const { error } = await db().from("servicos").insert({
         account_id: profile!.accountId,
@@ -178,10 +216,19 @@ export function useCriarServico() {
         preco_base: input.precoBase,
         requer_profissional: input.requerProfissional,
         requer_recurso: input.requerRecurso,
-        aceita_faces: input.aceitaFaces ?? false,
+        // `aceita_faces` NÃO vai aqui: é derivada no banco pelo gatilho
+        // `derivar_aceita_faces()` a partir de `faces_maximo` (migration
+        // 043). Mandar valor daqui não daria erro — seria só ignorado —,
+        // e é exatamente por isso que não se manda.
         unidade_lancamento: input.unidadeLancamento || null,
         quantidade_maxima: input.quantidadeMaxima || null,
         codigo_sigtap: input.codigoSigtap || null,
+        faces_minimo: input.facesMinimo ?? null,
+        faces_maximo: input.facesMaximo ?? null,
+        regiao_dentaria: input.regiaoDentaria || null,
+        exige_consentimento_tratamento: input.exigeConsentimentoTratamento ?? false,
+        exige_consentimento_informado: input.exigeConsentimentoInformado ?? false,
+        exige_achado_diagnostico: input.exigeAchadoDiagnostico ?? false,
       });
       if (error) throw error;
     },

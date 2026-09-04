@@ -2,6 +2,12 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+0.1] - 2026-09-04 (Subetapa 03.6.a — a regra de cada código de procedimento)
+- **Cada procedimento do catálogo agora carrega a própria regra.** Além do código SIGTAP, da unidade de lançamento e do teto de quantidade que a 03.6 trouxe, dá para declarar **quantas faces** aquele código aceita (de 1 a 5) e se ele vale **só em dente anterior, só em posterior ou nos dois**. Uma "resina de 2 faces em dente posterior" passa a ser uma regra que o banco conhece, não um combinado que só existe na cabeça de quem cadastrou.
+- **A caixa "aceita marcação por face" sumiu do formulário — e isso é melhoria, não perda.** Ela agora é deduzida sozinha: quem preenche o intervalo de faces já está dizendo que o procedimento aceita face. Um a menos para marcar, e um a menos para esquecer de marcar (ou marcar errado).
+- **Três requisitos por procedimento, declarados no cadastro:** exige termo de consentimento, exige consentimento informado (para procedimento de risco significativo) e exige achado diagnóstico vinculado. Ficam visíveis como selos na ficha do serviço. Por enquanto são a declaração; a trava que impede um procedimento sem consentimento de avançar no plano de tratamento chega na próxima entrega.
+- Os 64 procedimentos SIGTAP já semeados continuam intactos, e as três "restaurações" ganharam a regra de forma que a descrição oficial delas já dizia — anterior, posterior e decíduo.
+
 ## [+1.0] - 2026-09-03 (Subetapa 03.7 — odontograma)
 - **O CRM ganhou um odontograma de verdade.** Não é mais uma grade de 32 quadradinhos com um estado por dente: é a arcada desenhada dente a dente, com cárie e restauração **por face**, dentição permanente, decídua e **mista**, dente ausente, implante, raiz residual, prótese, diagnóstico pulpar e apical, ortodontia e ficha periodontal completa. Tudo em português.
 - **O tratamento tem duas cartas: o que existe hoje e o que está planejado.** O profissional marca a boca como ela está, monta o plano ao lado, e o sistema mostra a diferença entre os dois. Cada dente aparece na sessão como **existente**, **a realizar** ou **executado** — e "executado" ninguém digita: nasce sozinho quando o que a sessão passada planejou já aparece na boca desta.

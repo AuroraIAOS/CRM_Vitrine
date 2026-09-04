@@ -11,8 +11,10 @@ import {
   useDefinirVariantePadrao,
   useSemearProcedimentosSigtap,
   ROTULO_UNIDADE,
+  ROTULO_REGIAO,
   type Servico,
   type UnidadeLancamento,
+  type RegiaoDentaria,
 } from "./api";
 
 const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -26,10 +28,18 @@ function FormularioNovoServico({ onCriado, onCancelar }: { onCriado: () => void;
   const [preco, setPreco] = useState("");
   const [requerProfissional, setRequerProfissional] = useState(true);
   const [requerRecurso, setRequerRecurso] = useState(false);
-  const [aceitaFaces, setAceitaFaces] = useState(false);
   const [unidadeLancamento, setUnidadeLancamento] = useState<UnidadeLancamento | "">("");
   const [quantidadeMaxima, setQuantidadeMaxima] = useState("");
   const [codigoSigtap, setCodigoSigtap] = useState("");
+  // Regra de forma do código (Subetapa 03.6.a). "Aceita marcação por
+  // face" deixou de ser uma caixa de seleção: agora é consequência de
+  // declarar quantas faces o código aceita, e quem deriva é o banco.
+  const [facesMinimo, setFacesMinimo] = useState("");
+  const [facesMaximo, setFacesMaximo] = useState("");
+  const [regiaoDentaria, setRegiaoDentaria] = useState<RegiaoDentaria | "">("");
+  const [exigeConsentimentoTratamento, setExigeConsentimentoTratamento] = useState(false);
+  const [exigeConsentimentoInformado, setExigeConsentimentoInformado] = useState(false);
+  const [exigeAchadoDiagnostico, setExigeAchadoDiagnostico] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   return (
@@ -41,12 +51,25 @@ function FormularioNovoServico({ onCriado, onCancelar }: { onCriado: () => void;
           e.preventDefault();
           setErro(null);
           if (!categoriaId) return;
-          // Espelha a CHECK do banco (servicos_aceita_faces_exige_unidade)
-          // aqui na tela — a validação de verdade é a do banco, isto só
-          // evita a viagem de ida e volta com um erro óbvio.
-          if (aceitaFaces && !unidadeLancamento) {
-            setErro("Procedimento que aceita face precisa de uma unidade de lançamento.");
+          // Espelha as CHECKs do banco (servicos_faces_intervalo,
+          // servicos_faces_exigem_dente) aqui na tela — a validação de
+          // verdade é a do banco, isto só evita a viagem de ida e volta
+          // com um erro óbvio.
+          const fMin = facesMinimo ? Number(facesMinimo) : null;
+          const fMax = facesMaximo ? Number(facesMaximo) : null;
+          if ((fMin === null) !== (fMax === null)) {
+            setErro("A regra de faces precisa dos dois extremos: mínimo e máximo.");
             return;
+          }
+          if (fMin !== null && fMax !== null) {
+            if (fMin < 1 || fMax > 5 || fMin > fMax) {
+              setErro("O dente tem 5 faces: o intervalo vai de 1 a 5, e o mínimo não passa do máximo.");
+              return;
+            }
+            if (unidadeLancamento !== "dente") {
+              setErro("Face é superfície de dente — código com regra de faces precisa ser lançado por dente.");
+              return;
+            }
           }
           criar.mutate(
             {
@@ -56,10 +79,15 @@ function FormularioNovoServico({ onCriado, onCancelar }: { onCriado: () => void;
               precoBase: Number(preco.replace(",", ".")) || 0,
               requerProfissional,
               requerRecurso,
-              aceitaFaces,
               unidadeLancamento: unidadeLancamento || undefined,
               quantidadeMaxima: quantidadeMaxima ? Number(quantidadeMaxima) : undefined,
               codigoSigtap: codigoSigtap.trim() || undefined,
+              facesMinimo: fMin ?? undefined,
+              facesMaximo: fMax ?? undefined,
+              regiaoDentaria: regiaoDentaria || undefined,
+              exigeConsentimentoTratamento,
+              exigeConsentimentoInformado,
+              exigeAchadoDiagnostico,
             },
             { onSuccess: onCriado, onError: (err) => setErro((err as { message?: string })?.message ?? "Falha ao criar serviço") },
           );
@@ -127,19 +155,15 @@ function FormularioNovoServico({ onCriado, onCancelar }: { onCriado: () => void;
             <input type="checkbox" checked={requerRecurso} onChange={(e) => setRequerRecurso(e.target.checked)} />
             Requer sala/recurso
           </label>
-          <label className="flex items-center gap-1.5 text-[11.5px] text-secondary-foreground">
-            <input type="checkbox" checked={aceitaFaces} onChange={(e) => setAceitaFaces(e.target.checked)} />
-            Aceita marcação por face (odontograma)
-          </label>
         </div>
 
         <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
           <div className="flex flex-col gap-1">
             <label className="text-[11px] font-medium text-secondary-foreground">
-              Unidade de lançamento {aceitaFaces && <span className="text-destructive">*</span>}
+              Unidade de lançamento {facesMaximo && <span className="text-destructive">*</span>}
             </label>
             <select
-              required={aceitaFaces}
+              required={!!facesMaximo}
               className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
               value={unidadeLancamento}
               onChange={(e) => setUnidadeLancamento(e.target.value as UnidadeLancamento | "")}
@@ -171,6 +195,90 @@ function FormularioNovoServico({ onCriado, onCancelar }: { onCriado: () => void;
               onChange={(e) => setCodigoSigtap(e.target.value)}
               placeholder="Ex.: 03.07.01.003-1"
             />
+          </div>
+        </div>
+
+        {/*
+          Regra de forma do código (Subetapa 03.6.a, item 35). Não é
+          rótulo: é o que o banco valida agora, e o que a trava do plano
+          de tratamento vai cobrar contra cada linha orçada.
+        */}
+        <div className="flex flex-col gap-1.5 rounded-md border border-hairline px-3 py-2.5">
+          <span className="text-[11px] font-medium text-foreground">Regra do código</span>
+          <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium text-secondary-foreground">Faces: mínimo</label>
+              <input
+                type="number"
+                min={1}
+                max={5}
+                className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
+                value={facesMinimo}
+                onChange={(e) => setFacesMinimo(e.target.value)}
+                placeholder="—"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium text-secondary-foreground">Faces: máximo</label>
+              <input
+                type="number"
+                min={1}
+                max={5}
+                className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
+                value={facesMaximo}
+                onChange={(e) => setFacesMaximo(e.target.value)}
+                placeholder="—"
+              />
+            </div>
+            <div className="flex flex-col gap-1 md:col-span-2">
+              <label className="text-[11px] font-medium text-secondary-foreground">Região dentária</label>
+              <select
+                className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
+                value={regiaoDentaria}
+                onChange={(e) => setRegiaoDentaria(e.target.value as RegiaoDentaria | "")}
+              >
+                <option value="">Sem restrição declarada</option>
+                {(Object.keys(ROTULO_REGIAO) as RegiaoDentaria[]).map((r) => (
+                  <option key={r} value={r}>
+                    {ROTULO_REGIAO[r]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <span className="text-[10.5px] text-muted-foreground">
+            Preencher o intervalo de faces é o que marca o procedimento como "aceita marcação por face" no odontograma —
+            o sistema deduz sozinho. O dente tem 5 faces (mesial, distal, vestibular, lingual e oclusal/incisal).
+          </span>
+        </div>
+
+        <div className="flex flex-col gap-1.5 rounded-md border border-hairline px-3 py-2.5">
+          <span className="text-[11px] font-medium text-foreground">Requisitos deste procedimento</span>
+          <div className="flex flex-wrap items-center gap-4">
+            <label className="flex items-center gap-1.5 text-[11.5px] text-secondary-foreground">
+              <input
+                type="checkbox"
+                checked={exigeConsentimentoTratamento}
+                onChange={(e) => setExigeConsentimentoTratamento(e.target.checked)}
+              />
+              Exige termo de consentimento
+            </label>
+            <label className="flex items-center gap-1.5 text-[11.5px] text-secondary-foreground">
+              <input
+                type="checkbox"
+                checked={exigeConsentimentoInformado}
+                onChange={(e) => setExigeConsentimentoInformado(e.target.checked)}
+              />
+              Exige consentimento informado (risco significativo)
+            </label>
+            <label className="flex items-center gap-1.5 text-[11.5px] text-secondary-foreground">
+              <input
+                type="checkbox"
+                checked={exigeAchadoDiagnostico}
+                onChange={(e) => setExigeAchadoDiagnostico(e.target.checked)}
+              />
+              Exige achado diagnóstico vinculado
+            </label>
           </div>
         </div>
 
@@ -243,7 +351,14 @@ function DetalheServico({ servico }: { servico: Servico }) {
     <Card className="flex flex-col gap-3 p-4">
       <span className="text-[12.5px] font-medium text-foreground">Variantes de {servico.nome}</span>
 
-      {(servico.aceitaFaces || servico.unidadeLancamento || servico.quantidadeMaxima || servico.codigoSigtap) && (
+      {(servico.aceitaFaces ||
+        servico.unidadeLancamento ||
+        servico.quantidadeMaxima ||
+        servico.codigoSigtap ||
+        servico.regiaoDentaria ||
+        servico.exigeConsentimentoTratamento ||
+        servico.exigeConsentimentoInformado ||
+        servico.exigeAchadoDiagnostico) && (
         <div className="flex flex-wrap gap-x-4 gap-y-1 rounded-md bg-content px-3 py-2 text-[10.5px] text-secondary-foreground">
           {servico.codigoSigtap && (
             <span>
@@ -252,7 +367,21 @@ function DetalheServico({ servico }: { servico: Servico }) {
           )}
           {servico.unidadeLancamento && <span>Lançado {ROTULO_UNIDADE[servico.unidadeLancamento].toLowerCase()}</span>}
           {servico.quantidadeMaxima != null && <span>Máximo de {servico.quantidadeMaxima} por unidade</span>}
+          {/* Regra de forma do código (03.6.a) — `aceitaFaces` continua
+              sendo lida aqui; o que mudou é que ela agora é derivada
+              do intervalo de faces, não digitada. */}
+          {servico.facesMaximo != null && (
+            <span>
+              {servico.facesMinimo === servico.facesMaximo
+                ? `Exatamente ${servico.facesMaximo} face${servico.facesMaximo === 1 ? "" : "s"}`
+                : `De ${servico.facesMinimo} a ${servico.facesMaximo} faces`}
+            </span>
+          )}
+          {servico.regiaoDentaria && <span>{ROTULO_REGIAO[servico.regiaoDentaria]}</span>}
           {servico.aceitaFaces && <Badge tone="neutral">Aceita marcação por face</Badge>}
+          {servico.exigeConsentimentoTratamento && <Badge tone="warning">Exige consentimento</Badge>}
+          {servico.exigeConsentimentoInformado && <Badge tone="warning">Exige consentimento informado</Badge>}
+          {servico.exigeAchadoDiagnostico && <Badge tone="warning">Exige achado diagnóstico</Badge>}
         </div>
       )}
 
