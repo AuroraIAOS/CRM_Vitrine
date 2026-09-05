@@ -100,10 +100,22 @@ export function useClientesDaConta() {
     queryKey: ["health-clientes", accountId],
     enabled: !!accountId,
     queryFn: async (): Promise<ClienteClinico[]> => {
+      // `data_nascimento` vem de `clientes`, NUNCA de `pessoas`.
+      //
+      // DEFEITO MEDIDO EM PRODUÇÃO (2026-09-05, demonstração da 03.8.a): a
+      // Subetapa 03.7.a passou a pedir a data de nascimento e a pediu na
+      // tabela errada — a coluna existe em `aba_people.clientes` desde a
+      // migration `004`, e não em `pessoas`. O PostgREST responde **400**,
+      // este `queryFn` lança, e a tela mostra "Nenhum cliente cadastrado
+      // nesta conta". O erro virou um ESTADO VAZIO PLAUSÍVEL — e ficou
+      // assim em produção, nas telas de Prontuário e de Plano, sem nada
+      // vermelho em lugar nenhum. `features/people/api.ts` sempre leu da
+      // tabela certa, que é o que tornou o defeito invisível: uma tela
+      // mostrava os 10 clientes e a outra dizia que não havia nenhum.
       const { data: clientes, error } = await supabase
         .schema("aba_people")
         .from("clientes")
-        .select("id, status")
+        .select("id, status, data_nascimento")
         .eq("account_id", accountId!);
       if (error) throw error;
       if (!clientes?.length) return [];
@@ -111,7 +123,7 @@ export function useClientesDaConta() {
       const { data: pessoas, error: pessoasErr } = await supabase
         .schema("aba_people")
         .from("pessoas")
-        .select("id, nome_exibicao, data_nascimento")
+        .select("id, nome_exibicao")
         .in(
           "id",
           clientes.map((c) => c.id),
@@ -125,7 +137,7 @@ export function useClientesDaConta() {
           return {
             id: c.id as string,
             nome: (p?.nome_exibicao as string) ?? "(sem nome)",
-            dataNascimento: (p?.data_nascimento as string) ?? null,
+            dataNascimento: (c.data_nascimento as string) ?? null,
           };
         })
         .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));

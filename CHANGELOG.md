@@ -2,6 +2,11 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+0.1] - 2026-09-05 (Correção — a lista de pacientes voltou ao Prontuário e ao Plano)
+
+- **O Prontuário e o Plano voltaram a listar os pacientes.** As duas telas diziam "Nenhum paciente cadastrado nesta conta" enquanto a tela de Pessoas mostrava os dez — o pedido de dados perguntava a data de nascimento na tabela errada, a resposta vinha com erro, e a tela tratava o erro como "não há ninguém". Quem abrisse o Prontuário por esse caminho via uma clínica vazia.
+- **A correção também vale como regra:** falha de carregamento e lista vazia não podem ter a mesma aparência. Um erro que se parece com um resultado normal é o defeito mais caro de achar — este só apareceu porque outra tela do produto discordava.
+
 ## [+1.0] - 2026-09-05 (Subetapa 03.8.a — o preço se resolve sozinho, e a tabela tem vigência)
 
 - **O preço deixou de ser digitado e passou a ser resolvido.** A clínica monta tabelas de preço em cinco degraus — Paciente, Tipo de profissional, Clínica, Grupo de clínicas e Prática — e o sistema percorre essa escada no momento do lançamento, do mais específico para o mais geral, até achar quem responda. **Ninguém escolhe tabela na tela**, e não é só uma decisão de layout: não existe, em lugar nenhum do sistema, um jeito de passar a tabela por parâmetro. A mesma consulta sai por R$ 250 com um clínico geral e R$ 400 com um especialista, sem que ninguém tenha decidido nada na hora.
