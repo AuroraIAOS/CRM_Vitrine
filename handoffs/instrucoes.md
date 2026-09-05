@@ -844,6 +844,22 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Regra que fica:** **navegação dirigida por dado transforma toda linha nova de catálogo em mudança de interface.** Antes de acrescentar módulo, pergunte o que a tela publicada fará com ele hoje — e lembre que o fallback que existe para ser tolerante é o mesmo que esconde a falta.
 - **Fonte:** Subetapa 03.8, 2026-09-04.
 
+### `REVOKE SELECT (coluna)` é inócuo enquanto existir o `GRANT SELECT` da TABELA — e a lição já estava escrita
+- **Gatilho:** Subetapa 03.8, migration `047`, ao fechar a leitura registrada do plano. A primeira versão fazia `REVOKE SELECT (titulo, observacao) ON aba_treatment.planos FROM authenticated` e as oito colunas clínicas **continuaram legíveis**.
+- **A causa:** privilégio de **tabela** cobre todas as colunas, e vive em outro lugar do catálogo. Revogar por coluna enquanto o `GRANT SELECT` de tabela ainda existe **não dá erro, não protege nada e não aparece em lugar nenhum** — o `REVOKE` é aceito, e a leitura continua passando. O caminho certo é o inverso: `REVOKE SELECT` da tabela inteira e depois `GRANT SELECT (lista que fica)`.
+- **E a reconcessão não é opcional:** em Postgres, `UPDATE ... WHERE id = $1` exige `SELECT` nas colunas que ele lê, inclusive as do `WHERE`. Revogar a tabela sem reconceder o metadado quebra toda escrita — por isso a verificação da migration confere as duas pontas: **nenhuma coluna clínica legível** *e* **o metadado ainda legível**.
+- **O que torna este caso valioso não é o erro, é onde ele já estava documentado:** o cabeçalho de `013_aba_health.sql` explica exatamente isso, com todas as letras, e cita a migration `053` do Maximus como origem. Eu havia lido `013` naquela mesma sessão — para copiar a lista de colunas revogadas — e reproduzi o defeito assim mesmo. **Ler a fonte não é o mesmo que carregar a lição dela**, e a única coisa que pegou foi a verificação que recusa a migration, na primeira execução.
+- **Regra que fica:** **em Postgres, privilégio por coluna só existe depois que o privilégio de tabela sai.** E a regra maior: quando uma migration copia um padrão de outra, copie também as VERIFICAÇÕES dela — foi a verificação, não a leitura, que impediu oito colunas de dado de saúde de irem para produção legíveis.
+- **Fonte:** Subetapa 03.8, 2026-09-04.
+
+### Porte de regime de segurança pela metade: alcance sem registro é a mesma falha que a `070` do Maximus corrigiu
+- **Gatilho:** Subetapa 03.8. O schema novo guarda **dente e face** — dado de saúde fora de `aba_health` pela primeira vez no produto. A subetapa portou o ALCANCE (`pode_planejar` chama `pode_acessar`), reportou a ausência de log como **pendência** e considerou a entrega completa. Max recusou: *"tudo o que se referir ao schema `aba_health` deve ser resolvido de forma segura e sem deixar para depois"*.
+- **Por que a pendência era um defeito, e não acabamento:** o regime de `aba_health` tem duas metades — a política diz **quem pode ler**, a função de leitura diz **que alguém leu** —, e a §6 deste arquivo já registrava que "política de RLS autoriza, mas não registra". Sem a segunda metade, o relatório de "Ações dos usuários" da 03.5 mostraria acesso a prontuário e **silêncio** sobre plano; e silêncio em trilha de auditoria é lido como "ninguém acessou". **Trilha incompleta é pior que trilha nenhuma, porque é lida como completa.**
+- **A tentação que o CODE seguiu, e que é o padrão errado:** portar a parte que o plano da subetapa nomeava (o alcance) e transformar o resto em item de lista para depois. Item de lista para depois é a forma que um defeito assume quando não dói hoje.
+- **Ação:** migration `047` — revogação de `SELECT` por coluna, `ler_planos()` que loga antes de devolver e reafirma a fronteira de conta, e gatilho de escrita nas quatro tabelas. Seis casos novos na suíte, incluindo o controle negativo que mais importa: **agent sem alcance recebe conjunto vazio E nenhuma linha de log** — nada foi lido, então log a mais aqui seria log mentindo.
+- **Regra que fica:** **ao levar dado de saúde para um schema novo, o porte do regime é ATÔMICO — alcance, revogação por coluna, leitura registrada e escrita registrada.** Entregar um subconjunto e chamar o resto de pendência cria uma superfície que parece protegida. E, na dúvida sobre o que o porte inclui, a lista está nas migrations que existem **só** porque alguém antes portou pela metade: `053` (leitura sem log) e `070` (escrita sem log).
+- **Fonte:** Subetapa 03.8, 2026-09-04, por ordem de Max.
+
 ---
 
 ## 6. Armadilhas conhecidas (não repetir)

@@ -400,6 +400,52 @@ try {
     funcs.map((f) => f.proname).join(", "),
   );
 
+  // ---- a metade que a migration 047 acrescentou: leitura registrada ----
+  const { rows: colunas } = await q(
+    `SELECT x.tab, x.col, has_column_privilege('authenticated', ('aba_treatment.'||x.tab)::regclass, x.col, 'SELECT') AS le
+       FROM (VALUES ('planos','titulo'),('planos','observacao'),
+                    ('diagnosticos','dente'),('diagnosticos','faces'),('diagnosticos','descricao'),
+                    ('procedimentos_plano','dente'),('procedimentos_plano','faces'),
+                    ('procedimentos_plano','observacao'),
+                    ('procedimentos_plano','id'),('procedimentos_plano','estado')
+            ) AS x(tab,col)`,
+  );
+  const clinicas = colunas.filter((c) => !["id", "estado"].includes(c.col));
+  const metadado = colunas.filter((c) => ["id", "estado"].includes(c.col));
+  afirmar(
+    "dente, face e texto livre estão REVOGADOS de authenticated — só saem pela função que registra",
+    clinicas.every((c) => !c.le),
+    clinicas.filter((c) => c.le).map((c) => `${c.tab}.${c.col}`).join(", ") || "nenhuma vazando",
+  );
+  afirmar("e o metadado continua legível — a revogação não passou do ponto", metadado.every((c) => c.le));
+
+  const { rows: [{ n: logsAntes }] } = await q(
+    "SELECT count(*)::int n FROM aba_health.log_acesso WHERE cliente_id=$1 AND tipo_registro='plano' AND acao='leitura'",
+    [clienteId],
+  );
+  await q("BEGIN");
+  await q("SELECT set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: algumUsuario.user_id })]);
+  const { rows: lidos } = await q("SELECT * FROM aba_treatment.ler_planos($1)", [clienteId]);
+  await q("COMMIT");
+  const { rows: [{ n: logsDepois }] } = await q(
+    "SELECT count(*)::int n FROM aba_health.log_acesso WHERE cliente_id=$1 AND tipo_registro='plano' AND acao='leitura'",
+    [clienteId],
+  );
+  afirmar(
+    "ler_planos() devolve a matriz inteira numa linha por plano",
+    lidos.length === 1 && lidos[0].opcoes.length === 2 && lidos[0].procedimentos.length > 0,
+    `${lidos.length} plano(s), ${lidos[0]?.opcoes?.length ?? 0} opções, ${lidos[0]?.procedimentos?.length ?? 0} células`,
+  );
+  afirmar(
+    "e a leitura DEIXA RASTRO em aba_health.log_acesso — uma linha por plano lido",
+    logsDepois === logsAntes + 1,
+    `${logsAntes} → ${logsDepois}`,
+  );
+  afirmar(
+    "a fila de trabalho vem calculada na própria leitura (diagnóstico sem procedimento)",
+    lidos[0].diagnosticos.some((d) => d.fasado === false),
+  );
+
   const { rows: [{ n: fksAbertas }] } = await q(
     `SELECT count(*)::int n FROM public.fks_sem_isolamento_de_conta()
       WHERE filho LIKE 'aba_treatment.%' OR pai LIKE 'aba_treatment.%'`,

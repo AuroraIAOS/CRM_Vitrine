@@ -703,9 +703,121 @@ describe("aba_treatment — o plano de tratamento segue o regime clínico (Subet
   it("`treatment` está no catálogo de módulos com o rótulo da decisão D-V1", async () => {
     const { data, error } = await admin.schema("access").from("modules").select("key, label, position").eq("key", "treatment").single();
     expect(error).toBeNull();
-    expect(data!.label).toBe("Planos");
+    expect(data!.label).toBe("Plano");
     // Logo depois de Prontuário: a ordem da navegação é a do trabalho.
     expect(data!.position).toBe(6);
+  });
+
+  // ============================================================
+  // 5. LEITURA REGISTRADA — o regime de aba_health tem DUAS metades
+  //
+  // A política diz QUEM pode ler; a função de leitura diz QUE ALGUÉM LEU.
+  // A 03.8 entregou a primeira e reportou a segunda como pendência; Max
+  // recusou a pendência ("dado de saúde se resolve agora"), e a migration
+  // `047` fechou. Estes casos existem para que a segunda metade não possa
+  // ser desfeita sem ficar vermelho.
+  // ============================================================
+
+  async function contarLogPlano(acao: string): Promise<number> {
+    const { count } = await admin
+      .schema("aba_health")
+      .from("log_acesso")
+      .select("id", { count: "exact", head: true })
+      .eq("cliente_id", clienteId)
+      .eq("tipo_registro", "plano")
+      .eq("acao", acao);
+    return count ?? 0;
+  }
+
+  it("ATAQUE: dente e face NÃO saem por select direto — nem para o owner", async () => {
+    const owner = await clientAs("owner");
+    for (const [tabela, coluna] of [
+      ["procedimentos_plano", "dente"],
+      ["procedimentos_plano", "faces"],
+      ["procedimentos_plano", "observacao"],
+      ["diagnosticos", "dente"],
+      ["diagnosticos", "faces"],
+      ["diagnosticos", "descricao"],
+      ["planos", "titulo"],
+      ["planos", "observacao"],
+    ] as const) {
+      const { error } = await owner.schema("aba_treatment").from(tabela).select(coluna).limit(1);
+      expect(ehErroRls(error), `${tabela}.${coluna} deveria estar revogada`).toBe(true);
+    }
+  });
+
+  it("ATAQUE: `select('*')` também não abre a porta no schema do plano", async () => {
+    const owner = await clientAs("owner");
+    const { error } = await owner.schema("aba_treatment").from("procedimentos_plano").select("*").limit(1);
+    expect(ehErroRls(error)).toBe(true);
+  });
+
+  it("CONTROLE POSITIVO: o metadado CONTINUA legível — a revogação não passou do ponto", async () => {
+    const owner = await clientAs("owner");
+    const { error } = await owner
+      .schema("aba_treatment")
+      .from("procedimentos_plano")
+      .select("id, plano_id, opcao_id, fase_id, estado, recusado_em, executado_em")
+      .eq("plano_id", planoId);
+    // Sem estas colunas a aplicação não lista, não junta e não atualiza —
+    // em Postgres, `UPDATE ... WHERE id = $1` exige SELECT no `id`.
+    expect(error).toBeNull();
+  });
+
+  it("ler_planos() devolve a matriz INTEIRA e grava o log na mesma transação", async () => {
+    const antes = await contarLogPlano("leitura");
+
+    const owner = await clientAs("owner");
+    const { data, error } = await owner.schema("aba_treatment").rpc("ler_planos", { p_cliente_id: clienteId });
+    expect(error).toBeNull();
+    expect((data ?? []).length).toBeGreaterThan(0);
+
+    const plano = (data as Record<string, unknown>[]).find((p) => p.id === planoId)!;
+    expect(plano.titulo).toBe("Plano Fictício 03.8");
+    // As três partes da matriz vêm na MESMA leitura registrada: as opções
+    // (coluna), os diagnósticos (que atravessam as colunas) e as células.
+    expect(Array.isArray(plano.opcoes)).toBe(true);
+    expect((plano.opcoes as unknown[]).length).toBe(2);
+    const procs = plano.procedimentos as { dente: string | null; faces: string[] }[];
+    expect(procs.some((x) => x.dente === "16")).toBe(true);
+    const diags = plano.diagnosticos as { id: string; fasado: boolean }[];
+    // A fila de trabalho vem calculada: diagnóstico sem procedimento é
+    // `fasado: false`, e é por ele que o planejamento começa.
+    expect(diags.find((d) => d.id === diagnosticoId)?.fasado).toBe(true);
+
+    expect(await contarLogPlano("leitura")).toBeGreaterThan(antes);
+  });
+
+  it("ATAQUE: agent sem alcance clínico recebe conjunto vazio de ler_planos E NENHUM log", async () => {
+    const antes = await contarLogPlano("leitura");
+
+    const agent = await clientAs("agent");
+    const { data, error } = await agent.schema("aba_treatment").rpc("ler_planos", { p_cliente_id: clienteId });
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+    // Nada foi lido, então não há o que registrar. Log a mais aqui seria
+    // log mentindo — e um log que mente é pior que log nenhum.
+    expect(await contarLogPlano("leitura")).toBe(antes);
+  });
+
+  it("ESCRITA no plano também gera log — a metade que a migration 070 do Maximus ensinou", async () => {
+    const antes = await contarLogPlano("criacao");
+
+    const owner = await clientAs("owner");
+    const { data, error } = await owner
+      .schema("aba_treatment")
+      .from("planos")
+      .insert({ account_id: ctx.accountId, cliente_id: clienteId, titulo: "Plano do teste de log" })
+      .select("id")
+      .single();
+    expect(error).toBeNull();
+    expect(await contarLogPlano("criacao")).toBe(antes + 1);
+
+    const antesUpd = await contarLogPlano("atualizacao");
+    await owner.schema("aba_treatment").from("planos").update({ observacao: "mexido" }).eq("id", data!.id);
+    expect(await contarLogPlano("atualizacao")).toBe(antesUpd + 1);
+
+    await admin.schema("aba_treatment").from("planos").delete().eq("id", data!.id);
   });
 
   it("as seis fases clínicas nasceram semeadas, e na ordem clínica", async () => {
