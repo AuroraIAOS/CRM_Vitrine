@@ -11,6 +11,7 @@ import { Integracoes } from "./secoes/Integracoes";
 import { ModulosELicenca } from "./secoes/ModulosELicenca";
 import { PerfisEPermissoes } from "./secoes/PerfisEPermissoes";
 import { ServicosEAgenda } from "./secoes/ServicosEAgenda";
+import { TabelasDePreco } from "./secoes/TabelasDePreco";
 
 /**
  * Tela `1m` do pacote ratificado — Configurações da conta (Subetapa 02.12).
@@ -18,6 +19,10 @@ import { ServicosEAgenda } from "./secoes/ServicosEAgenda";
  * A nav da esquerda tem as 10 seções desenhadas no wireframe. **Equipe** já
  * existia desde a Subetapa 02.2 e entra aqui sem alteração — as outras nove
  * são desta subetapa.
+ *
+ * A 11ª seção — **Tabelas de preço** — entrou na Subetapa 03.8.a: a escada
+ * resolve o preço sozinha no lançamento, mas alguém tem de ter dito antes
+ * quanto custa cada procedimento em cada degrau, e é da recepção dizer.
  *
  * A seção ativa vive na query string (`?secao=`) e não em estado local: um
  * link para "Configurações → Equipe" precisa abrir na Equipe, e o botão
@@ -32,6 +37,7 @@ const SECOES = [
   { chave: "permissoes", rotulo: "Perfis e permissões", componente: PerfisEPermissoes },
   { chave: "equipe", rotulo: "Equipe", componente: EquipePage },
   { chave: "procedimentos", rotulo: "Serviços e agenda", componente: ServicosEAgenda },
+  { chave: "precos", rotulo: "Tabelas de preço", componente: TabelasDePreco },
   { chave: "formularios", rotulo: "Formulários clínicos", componente: FormulariosClinicos },
   { chave: "integracoes", rotulo: "Integrações", componente: Integracoes },
   { chave: "ia", rotulo: "Chaves de IA", componente: ChavesDeIA },

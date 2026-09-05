@@ -10,6 +10,7 @@ import {
   Workflow,
   Sparkles,
   Settings,
+  ClipboardList,
 } from "lucide-react";
 import type { ReadableModule } from "@/lib/access";
 
@@ -32,6 +33,7 @@ const MODULE_ROUTE: Record<string, string> = {
   sales: "/vendas",
   finance: "/financeiro",
   health: "/prontuario",
+  treatment: "/plano",
   catalog: "/catalogo",
   messaging: "/mensagens",
   automations: "/automacoes",
@@ -45,6 +47,7 @@ const MODULE_ICON: Record<string, LucideIcon> = {
   sales: TrendingUp,
   finance: Wallet,
   health: HeartPulse,
+  treatment: ClipboardList,
   catalog: Package,
   messaging: MessageSquare,
   automations: Workflow,
@@ -64,26 +67,27 @@ function toNavItem(module: ReadableModule): NavItem {
 /**
  * MÓDULOS QUE EXISTEM NO BANCO E AINDA NÃO TÊM TELA.
  *
- * `treatment` (rótulo "Planos") nasceu na Subetapa 03.8 — schema, RLS,
- * regras e operações —, e a decisão de Max foi entregar a subetapa **só no
- * banco**: a tela da matriz (fase na linha, opção na coluna) vem junto com o
- * preço, na 03.8.a. A linha em `access.modules` é necessária desde já, porque
- * é ela que faz o módulo aparecer na matriz de permissões e é dela que
- * `access.can('treatment', ...)` depende.
+ * A lista nasceu na Subetapa 03.8, quando `treatment` entrou em
+ * `access.modules` numa subetapa que era **só de banco** por decisão de
+ * escopo — e o banco sozinho já mexia na tela, porque a navegação é
+ * derivada de `access.readable_modules()` desde a 02.1. O efeito era
+ * imediato e silencioso: `toNavItem` cai no `/${module_key}` quando não
+ * conhece a rota, e o site publicado passou a mostrar um item "Plano"
+ * apontando para uma rota inexistente.
  *
- * Sem esta lista, o efeito seria imediato e visível: `toNavItem` cai no
- * `/${module_key}` quando não conhece a rota, e o site publicado passaria a
- * mostrar um item de menu "Planos" que leva a lugar nenhum. É a armadilha que
- * a Subetapa 03.6.b já pagou por outro caminho — mudar o banco antes de a
- * tela saber — e aqui ela foi vista antes de publicar, não depois.
+ * **A Subetapa 03.8.a esvaziou a lista**, que era o que o comentário
+ * anterior prometia: `treatment` ganhou `/plano` no `MODULE_ROUTE` acima,
+ * ícone próprio e a página de verdade. A lista FICA — vazia — porque o
+ * mecanismo continua sendo necessário: a próxima linha nova em
+ * `access.modules` acende um item de menu no minuto seguinte, e é aqui
+ * que ela espera a tela dela.
  *
- * **Tirar a chave daqui é parte da subetapa que entregar a tela**, e o
- * `MODULE_ROUTE` acima é onde a rota nova se declara. Enquanto a chave estiver
- * nesta lista, o módulo é invisível na navegação e continua inteiro na matriz
- * de permissões — que é exatamente a divisão certa entre "existe" e "tem
- * porta".
+ * REGRA QUE FICA: navegação dirigida por dado transforma toda linha nova
+ * de catálogo em mudança de interface. Antes de acrescentar módulo,
+ * pergunte o que a tela publicada fará com ele hoje — e lembre que o
+ * fallback que existe para ser tolerante é o mesmo que esconde a falta.
  */
-const MODULOS_SEM_TELA = new Set<string>(["treatment"]);
+const MODULOS_SEM_TELA = new Set<string>([]);
 
 /** Itens do corpo rolável da sidebar — só módulos não-núcleo, na ordem de `position`. */
 export function buildModuleNav(modules: ReadableModule[]): NavItem[] {

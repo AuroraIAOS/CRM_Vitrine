@@ -91,6 +91,9 @@ const ProntuarioPage = lazy(() =>
 const MapasClinicosPage = lazy(() =>
   import("@/features/health/MapasClinicosPage").then((m) => ({ default: m.MapasClinicosPage })),
 );
+const PlanoPage = lazy(() =>
+  import("@/features/treatment/PlanoPage").then((m) => ({ default: m.PlanoPage })),
+);
 const AutomacoesPage = lazy(() =>
   import("@/features/automations/AutomacoesPage").then((m) => ({ default: m.AutomacoesPage })),
 );
@@ -156,6 +159,12 @@ export const router = createBrowserRouter([
           // também casaria com `:clienteId`.
           { path: "prontuario/mapas", element: <MapasClinicosPage /> },
           { path: "prontuario/:clienteId", element: <ProntuarioPage /> },
+          // `/plano` (Subetapa 03.8.a) — a matriz clínica da 03.8 ganha
+          // porta, junto da vista financeira dela. Mesma divisão de
+          // `/prontuario`: a lista de pacientes na rota sem parâmetro, o
+          // plano na rota com o paciente.
+          { path: "plano", element: <PlanoPage /> },
+          { path: "plano/:clienteId", element: <PlanoPage /> },
           { path: "catalogo", element: <CatalogoPage /> },
           { path: "mensagens", element: <MessagingPage /> },
           { path: "automacoes", element: <AutomacoesPage /> },
