@@ -50,6 +50,8 @@ describe("orçamento — o preço se resolve, e a fronteira clínica atravessa (
   let tabelaTipo: string;
   let orcamentoId: string;
   const funcionarios: string[] = [];
+  const tabelasExtras: string[] = [];
+  let grupoIdParaLimpeza: string | null = null;
 
   /** Profissional ativo exige funcionário ativo, que exige login real
    *  (`instrucoes.md` §5). A escada resolve pelo TIPO, que não depende de
@@ -207,7 +209,7 @@ describe("orçamento — o preço se resolve, e a fronteira clínica atravessa (
         `DELETE FROM aba_finance.itens_orcamento WHERE orcamento_id IN
            (SELECT id FROM aba_finance.orcamentos WHERE plano_id = $1)`, [planoId]);
       await dono.query(`DELETE FROM aba_finance.orcamentos WHERE plano_id = $1`, [planoId]);
-      const tabelas = [tabelaPratica, tabelaTipo].filter(Boolean);
+      const tabelas = [tabelaPratica, tabelaTipo, ...tabelasExtras].filter(Boolean);
       if (tabelas.length) {
         await dono.query(`DELETE FROM aba_finance.tarifas WHERE tabela_preco_id = ANY($1)`, [tabelas]);
         await dono.query(`DELETE FROM aba_finance.tabelas_preco WHERE id = ANY($1)`, [tabelas]);
@@ -220,6 +222,8 @@ describe("orçamento — o preço se resolve, e a fronteira clínica atravessa (
       await dono.end();
     }
 
+    await admin.schema("aba_finance").from("clientes_grupo_preco").delete().eq("account_id", ctx.accountId).eq("grupo_id", grupoIdParaLimpeza ?? "00000000-0000-0000-0000-000000000000");
+    if (grupoIdParaLimpeza) await admin.schema("aba_finance").from("grupos_preco").delete().eq("id", grupoIdParaLimpeza);
     await admin.schema("aba_treatment").from("procedimentos_plano").delete().eq("plano_id", planoId);
     await admin.schema("aba_treatment").from("opcoes").delete().eq("plano_id", planoId);
     await admin.schema("aba_treatment").from("planos").delete().eq("id", planoId);
@@ -539,4 +543,152 @@ describe("orçamento — o preço se resolve, e a fronteira clínica atravessa (
     // que a 03.8 pagou.
     expect(data).toEqual([]);
   });
+
+  // ============================================================
+  // 6. PREÇO POR GRUPO DE PACIENTES — o degrau que o convênio vai usar
+  //
+  // Subetapa 03.8.d. A ordem da escada é uma decisão de negócio de Max
+  // (D-F5), não um detalhe de implementação — e por isso ela é testada
+  // como regra, não como comportamento emergente:
+  //
+  //     Paciente > Grupo > Tipo de profissional > Clínica > Rede > Prática
+  //
+  // A cortesia individual vence o convênio porque é a regra mais
+  // específica que existe; o convênio vence o tipo de profissional porque
+  // a apólice fecha tabela por procedimento.
+  // ============================================================
+
+  let grupoId: string;
+  let tabelaGrupo: string;
+
+  async function comprometerComoOwner(tabelaId: string) {
+    const owner = await clientAs("owner");
+    const { error } = await owner
+      .schema("aba_finance")
+      .rpc("comprometer_tabela_preco", { p_tabela_id: tabelaId, p_vigente_de: null });
+    if (error) throw error;
+  }
+
+  it("o grupo resolve o preço de quem está nele, e não o de quem não está", async () => {
+    const { data: g, error: gErr } = await admin
+      .schema("aba_finance").from("grupos_preco")
+      .insert({ account_id: ctx.accountId, nome: "Convênio 03.8.d", prioridade: 10 })
+      .select("id").single();
+    expect(gErr).toBeNull();
+    grupoId = g!.id;
+    grupoIdParaLimpeza = grupoId;
+
+    await admin.schema("aba_finance").from("clientes_grupo_preco")
+      .insert({ account_id: ctx.accountId, grupo_id: grupoId, cliente_id: clienteId });
+
+    const { data: t } = await admin
+      .schema("aba_finance").from("tabelas_preco")
+      .insert({
+        account_id: ctx.accountId, nome: "Tabela do convênio 03.8.d",
+        escopo: "grupo_paciente", grupo_preco_id: grupoId,
+      })
+      .select("id").single();
+    tabelaGrupo = t!.id;
+    tabelasExtras.push(tabelaGrupo);
+    await admin.schema("aba_finance").from("tarifas")
+      .insert({ account_id: ctx.accountId, tabela_preco_id: tabelaGrupo, procedimento_id: procId, valor: 90 });
+    await comprometerComoOwner(tabelaGrupo);
+
+    const owner = await clientAs("owner");
+    const { data: dentro } = await owner.schema("aba_finance").rpc("resolver_preco", {
+      p_procedimento_id: procId, p_cliente_id: clienteId, p_profissional_id: profEspecialista,
+    });
+    const { data: fora } = await owner.schema("aba_finance").rpc("resolver_preco", {
+      p_procedimento_id: procId, p_cliente_id: outroClienteId, p_profissional_id: profEspecialista,
+    });
+
+    // O CONVÊNIO VENCE O TIPO DE PROFISSIONAL: o especialista custaria
+    // R$ 400, e o conveniado sai por 90.
+    expect(Number(dentro![0].valor)).toBe(90);
+    expect(dentro![0].degrau).toBe("grupo_paciente");
+    // Quem não está no grupo continua pagando o do especialista.
+    expect(Number(fora![0].valor)).toBe(400);
+    expect(fora![0].degrau).toBe("tipo_profissional");
+  });
+
+  it("ATAQUE: tirar o paciente do grupo tira o preço — e a contagem prova", async () => {
+    await admin.schema("aba_finance").from("clientes_grupo_preco")
+      .delete().eq("grupo_id", grupoId).eq("cliente_id", clienteId);
+
+    const owner = await clientAs("owner");
+    const { data } = await owner.schema("aba_finance").rpc("resolver_preco", {
+      p_procedimento_id: procId, p_cliente_id: clienteId, p_profissional_id: profEspecialista,
+    });
+    // Voltou ao degrau de tipo de profissional. Sem contar o valor depois,
+    // "não deu erro" não distinguiria remoção de nada ter acontecido.
+    expect(data![0].degrau).toBe("tipo_profissional");
+    expect(Number(data![0].valor)).toBe(400);
+
+    await admin.schema("aba_finance").from("clientes_grupo_preco")
+      .insert({ account_id: ctx.accountId, grupo_id: grupoId, cliente_id: clienteId });
+  });
+
+  it("ATAQUE: `agent` não cria grupo nem põe paciente nele — quem define preço é a recepção", async () => {
+    const agent = await clientAs("agent");
+
+    const { error: eGrupo } = await agent
+      .schema("aba_finance").from("grupos_preco")
+      .insert({ account_id: ctx.accountId, nome: "Grupo pirata 03.8.d" });
+    expect(ehErroRls(eGrupo)).toBe(true);
+
+    const { error: eMembro } = await agent
+      .schema("aba_finance").from("clientes_grupo_preco")
+      .insert({ account_id: ctx.accountId, grupo_id: grupoId, cliente_id: outroClienteId });
+    expect(ehErroRls(eMembro)).toBe(true);
+
+    // Recusa contada, não só o erro lido (lição da 03.8).
+    const { count: grupos } = await admin.schema("aba_finance").from("grupos_preco")
+      .select("id", { count: "exact", head: true }).eq("nome", "Grupo pirata 03.8.d");
+    const { count: membros } = await admin.schema("aba_finance").from("clientes_grupo_preco")
+      .select("id", { count: "exact", head: true }).eq("cliente_id", outroClienteId);
+    expect(grupos).toBe(0);
+    expect(membros).toBe(0);
+  });
+
+  it("ATAQUE: `anon` não alcança grupo nem a lista de quem está nele", async () => {
+    const anon = anonClient();
+    for (const tabela of ["grupos_preco", "clientes_grupo_preco"]) {
+      const { error } = await anon.schema("aba_finance").from(tabela).select("id").limit(1);
+      expect(ehErroRls(error), `${tabela} deveria recusar anon`).toBe(true);
+    }
+  });
+
+  it("a cortesia individual vence o grupo — e é a regra que menos pode se perder", async () => {
+    const { data: t } = await admin
+      .schema("aba_finance").from("tabelas_preco")
+      .insert({
+        account_id: ctx.accountId, nome: "Cortesia 03.8.d",
+        escopo: "paciente", cliente_id: clienteId,
+      })
+      .select("id").single();
+    await admin.schema("aba_finance").from("tarifas")
+      .insert({ account_id: ctx.accountId, tabela_preco_id: t!.id, procedimento_id: procId, valor: 40 });
+    await comprometerComoOwner(t!.id);
+
+    const owner = await clientAs("owner");
+    const { data } = await owner.schema("aba_finance").rpc("resolver_preco", {
+      p_procedimento_id: procId, p_cliente_id: clienteId, p_profissional_id: profEspecialista,
+    });
+    expect(Number(data![0].valor)).toBe(40);
+    expect(data![0].degrau).toBe("paciente");
+
+    tabelasExtras.push(t!.id);
+  });
+
+  it("a escada não ganhou atalho: `resolver_preco` continua sem parâmetro de tabela", async () => {
+    // O degrau novo é o momento em que a tentação aparece — "deixa passar a
+    // tabela do convênio direto". A verificação (e) da migration `050`
+    // recusa isso no catálogo; aqui ela é cobrada pela porta da aplicação.
+    const owner = await clientAs("owner");
+    const { error } = await owner.schema("aba_finance").rpc("resolver_preco", {
+      p_procedimento_id: procId, p_tabela_preco_id: tabelaGrupo,
+    } as Record<string, unknown>);
+    expect(error).not.toBeNull();
+  });
+
 });

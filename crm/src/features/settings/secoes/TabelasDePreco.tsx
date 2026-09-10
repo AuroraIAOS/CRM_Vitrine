@@ -2,9 +2,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { useNomesDeProcedimento, useProfissionaisComTipo } from "@/features/treatment/api";
+import { useClientesDaConta } from "@/features/health/api";
 import {
   DEGRAUS,
   rotuloDoDegrau,
+  useAlternarGrupoPreco,
+  useCriarGrupoPreco,
+  useGruposPreco,
+  useMembroDoGrupo,
+  useMembrosDoGrupo,
   useComprometerTabela,
   useCriarTabelaPreco,
   useDefinirTarifa,
@@ -64,6 +70,17 @@ export function TabelasDePreco() {
   const [percentual, setPercentual] = useState("10");
   const [procedimentoId, setProcedimentoId] = useState("");
   const [valor, setValor] = useState("");
+  const [grupoId, setGrupoId] = useState("");
+  const [grupoAberto, setGrupoAberto] = useState<string | null>(null);
+  const [nomeGrupo, setNomeGrupo] = useState("");
+  const [prioridadeGrupo, setPrioridadeGrupo] = useState("100");
+
+  const { data: grupos = [] } = useGruposPreco();
+  const { data: clientes = [] } = useClientesDaConta();
+  const { data: membros = [] } = useMembrosDoGrupo(grupoAberto);
+  const criarGrupo = useCriarGrupoPreco();
+  const alternarGrupo = useAlternarGrupoPreco();
+  const membroDoGrupo = useMembroDoGrupo();
 
   const { data: tarifas = [] } = useTarifas(aberta);
 
@@ -264,6 +281,143 @@ export function TabelasDePreco() {
         )}
       </CardSecao>
 
+
+      <CardSecao>
+        <TituloSecao
+          titulo="Grupos de pacientes"
+          descricao="Convênio, promoção do mês, categoria. Um grupo reúne pacientes que pagam pela mesma tabela — em vez de uma tabela por pessoa."
+        />
+        {grupos.length === 0 ? (
+          <Vazio>
+            Nenhum grupo criado. Sem grupos, o degrau “preço por convênio ou grupo” não tem o que resolver.
+          </Vazio>
+        ) : (
+          <div className="flex flex-col">
+            <div className="grid grid-cols-[1fr_90px_90px_80px] gap-2 border-b border-border pb-1.5 font-mono text-[9.5px] uppercase tracking-[0.08em] text-muted-foreground">
+              <span>Grupo</span>
+              <span>Prioridade</span>
+              <span>Pacientes</span>
+              <span>Estado</span>
+            </div>
+            {grupos.map((g) => (
+              <div key={g.id} className="flex flex-col border-b border-hairline last:border-b-0">
+                <button
+                  type="button"
+                  onClick={() => setGrupoAberto(grupoAberto === g.id ? null : g.id)}
+                  className="grid grid-cols-[1fr_90px_90px_80px] items-center gap-2 py-2 text-left text-[11px] text-secondary-foreground hover:bg-content"
+                >
+                  <span className="truncate">{g.nome}</span>
+                  <span className="font-mono">{g.prioridade}</span>
+                  <span className="font-mono">{g.membros}</span>
+                  <span>
+                    <Pill tom={g.ativo ? "success" : "muted"}>{g.ativo ? "ativo" : "inativo"}</Pill>
+                  </span>
+                </button>
+
+                {grupoAberto === g.id && (
+                  <div className="flex flex-col gap-2.5 bg-content px-3 py-2.5">
+                    {!ehAdmin ? (
+                      <Nota>Só a recepção monta grupo de preço. Você está vendo em modo leitura.</Nota>
+                    ) : (
+                      <>
+                        <Rotulo>Quem está neste grupo</Rotulo>
+                        {clientes.length === 0 ? (
+                          <Vazio>Nenhum paciente cadastrado nesta conta.</Vazio>
+                        ) : (
+                          <div className="flex flex-col gap-1">
+                            {clientes.map((c) => {
+                              const dentro = membros.includes(c.id);
+                              return (
+                                <label
+                                  key={c.id}
+                                  className="flex cursor-pointer items-center gap-2 text-[11px] text-secondary-foreground"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    id={`grupo-${g.id}-cliente-${c.id}`}
+                                    checked={dentro}
+                                    disabled={membroDoGrupo.isPending}
+                                    onChange={() =>
+                                      membroDoGrupo.mutate({ grupoId: g.id, clienteId: c.id, incluir: !dentro })
+                                    }
+                                  />
+                                  <span>{c.nome}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        <div className="flex flex-wrap items-center gap-2 border-t border-hairline pt-2.5">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={alternarGrupo.isPending}
+                            onClick={() => alternarGrupo.mutate({ grupoId: g.id, ativo: !g.ativo })}
+                            title="Grupo inativo sai da escada — o preço dele deixa de resolver, sem apagar nada."
+                          >
+                            {g.ativo ? "Desativar grupo" : "Reativar grupo"}
+                          </Button>
+                          {membroDoGrupo.error && (
+                            <span className="text-[10.5px] text-destructive">
+                              {(membroDoGrupo.error as Error).message}
+                            </span>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <Nota>
+          Um paciente pode estar em mais de um grupo — o convênio e a promoção do mês, por exemplo. Quando isso
+          acontece, vence o de <strong>menor prioridade</strong>; empate cai na tabela comprometida mais recente.
+        </Nota>
+
+        {ehAdmin && (
+          <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
+            <input
+              value={nomeGrupo}
+              onChange={(e) => setNomeGrupo(e.target.value)}
+              placeholder="Nome do grupo (ex.: Convênio Vida)"
+              aria-label="Nome do grupo"
+              id="novo-grupo-nome"
+              className="min-w-[200px] flex-1 rounded-[5px] border border-input bg-background px-2 py-1 text-[11px]"
+            />
+            <input
+              type="number"
+              min={1}
+              max={999}
+              value={prioridadeGrupo}
+              onChange={(e) => setPrioridadeGrupo(e.target.value)}
+              aria-label="Prioridade do grupo"
+              id="novo-grupo-prioridade"
+              className="w-[90px] rounded-[5px] border border-input bg-background px-2 py-1 text-[11px]"
+            />
+            <span className="text-[10.5px] text-muted-foreground">prioridade (menor vence)</span>
+            <Button
+              size="sm"
+              disabled={!nomeGrupo.trim() || criarGrupo.isPending}
+              onClick={() =>
+                criarGrupo.mutate(
+                  { nome: nomeGrupo.trim(), prioridade: Number(prioridadeGrupo) || 100 },
+                  { onSuccess: () => { setNomeGrupo(""); setPrioridadeGrupo("100"); } },
+                )
+              }
+            >
+              Criar grupo
+            </Button>
+            {criarGrupo.error && (
+              <span className="text-[10.5px] text-destructive">{(criarGrupo.error as Error).message}</span>
+            )}
+          </div>
+        )}
+      </CardSecao>
+
       {ehAdmin && (
         <CardSecao>
           <TituloSecao titulo="Nova tabela de preço" descricao="Nasce em rascunho: só entra na escada quando for comprometida." />
@@ -286,6 +440,20 @@ export function TabelasDePreco() {
                 </option>
               ))}
             </select>
+            {escopo === "grupo_paciente" && (
+              <select
+                value={grupoId}
+                onChange={(e) => setGrupoId(e.target.value)}
+                className="rounded-[5px] border border-input bg-background px-2 py-1 text-[11px]"
+              >
+                <option value="">Escolha o grupo…</option>
+                {grupos.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.nome}
+                  </option>
+                ))}
+              </select>
+            )}
             {escopo === "tipo_profissional" && (
               <select
                 value={tipoId}
@@ -302,15 +470,21 @@ export function TabelasDePreco() {
             )}
             <Button
               size="sm"
-              disabled={!nome.trim() || (escopo === "tipo_profissional" && !tipoId) || criar.isPending}
+              disabled={
+                !nome.trim() ||
+                (escopo === "tipo_profissional" && !tipoId) ||
+                (escopo === "grupo_paciente" && !grupoId) ||
+                criar.isPending
+              }
               onClick={() =>
                 criar.mutate(
                   {
                     nome: nome.trim(),
                     escopo,
                     tipo_profissional_id: escopo === "tipo_profissional" ? tipoId : null,
+                    grupo_preco_id: escopo === "grupo_paciente" ? grupoId : null,
                   },
-                  { onSuccess: () => { setNome(""); setTipoId(""); } },
+                  { onSuccess: () => { setNome(""); setTipoId(""); setGrupoId(""); } },
                 )
               }
             >
@@ -319,9 +493,9 @@ export function TabelasDePreco() {
           </div>
           {criar.error && <span className="text-[10.5px] text-destructive">{(criar.error as Error).message}</span>}
           <Nota>
-            Tabela do degrau <strong>Paciente</strong> não se cria aqui: ela é o preço pessoal de alguém — cortesia ou
-            acordo pontual — e nasce na ficha do próprio paciente. É também o degrau que receberá o convênio quando o
-            convênio existir (D-V5).
+            O degrau <strong>preço só deste paciente</strong> não se cria aqui: ele é o preço pessoal de alguém —
+            cortesia ou acordo pontual — e nasce na ficha do próprio paciente. Para vários pacientes de uma vez —
+            convênio, promoção, categoria — use <strong>preço por convênio ou grupo</strong>, logo acima.
           </Nota>
         </CardSecao>
       )}

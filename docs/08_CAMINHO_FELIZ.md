@@ -34,6 +34,7 @@ Tomadas por Max em **2026-09-06**, na conversa que revisou o fluxo dele.
 | **D-F2** | Quando o interessado deixa de ser lead | **Aceitar a consulta de diagnóstico é o gesto que converte.** `converter_lead()` roda no ato do agendamento, porque `agendamentos.cliente_id` é `NOT NULL REFERENCES aba_people.clientes` e um lead não entra na agenda. **"Paciente" não vira tabela nem coluna: é DERIVADO** — cliente com contrato assinado. Custo declarado e aceito: a base de clientes passa a incluir quem agendou e nunca fechou, então toda métrica de conversão compara *clientes* com *clientes com contrato*, nunca conta clientes | **Max, 2026-09-06** |
 | **D-F3** | Quem autoriza o preço, e quando | **O profissional aprova o ORÇAMENTO antes de ele ir ao paciente** — e não assina o contrato depois do aceite, como o fluxo original previa. A recepção só apresenta orçamento aprovado; se ela alterar desconto, parcela, juros ou mora, **o orçamento volta a rascunho** e exige nova aprovação. Motivo: na ordem original, promete-se um preço ao paciente antes de quem responde por ele ter autorizado, e desdizer valor já aceito é o pior momento possível da relação | **Max, 2026-09-06** |
 | **D-F4** | O vocabulário de preço na interface | **Troca.** "Escada", "degrau" e "veio de" são vocabulário de quem construiu, não de quem usa. Os termos internos (`escopo`, `degrau`) ficam no banco, onde são precisos; a tela passa a falar a língua da clínica. Mapa completo na §4 | **Max, 2026-09-06** |
+| **D-F5** | O mecanismo de preço por grupo entra na Etapa 03 | **Sim.** *"Embora os convênios sejam tratados fora do MVP, já podemos deixar o mecanismo do orçamento pronto para recebê-los."* Vira a **Subetapa 03.8.d**: o degrau entra na posição **2** — `Paciente > Grupo > Tipo de profissional > Clínica > Rede > Prática` —, a cortesia individual vence o convênio e o convênio vence o tipo de profissional. **Nenhuma linha de convênio se cria**: operadora, apólice, carência e cobertura seguem fora do MVP por D-V5; o que entra é o lugar onde eles vão encaixar. Junto vem um renome que a D-V1 exige: `grupo` já significava *grupo de clínicas* no `escopo`, e passa a `rede` — uma palavra, um dono | **Max, 2026-09-10** |
 
 ---
 
@@ -175,8 +176,7 @@ A metade errada é a que a interface precisa impedir:
 
 ## 5. Três buracos de preço que os exemplos de Max revelaram
 
-Ao tentar encaixar casos reais nos cinco degraus, três não couberam. **Nenhum
-é implementado agora** (`CLAUDE.md` §15) — ficam registrados para decisão.
+Ao tentar encaixar casos reais nos cinco degraus, três não couberam. **(a) continua registrado para decisão** (`CLAUDE.md` §15). **(b) e (c) saíram da espera em 2026-09-10 por D-F5** e viraram a Subetapa **03.8.d** — o mecanismo entra, o convênio não.
 
 **(a) Preço por profissional específico.** Se o Dr. Plínio cobra mais que os
 outros especialistas porque é o mais procurado, não há onde dizer isso: o

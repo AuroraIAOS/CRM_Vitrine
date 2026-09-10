@@ -2,6 +2,15 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-09-10 (Subetapa 03.8.d — preço por convênio ou grupo)
+
+- **A clínica pode dar um preço a um conjunto de pacientes de uma vez.** Convênio de empresa, promoção do mês, tabela de servidor público: cria-se o grupo, marca-se quem está nele, e o orçamento de qualquer um deles passa a resolver por aquela tabela. Antes, uma cortesia para quarenta pessoas exigiria quarenta tabelas de preço — uma por paciente, todas dizendo a mesma coisa e nenhuma sabendo que eram a mesma regra.
+- **O preço pessoal continua valendo acima de tudo.** Se a clínica abriu exceção para alguém, ela vence o convênio — é a regra mais específica que existe, e a que mais se perderia por acidente. E o convênio vence o preço do especialista, porque a apólice fecha valor por procedimento; a diferença do especialista, se a clínica quiser cobrá-la, é um lançamento à parte, nomeado e reportável.
+- **Um paciente pode estar em dois grupos, e o sistema não decide no escuro.** Cada grupo tem uma prioridade, e a de menor número vence — a regra aparece escrita na própria tela, ao lado dos grupos, em vez de ficar só no banco.
+- **Desativar um grupo tira o preço dele de cena sem apagar nada** — o que já foi orçado por ele continua registrado e explicável.
+- **A tela de preços passou a falar a língua de quem atende.** Os degraus deixaram de ser jargão e viraram as perguntas que o sistema faz, na ordem em que faz: "este paciente tem preço próprio?", "ele está num grupo com preço próprio?", "o tipo de quem vai executar tem preço próprio?". A mudança veio de uma leitura real: a versão anterior sugeria que degraus eram algo que a clínica cria — e não são; o que se cria são tabelas.
+- Nenhum convênio foi construído: operadora, apólice, carência e cobertura continuam fora do MVP e sob controle manual da recepção. O que entrou é o lugar onde eles vão encaixar quando chegarem.
+
 ## [+0.1] - 2026-09-05 (Correção — a lista de pacientes voltou ao Prontuário e ao Plano)
 
 - **O Prontuário e o Plano voltaram a listar os pacientes.** As duas telas diziam "Nenhum paciente cadastrado nesta conta" enquanto a tela de Pessoas mostrava os dez — o pedido de dados perguntava a data de nascimento na tabela errada, a resposta vinha com erro, e a tela tratava o erro como "não há ninguém". Quem abrisse o Prontuário por esse caminho via uma clínica vazia.
