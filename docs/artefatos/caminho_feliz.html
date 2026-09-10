@@ -1,0 +1,594 @@
+<title>Caminho Feliz do Atendimento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap">
+
+<style>
+  :root {
+    --ground:        #f7f9f8;
+    --surface:       #ffffff;
+    --surface-sunk:  #eef2f0;
+    --ink:           #16241f;
+    --ink-soft:      #4a5c56;
+    --ink-faint:     #7d8f89;
+    --rule:          #dde5e2;
+    --rule-soft:     #e9efed;
+    --accent:        #0e7c66;
+    --accent-tint:   #e2f0ec;
+
+    --ator-recepcao:     #b2652b;
+    --ator-recepcao-bg:  #f7ece2;
+    --ator-profissional: #0e7c66;
+    --ator-profissional-bg: #e2f0ec;
+    --ator-paciente:     #5b6e9b;
+    --ator-paciente-bg:  #e8ecf5;
+    --ator-sistema:      #64756f;
+    --ator-sistema-bg:   #e9eeec;
+
+    --pronto:      #0e7c66;
+    --pronto-bg:   #e2f0ec;
+    --falta:       #9a5b12;
+    --falta-bg:    #f9efe1;
+
+    --serif: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+    --sans:  "IBM Plex Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+    --mono:  "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:       #101815;
+      --surface:      #16211d;
+      --surface-sunk: #1b2823;
+      --ink:          #e6efeb;
+      --ink-soft:     #a9bcb5;
+      --ink-faint:    #758880;
+      --rule:         #2a3a34;
+      --rule-soft:    #223029;
+      --accent:       #4bbfa2;
+      --accent-tint:  #17342c;
+
+      --ator-recepcao:     #d99456;
+      --ator-recepcao-bg:  #33241a;
+      --ator-profissional: #4bbfa2;
+      --ator-profissional-bg: #17342c;
+      --ator-paciente:     #93a6d1;
+      --ator-paciente-bg:  #1e2537;
+      --ator-sistema:      #93a8a1;
+      --ator-sistema-bg:   #1f2b27;
+
+      --pronto:    #4bbfa2;
+      --pronto-bg: #17342c;
+      --falta:     #e0a460;
+      --falta-bg:  #33261a;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:       #101815;
+    --surface:      #16211d;
+    --surface-sunk: #1b2823;
+    --ink:          #e6efeb;
+    --ink-soft:     #a9bcb5;
+    --ink-faint:    #758880;
+    --rule:         #2a3a34;
+    --rule-soft:    #223029;
+    --accent:       #4bbfa2;
+    --accent-tint:  #17342c;
+
+    --ator-recepcao:     #d99456;
+    --ator-recepcao-bg:  #33241a;
+    --ator-profissional: #4bbfa2;
+    --ator-profissional-bg: #17342c;
+    --ator-paciente:     #93a6d1;
+    --ator-paciente-bg:  #1e2537;
+    --ator-sistema:      #93a8a1;
+    --ator-sistema-bg:   #1f2b27;
+
+    --pronto:    #4bbfa2;
+    --pronto-bg: #17342c;
+    --falta:     #e0a460;
+    --falta-bg:  #33261a;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0;
+    padding-block: 40px 64px;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .folha { max-width: 940px; margin: 0 auto; }
+
+  /* ---------- cabeçalho ---------- */
+  .capa { display: flex; flex-direction: column; gap: 18px; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(30px, 5vw, 44px);
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  .lide {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    max-width: 62ch;
+    margin: 0;
+  }
+
+  /* ---------- medidor ---------- */
+  .medidor {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px 28px;
+    padding: 18px 20px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+  }
+  .medidor .numero {
+    font-family: var(--mono);
+    font-size: 30px;
+    font-weight: 500;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .medidor .rotulo { font-size: 13px; color: var(--ink-soft); max-width: 34ch; }
+  .barra {
+    flex: 1 1 220px;
+    min-width: 180px;
+    height: 8px;
+    border-radius: 4px;
+    background: var(--surface-sunk);
+    overflow: hidden;
+    display: flex;
+  }
+  .barra i { display: block; height: 100%; }
+  .barra .b-pronto { background: var(--pronto); width: 47.7%; }
+  .barra .b-falta  { background: var(--falta); opacity: 0.55; width: 52.3%; }
+
+  /* ---------- legenda ---------- */
+  .legenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    align-items: center;
+    margin-top: 4px;
+  }
+  .legenda .titulo {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-right: 4px;
+  }
+
+  .chip {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .c-recepcao     { color: var(--ator-recepcao);     background: var(--ator-recepcao-bg); }
+  .c-profissional { color: var(--ator-profissional); background: var(--ator-profissional-bg); }
+  .c-paciente     { color: var(--ator-paciente);     background: var(--ator-paciente-bg); }
+  .c-sistema      { color: var(--ator-sistema);      background: var(--ator-sistema-bg); }
+
+  /* ---------- trilha de etapas ---------- */
+  .trilha { margin-top: 46px; display: flex; flex-direction: column; gap: 30px; }
+
+  .etapa {
+    display: grid;
+    grid-template-columns: 62px 1fr;
+    gap: 0 20px;
+    align-items: start;
+  }
+
+  .marco { display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; }
+  .marco .codigo {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--surface);
+    background: var(--ink);
+    width: 44px;
+    height: 30px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 0.03em;
+    flex: none;
+  }
+  .marco .fio { width: 2px; flex: 1 1 auto; background: var(--rule); border-radius: 1px; min-height: 20px; }
+  .etapa:last-of-type .marco .fio { background: linear-gradient(var(--rule), transparent); }
+
+  .corpo { padding-bottom: 6px; }
+
+  h2 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 21px;
+    line-height: 1.25;
+    margin: 0 0 6px;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+
+  .resumo {
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin: 0 0 16px;
+    max-width: 64ch;
+  }
+
+  .paralelo {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-tint);
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+  }
+
+  /* ---------- passos ---------- */
+  ol.passos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+
+  ol.passos > li {
+    display: grid;
+    grid-template-columns: 26px 1fr auto;
+    gap: 4px 12px;
+    align-items: baseline;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  ol.passos > li:last-child { border-bottom: none; }
+
+  .n {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .texto { font-size: 14.5px; line-height: 1.5; }
+  .texto .quem { display: inline-block; margin-right: 7px; vertical-align: 1.5px; }
+
+  .estado {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.03em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    justify-self: end;
+  }
+  .e-pronto { color: var(--pronto); background: var(--pronto-bg); }
+  .e-falta  { color: var(--falta);  background: var(--falta-bg); }
+
+  /* ---------- decisões ---------- */
+  .decisoes { margin-top: 54px; padding-top: 30px; border-top: 2px solid var(--ink); }
+
+  h3 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 19px;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  .sub { font-size: 13.5px; color: var(--ink-soft); margin: 0 0 20px; max-width: 62ch; }
+
+  dl.dec { margin: 0; display: flex; flex-direction: column; gap: 14px; }
+  dl.dec > div {
+    display: grid;
+    grid-template-columns: 58px 1fr;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+  }
+  dl.dec dt {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.03em;
+  }
+  dl.dec dd { margin: 0; font-size: 14px; line-height: 1.55; }
+  dl.dec dd b { font-weight: 600; }
+
+  .rodape {
+    margin-top: 40px;
+    padding-top: 18px;
+    border-top: 1px solid var(--rule);
+    font-size: 12.5px;
+    color: var(--ink-faint);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  code {
+    font-family: var(--mono);
+    font-size: 0.9em;
+    background: var(--surface-sunk);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  @media (max-width: 620px) {
+    .etapa { grid-template-columns: 44px 1fr; gap: 0 14px; }
+    .marco .codigo { width: 40px; font-size: 12px; }
+    ol.passos > li { grid-template-columns: 22px 1fr; }
+    .estado { grid-column: 2; justify-self: start; margin-top: 2px; }
+    dl.dec > div { grid-template-columns: 1fr; gap: 6px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="folha">
+
+  <header class="capa">
+    <p class="eyebrow">CRM Vitrine · Protocolo operacional · 6 set 2026</p>
+    <h1>Caminho Feliz do Atendimento</h1>
+    <p class="lide">
+      O percurso completo de um atendimento odontológico — do primeiro contato ao procedimento
+      executado e assinado. Escrito por Max a partir da prática de consultório, revisado contra o
+      que o sistema faz hoje, e fechado em quatro decisões.
+    </p>
+
+    <div class="medidor">
+      <div>
+        <div class="numero">21<span style="color:var(--ink-faint); font-size:19px">/44</span></div>
+      </div>
+      <p class="rotulo">
+        passos que o CRM já executa hoje. Os outros 23 têm subetapa responsável — nenhum ficou sem dono.
+      </p>
+      <div class="barra" role="img" aria-label="21 de 44 passos já executam">
+        <i class="b-pronto"></i><i class="b-falta"></i>
+      </div>
+    </div>
+
+    <div class="legenda">
+      <span class="titulo">Quem executa</span>
+      <span class="chip c-recepcao">recepção</span>
+      <span class="chip c-profissional">profissional</span>
+      <span class="chip c-paciente">paciente</span>
+      <span class="chip c-sistema">sistema</span>
+    </div>
+  </header>
+
+  <main class="trilha">
+
+    <!-- E1 -->
+    <section class="etapa">
+      <div class="marco"><span class="codigo">E1</span><span class="fio"></span></div>
+      <div class="corpo">
+        <h2>Captação e primeira consulta</h2>
+        <p class="resumo">
+          O interessado chega por mensagem, telefone ou balcão. A recepção esclarece, convida para a
+          consulta de diagnóstico e, se ele aceitar, cadastra e agenda. Aceitar a consulta é o gesto
+          que converte o lead em cliente — a agenda exige cliente.
+        </p>
+        <ol class="passos">
+          <li><span class="n">01</span><span class="texto"><span class="chip c-paciente quem">paciente</span>Entra em contato por WhatsApp, telefone ou balcão</span><span class="estado e-pronto">pronto</span></li>
+          <li><span class="n">02</span><span class="texto"><span class="chip c-recepcao quem">recepção</span>Esclarece dúvidas e oferece a consulta de diagnóstico</span><span class="estado e-pronto">pronto</span></li>
+          <li><span class="n">03</span><span class="texto"><span class="chip c-recepcao quem">recepção</span>Cadastra os dados básicos do interessado</span><span class="estado e-pronto">pronto</span></li>
+          <li><span class="n">04</span><span class="texto"><span class="chip c-sistema quem">sistema</span>O aceite converte o lead em cliente</span><span class="estado e-falta">falta · 03.19</span></li>
+          <li><span class="n">05</span><span class="texto"><span class="chip c-recepcao quem">recepção</span>Agenda a consulta de diagnóstico</span><span class="estado e-pronto">pronto</span></li>
+          <li><span class="n">06</span><span class="texto"><span class="chip c-sistema quem">sistema</span>Consulta aparece como prevista na agenda do profissional</span><span class="estado e-pronto">pronto</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- E2 -->
+    <section class="etapa">
+      <div class="marco"><span class="codigo">E2</span><span class="fio"></span></div>
+      <div class="corpo">
+        <h2>Acolhimento e diagnóstico</h2>
+        <p class="resumo">
+          No dia, a recepção completa o cadastro — dados pessoais, bancários, convênio — e o
+          acolhimento move o agendamento para a sala de espera. O profissional chama, abre o
+          prontuário, faz a anamnese e preenche o odontograma, achado e trabalho por face.
+        </p>
+        <ol class="passos">
+          <li><span class="n">07</span><span class="texto"><span class="chip c-recepcao quem">recepção</span>Recebe o paciente e completa o cadastro</span><span class="estado e-pronto">pronto</span></li>
+          <li><span class="n">08</span><span class="texto"><span class="chip c-sistema quem">sistema</span>Acolhimento move o agendamento para sala de espera</span><span class="estado e-pronto">pronto</span></li>
+          <li><span class="n">09</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Chama o paciente; agendamento vai para em andamento</span><span class="estado e-pronto">pronto</span></li>
+          <li><span class="n">10</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Abre o prontuário e registra a anamnese</span><span class="estado e-pronto">pronto</span></li>
+          <li><span class="n">11</span><span class="texto"><span class="chip c-sistema quem">sistema</span>Alertas clínicos da anamnese aparecem na abertura</span><span class="estado e-falta">falta · 03.16</span></li>
+          <li><span class="n">12</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Preenche o odontograma, face a face</span><span class="estado e-pronto">pronto</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- E3 -->
+    <section class="etapa">
+      <div class="marco"><span class="codigo">E3</span><span class="fio"></span></div>
+      <div class="corpo">
+        <h2>Proposta e orçamento</h2>
+        <p class="resumo">
+          Do odontograma nasce o plano: fase clínica na linha, opções concorrentes na coluna. Cada
+          opção pode conter procedimento, pacote ou plano. Gerar orçamento resolve o preço sozinho,
+          sem ninguém escolher tabela. O profissional aprova antes de o paciente ver.
+        </p>
+        <ol class="passos">
+          <li><span class="n">13</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Monta o plano a partir do odontograma e do diagnóstico</span><span class="estado e-falta">falta · 03.8.c</span></li>
+          <li><span class="n">14</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Monta a opção A e a opção B para a mesma necessidade</span><span class="estado e-falta">falta · 03.8.c</span></li>
+          <li><span class="n">15</span><span class="texto"><span class="chip c-sistema quem">sistema</span>Cada opção aceita procedimento, pacote ou plano</span><span class="estado e-falta">falta · 03.8.c</span></li>
+          <li><span class="n">16</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Gera o orçamento das duas opções</span><span class="estado e-pronto">pronto</span></li>
+          <li><span class="n">17</span><span class="texto"><span class="chip c-sistema quem">sistema</span>O preço se resolve e a linha guarda de onde ele veio</span><span class="estado e-pronto">pronto</span></li>
+          <li><span class="n">18</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Aprova os orçamentos antes de irem ao paciente</span><span class="estado e-pronto">pronto</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- E4 -->
+    <section class="etapa">
+      <div class="marco"><span class="codigo">E4</span><span class="fio"></span></div>
+      <div class="corpo">
+        <h2>Negociação e aceite</h2>
+        <p class="resumo">
+          A recepção apresenta os orçamentos aprovados, impressos ou em tela. Só ela mexe em desconto,
+          parcela, juros e mora — e qualquer alteração devolve o orçamento a rascunho, exigindo nova
+          aprovação do profissional, que responde pelo número.
+        </p>
+        <ol class="passos">
+          <li><span class="n">19</span><span class="texto"><span class="chip c-recepcao quem">recepção</span>Imprime ou mostra em tela os orçamentos aprovados</span><span class="estado e-falta">falta · 03.8.b</span></li>
+          <li><span class="n">20</span><span class="texto"><span class="chip c-paciente quem">paciente</span>Pode levar o orçamento para casa e decidir depois</span><span class="estado e-pronto">pronto</span></li>
+          <li><span class="n">21</span><span class="texto"><span class="chip c-recepcao quem">recepção</span>Só ela altera desconto, parcela, juros e mora</span><span class="estado e-pronto">pronto</span></li>
+          <li><span class="n">22</span><span class="texto"><span class="chip c-sistema quem">sistema</span>Alteração de valor devolve o orçamento a rascunho</span><span class="estado e-falta">falta · 03.8.c</span></li>
+          <li><span class="n">23</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Reaprova o orçamento que foi alterado</span><span class="estado e-falta">falta · 03.8.c</span></li>
+          <li><span class="n">24</span><span class="texto"><span class="chip c-paciente quem">paciente</span>Escolhe a opção vencedora</span><span class="estado e-pronto">pronto</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- E5 -->
+    <section class="etapa">
+      <div class="marco"><span class="codigo">E5</span><span class="fio"></span></div>
+      <div class="corpo">
+        <h2>Contrato e dupla assinatura</h2>
+        <p class="resumo">
+          Escolhida a opção, a recepção confirma a via de assinatura e contrata. A perdedora é
+          registrada como recusada. O contrato nasce com a assinatura do profissional derivada da
+          aprovação e vai ao paciente por link, QR ou papel. A dupla assinatura libera a execução.
+        </p>
+        <ol class="passos">
+          <li><span class="n">25</span><span class="texto"><span class="chip c-recepcao quem">recepção</span>Confirma a via de assinatura registrada do paciente</span><span class="estado e-falta">falta · 03.12</span></li>
+          <li><span class="n">26</span><span class="texto"><span class="chip c-recepcao quem">recepção</span>Contrata a opção vencedora</span><span class="estado e-falta">falta · 03.8.b</span></li>
+          <li><span class="n">27</span><span class="texto"><span class="chip c-sistema quem">sistema</span>Registra a opção perdedora como recusada</span><span class="estado e-pronto">pronto</span></li>
+          <li><span class="n">28</span><span class="texto"><span class="chip c-sistema quem">sistema</span>Contrato nasce com a assinatura do profissional registrada</span><span class="estado e-falta">falta · 03.8.b</span></li>
+          <li><span class="n">29</span><span class="texto"><span class="chip c-sistema quem">sistema</span>Envia o token por WhatsApp, SMS, e-mail ou QR</span><span class="estado e-falta">falta · 03.10</span></li>
+          <li><span class="n">30</span><span class="texto"><span class="chip c-paciente quem">paciente</span>Assina em tela e o documento volta assinado</span><span class="estado e-falta">falta · 03.12</span></li>
+          <li><span class="n">31</span><span class="texto"><span class="chip c-sistema quem">sistema</span>Dupla assinatura libera a execução e prevê o faturamento</span><span class="estado e-falta">falta · 03.8.b</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- E6 -->
+    <section class="etapa">
+      <div class="marco"><span class="codigo">E6</span><span class="fio"></span></div>
+      <div class="corpo">
+        <h2>Execução e evolução</h2>
+        <p class="resumo">
+          Com o contrato assinado, agenda-se cada sessão. O profissional registra a evolução durante
+          o atendimento — avaliação, conduta e intercorrência —, lê para o paciente e envia para
+          assinatura simplificada. A recusa de assinar também se registra.
+        </p>
+        <ol class="passos">
+          <li><span class="n">32</span><span class="texto"><span class="chip c-recepcao quem">recepção</span>Agenda a sessão do procedimento contratado</span><span class="estado e-pronto">pronto</span></li>
+          <li><span class="n">33</span><span class="texto"><span class="chip c-recepcao quem">recepção</span>Acolhimento, sala de espera e chamada, como na primeira vez</span><span class="estado e-pronto">pronto</span></li>
+          <li><span class="n">34</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Registra a evolução durante a sessão</span><span class="estado e-falta">falta · 03.7.b</span></li>
+          <li><span class="n">35</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Registra intercorrências e prescrições no mesmo lugar</span><span class="estado e-falta">falta · 03.7.b</span></li>
+          <li><span class="n">36</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Marca as faces executadas, com data e autor</span><span class="estado e-falta">falta · 03.8.c</span></li>
+          <li><span class="n">37</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Lê a evolução ao paciente e envia para assinatura</span><span class="estado e-falta">falta · 03.12</span></li>
+          <li><span class="n">38</span><span class="texto"><span class="chip c-paciente quem">paciente</span>Assina por link ou QR; a recusa também se registra</span><span class="estado e-falta">falta · 03.7.b</span></li>
+          <li><span class="n">39</span><span class="texto"><span class="chip c-sistema quem">sistema</span>Evolução assinada encerra a sessão</span><span class="estado e-pronto">pronto</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- E7 -->
+    <section class="etapa">
+      <div class="marco"><span class="codigo">E7</span><span class="fio"></span></div>
+      <div class="corpo">
+        <span class="paralelo">corre em paralelo a partir de E5</span>
+        <h2>Financeiro</h2>
+        <p class="resumo">
+          A dupla assinatura gera as faturas previstas, que caem numa fila de aprovação da recepção.
+          Aprovadas, seguem ao paciente na hora ou por envio programado. O contrato só se encerra
+          quando não faltar nem dinheiro nem trabalho.
+        </p>
+        <ol class="passos">
+          <li><span class="n">40</span><span class="texto"><span class="chip c-sistema quem">sistema</span>Faturas previstas nascem da dupla assinatura</span><span class="estado e-falta">falta · 03.8.b</span></li>
+          <li><span class="n">41</span><span class="texto"><span class="chip c-sistema quem">sistema</span>Faturas caem na fila de aprovação da recepção</span><span class="estado e-falta">falta · 03.18</span></li>
+          <li><span class="n">42</span><span class="texto"><span class="chip c-recepcao quem">recepção</span>Aprova e despacha, na hora ou por envio programado</span><span class="estado e-falta">falta · 03.18</span></li>
+          <li><span class="n">43</span><span class="texto"><span class="chip c-sistema quem">sistema</span>Comissões do profissional são calculadas</span><span class="estado e-pronto">pronto</span></li>
+          <li><span class="n">44</span><span class="texto"><span class="chip c-sistema quem">sistema</span>Contrato fica aberto enquanto faltar pagamento ou execução</span><span class="estado e-falta">falta · 03.8.b</span></li>
+        </ol>
+      </div>
+    </section>
+
+  </main>
+
+  <section class="decisoes">
+    <h3>As quatro decisões que fecharam este caminho</h3>
+    <p class="sub">
+      Tomadas por Max em 6 de setembro de 2026, na revisão do fluxo original de 27 passos.
+    </p>
+    <dl class="dec">
+      <div>
+        <dt>D-F1</dt>
+        <dd>
+          A opção A/B aceita <b>procedimento, pacote ou plano</b>. Uma proposta que é um pacote não
+          cabia na matriz anterior, e o contrato passa a ser cópia fiel da opção aceita — sem
+          tradução no meio, que é onde o preço costuma divergir.
+        </dd>
+      </div>
+      <div>
+        <dt>D-F2</dt>
+        <dd>
+          <b>Aceitar a consulta converte o lead em cliente.</b> A agenda exige cliente, e um lead não
+          entra nela. “Paciente” não vira coluna: é derivado — cliente com contrato assinado.
+        </dd>
+      </div>
+      <div>
+        <dt>D-F3</dt>
+        <dd>
+          <b>O profissional aprova o orçamento antes de ele ir ao paciente</b>, e alterar dinheiro
+          devolve o orçamento a rascunho. Não se promete um preço que quem responde por ele ainda
+          não viu.
+        </dd>
+      </div>
+      <div>
+        <dt>D-F4</dt>
+        <dd>
+          <b>O vocabulário de preço muda na tela.</b> “Escada”, “degrau” e “veio de” descrevem bem o
+          mecanismo e mal o trabalho de quem atende: a tela passa a dizer <i>como o preço é
+          decidido</i>, <i>a quem se aplica</i> e <i>preço aplicado</i>.
+        </dd>
+      </div>
+    </dl>
+  </section>
+
+  <footer class="rodape">
+    <span>Fonte: <code>docs/08_CAMINHO_FELIZ.md</code> · fila de trabalho em <code>docs/00a_PLANO_ETAPA_03.md</code></span>
+    <span>Este documento é a base do manual do CRM e do POP/SOP da clínica — o percurso guiado com captura passo a passo acontece logo após a Subetapa 03.22.</span>
+  </footer>
+
+</div>
