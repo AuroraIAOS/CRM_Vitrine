@@ -254,11 +254,13 @@ Deno.serve(async (req: Request) => {
   const { data: userData, error: userErr } = await userClient.auth.getUser();
   if (userErr || !userData.user) return json({ error: "Sessão inválida" }, 401);
 
-  const { data: perfil, error: perfilErr } = await admin
-    .from("profiles")
-    .select("account_id, account_role")
-    .eq("user_id", userData.user.id)
-    .maybeSingle();
+  // Subetapa 03.9: o perfil da clínica ATIVA desta sessão. Ler `profiles` por
+  // `user_id` com service_role pegaria uma clínica qualquer de quem trabalha
+  // em duas (e o `maybeSingle()` recusaria). A RPC roda com o JWT do chamador,
+  // que carrega o `session_id` da escolha de clínica.
+  const { data: perfil, error: perfilErr } = await userClient
+    .rpc("active_membership")
+    .maybeSingle<{ account_id: string; account_role: string }>();
   if (perfilErr || !perfil) return json({ error: "Perfil não encontrado" }, 403);
 
   // ORDEM IMPORTA (achado do portão adversarial da Subetapa 02.15): esta

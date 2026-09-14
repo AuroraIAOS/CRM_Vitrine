@@ -269,7 +269,14 @@ describe("resgatar_convite — recusas de segurança (achado A02 da 01.8, regres
     expect(perfil?.account_id).toBe(ctx.accountId);
   });
 
-  it("usuário com dado de domínio na própria conta não consegue resgatar (23505)", async () => {
+  // [REVISTO na Subetapa 03.9 — decisão 2 de Max, 2026-09-14: convite
+  // híbrido.] Até a 03.9 este caso era RECUSADO com 23505 ("cadastre-se com
+  // outro e-mail"), porque um login só podia ter uma conta. Com a
+  // multiunidade, quem já tem clínica com dado ganha um perfil NOVO na conta
+  // que convidou, e a clínica de origem fica intacta. O teste continua aqui,
+  // com o nome novo, porque a pergunta de segurança é a mesma: o aceite não
+  // pode destruir dado da conta de origem.
+  it("usuário com dado de domínio na própria conta ganha perfil novo e preserva a conta de origem (convite híbrido, 03.9)", async () => {
     const owner = await clientAs("owner");
     const { data: convite } = await owner.rpc("criar_convite", { p_role: "viewer" });
 
@@ -299,10 +306,21 @@ describe("resgatar_convite — recusas de segurança (achado A02 da 01.8, regres
       await apagarUsuarioDescartavel(convidado.userId);
     });
 
+    limpeza.push(async () => {
+      await admin.from("profiles").delete().eq("user_id", convidado.userId);
+    });
+
+    const ctx = await loadContext();
     const { data, error } = await convidado.client.rpc("resgatar_convite", { p_token: convite.token });
-    expect(data).toBeNull();
-    expect(error?.code).toBe("23505");
-    expect(error?.message).toMatch(/dados/i);
+    expect(error).toBeNull();
+    expect(data).toBe(ctx.accountId);
+
+    const { data: perfis } = await admin.from("profiles").select("account_id, account_role").eq("user_id", convidado.userId);
+    const porConta = Object.fromEntries((perfis ?? []).map((p) => [p.account_id, p.account_role]));
+    expect(porConta).toEqual({ [perfilConvidado!.account_id]: "owner", [ctx.accountId]: "viewer" });
+
+    const { data: leadAindaLa } = await admin.schema("aba_people").from("leads").select("id").eq("id", pessoa!.id);
+    expect(leadAindaLa?.length).toBe(1);
   });
 });
 

@@ -2,6 +2,16 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-09-14 (Subetapa 03.9 — multiunidade e nível contratado) · no bench, aguardando merge
+
+- **O mesmo login trabalha em mais de uma clínica.** Quem pertence a dois consultórios entra com e-mail e senha e escolhe em qual vai trabalhar. Os dados de uma clínica nunca aparecem na outra: pacientes, prontuário, agenda, financeiro e notificações seguem a clínica escolhida. O papel também é o dela, então quem é dono numa e profissional na outra tem, em cada uma, só o que aquele papel permite.
+- **A escolha vale por aparelho.** Trocar de clínica no computador não troca a do celular. A troca fica no cabeçalho, e o sistema volta à tela inicial já na clínica nova.
+- **Convite para quem já tem clínica.** Quem já trabalha em outra clínica aceita o convite e passa a ter as duas, sem perder nada da que já tinha. O funcionário que só criou o login para aceitar o convite continua entrando direto, sem escolher nada.
+- **Uma pessoa pode ser dona de duas clínicas**, recebendo a titularidade da segunda pela transferência.
+- **Remover alguém de uma clínica não mexe nas outras dele**, e mudar o papel de alguém numa clínica não muda o papel dele em outra.
+- **O produto passa a saber o nível contratado de cada clínica** (Bronze, Prata, Ouro, Diamante). Por enquanto todos os níveis liberam tudo, e nada muda para ninguém; quando os módulos de cada nível forem definidos, o que estiver fora do nível some da clínica, inclusive para o proprietário. As configurações nunca saem de nenhum nível.
+- **Correção de segurança:** os formulários de anamnese de uma clínica podiam ser lidos e alterados pelo proprietário de outra. O acesso passou a respeitar a clínica. Em produção não havia cliente real exposto.
+
 ## [+1.0] - 2026-09-14 (Subetapa 03.7.b — a sessão clínica escreve)
 
 - **A evolução se escreve durante o atendimento.** Na aba Evoluções do prontuário, a sessão aberta tem cinco campos: Avaliação, Conduta, Intercorrência, Resultado e Próximos passos. O profissional escreve enquanto atende e salva quantas vezes quiser. Até aqui o prontuário guardava o desenho do mapa e nenhuma palavra: o texto só entrava depois, como adendo.

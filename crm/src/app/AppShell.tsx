@@ -42,7 +42,8 @@ function SidebarLink({ item }: { item: NavItem }) {
 }
 
 export function AppShell() {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, clinicas, escolherClinica } = useAuth();
+  const clinicaAtiva = clinicas.find((c) => c.accountId === profile?.accountId);
   const { data: modules } = useReadableModules();
   const location = useLocation();
 
@@ -102,6 +103,30 @@ export function AppShell() {
 
       {/* Header: identidade do usuário autenticado */}
       <header className="col-start-2 row-start-1 flex items-center justify-end gap-3 border-b border-border px-4">
+        {/* Subetapa 03.9: a clínica ativa desta sessão. Com uma só, é só o nome;
+            com mais de uma, a troca — que esvazia o cache e volta ao início. */}
+        {clinicas.length > 1 ? (
+          <label className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+            Clínica
+            <select
+              aria-label="Trocar de clínica"
+              className="rounded-[5px] border border-border bg-background px-2 py-[3px] text-[11.5px] text-foreground"
+              value={profile?.accountId ?? ""}
+              onChange={async (e) => {
+                const { error } = await escolherClinica(e.target.value);
+                if (!error) window.location.assign("/");
+              }}
+            >
+              {clinicas.map((c) => (
+                <option key={c.accountId} value={c.accountId}>
+                  {c.nome}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          clinicaAtiva && <span className="text-[11.5px] text-muted-foreground">{clinicaAtiva.nome}</span>
+        )}
         <div className="flex items-center gap-2 rounded-full border border-border py-[3px] pl-[3px] pr-[10px]">
           <div className="h-[22px] w-[22px] rounded-full bg-accent" />
           <span className="text-[11.5px] text-secondary-foreground">{profile?.fullName || user?.email}</span>

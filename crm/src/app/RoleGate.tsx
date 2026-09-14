@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
+import { EscolherClinicaPage } from "@/features/auth/EscolherClinicaPage";
 
 /**
  * Exige sessão válida. O gate por papel/módulo é o banco (`access.can()`/
@@ -8,10 +9,13 @@ import { useAuth } from "@/lib/auth";
  * vem de `access.readable_modules()` (Subetapa 02.1, `lib/access.ts`).
  */
 export function RoleGate() {
-  const { session, loading, profileLoading } = useAuth();
+  const { session, loading, profileLoading, precisaEscolherClinica } = useAuth();
 
   if (loading || (session && profileLoading)) return null;
   if (!session) return <Navigate to="/login" replace />;
+  // Subetapa 03.9: segundo estágio do login — duas clínicas e nenhuma escolhida
+  // nesta sessão. O banco nega tudo até a escolha; não há app para montar.
+  if (precisaEscolherClinica) return <EscolherClinicaPage />;
 
   return <Outlet />;
 }

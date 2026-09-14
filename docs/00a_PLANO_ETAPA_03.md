@@ -32,7 +32,7 @@
 | 03.8.d | Preço por grupo de pacientes: o degrau que o convênio vai usar | Onda 2 · P-sub | Opus | ✅ CONCLUÍDA |
 | 03.8.c | O plano se monta na tela, e a opção aceita item heterogêneo | Onda 2 · P-sub | Opus | ✅ CONCLUÍDA |
 | 03.8.b | Contrato: itens heterogêneos, assinatura e a trava dupla | Onda 2 · P-sub | Opus | ✅ CONCLUÍDA |
-| 03.9 | Multiunidade + trava de plano por módulo | Onda 3 · **PORTÃO COMPLETO** | Opus | ⬜ não iniciada |
+| 03.9 | Multiunidade + trava de plano por módulo | Onda 3 · **PORTÃO COMPLETO** | Opus | ⚠️ PENDENTE (bench pronto; tela e Edge Functions aguardam o merge) |
 | 03.10 | Infraestrutura de token externo | Onda 4 · P-sub | Opus | ⬜ não iniciada |
 | 03.11 | Caixa de entrada de exames | Onda 4 · P-sub | Opus | ⬜ não iniciada |
 | 03.12 | Assinatura do paciente por link multicanal | Onda 4 · P-sub | Opus | ⬜ não iniciada |
@@ -50,7 +50,7 @@
 | 03.22 | Implantação da UX Versão 03 | Etapa 3 do roteiro | Sonnet | ⬜ não iniciada |
 | 03.23 | Portão de segurança adversarial do MVP | Etapa 4 do roteiro · **PORTÃO COMPLETO** | Opus | ⬜ não iniciada |
 
-**Progresso: 17 de 35 concluídas** (03.0, 03.0.a, 03.2, 03.3, 03.4, 03.5, 03.6, 03.6.a, 03.6.b, 03.7, 03.7.a, 03.8, 03.8.a, 03.8.d, 03.8.c, 03.8.b, 03.7.b) · **1 adiada** (03.1) · **17 restantes** *(contagem de 2026-09-14, depois da 03.7.b — a de 2026-09-06 dizia 14 e não fora atualizada na 03.8.c; foi 26 em 2026-09-03, 30 em 2026-09-04 por D-I5, 32 em 2026-09-04 por D-V2/D-V6 34 em 2026-09-06 e 35 em 2026-09-10 (03.8.d, por D-F5) — número sem data não denuncia que envelheceu, `handoffs/instrucoes.md` §5)*. **As duas últimas nasceram do caminho feliz** (`docs/08_CAMINHO_FELIZ.md`, 2026-09-06): **03.7.b** e **03.8.c**, inseridas sem renumerar as seguintes, no mesmo padrão da 03.16.a e da 03.21.a. Elas não vêm de revisão de escritório — vêm de Max **usar o produto**: a demonstração ao vivo da tela `/plano` (2026-09-05) achou em minutos dois defeitos que build, `tsc`, 248 testes de RLS e a evidência de banco não pegaram. Três portões completos aguardam (03.9, 03.15, 03.23) — nenhum sem bench isolado, e nenhum termina em merge por conta do CODE (`CLAUDE.md` §13).
+**Progresso: 17 de 35 concluídas + 1 pendente** (a 03.9, com o portão executado em 2026-09-14 e o merge por decidir) (03.0, 03.0.a, 03.2, 03.3, 03.4, 03.5, 03.6, 03.6.a, 03.6.b, 03.7, 03.7.a, 03.8, 03.8.a, 03.8.d, 03.8.c, 03.8.b, 03.7.b) · **1 adiada** (03.1) · **17 restantes** *(contagem de 2026-09-14, depois da 03.7.b — a de 2026-09-06 dizia 14 e não fora atualizada na 03.8.c; foi 26 em 2026-09-03, 30 em 2026-09-04 por D-I5, 32 em 2026-09-04 por D-V2/D-V6 34 em 2026-09-06 e 35 em 2026-09-10 (03.8.d, por D-F5) — número sem data não denuncia que envelheceu, `handoffs/instrucoes.md` §5)*. **As duas últimas nasceram do caminho feliz** (`docs/08_CAMINHO_FELIZ.md`, 2026-09-06): **03.7.b** e **03.8.c**, inseridas sem renumerar as seguintes, no mesmo padrão da 03.16.a e da 03.21.a. Elas não vêm de revisão de escritório — vêm de Max **usar o produto**: a demonstração ao vivo da tela `/plano` (2026-09-05) achou em minutos dois defeitos que build, `tsc`, 248 testes de RLS e a evidência de banco não pegaram. Três portões completos aguardam (03.9, 03.15, 03.23) — nenhum sem bench isolado, e nenhum termina em merge por conta do CODE (`CLAUDE.md` §13).
 
 
 > **Status no próprio título.** Padrão fixado por Max em 2026-09-03: além do campo `Status:` no corpo da subetapa (`CLAUDE.md` §8), o mesmo marcador aparece **no fim da linha do `###`** — `· Status: ✅ CONCLUÍDA`, `· Status: ⏸️ ADIADA`, `· Status: ⚠️ PENDENTE`, `· Status: 🛑 ABANDONADA`. Subetapa não iniciada não leva marcador nenhum, e é essa ausência que a distingue. O motivo é de leitura: o sumário do editor e um `grep` por `^### Subetapa` passam a responder "onde estamos" sem abrir nenhum bloco. Vale nos **dois** planos, gravado no mesmo commit, como todo o resto do Status.
@@ -718,7 +718,7 @@ Status: ✅ CONCLUÍDA — executada em 2026-09-14 (Opus do início ao fim, `[Go
   - **Pendências de Max que continuam abertas, sem mudança:** preço por profissional específico; se o `agent` remove item proposto (03.21.a); o orçamento aprovado sem profissional em produção; o percurso guiado depois da 03.22.
 ### ONDA 3 — o núcleo de permissão
 
-### Subetapa 03.9 — Multiunidade + trava de plano por módulo [Manual] [LLM: Opus] · PORTÃO COMPLETO
+### Subetapa 03.9 — Multiunidade + trava de plano por módulo [Manual] [LLM: Opus] · PORTÃO COMPLETO · Status: ⚠️ PENDENTE
 Objetivo: item 24 e a decisão D3 na **mesma cirurgia**, porque a medição da 03.0 mostrou que as duas reescrevem `access.can()`. Multiunidade: remover `public.profiles.user_id UNIQUE`, passar a conta ativa por toda a camada de autorização, e login em dois estágios (e-mail e senha → o sistema detecta que o e-mail pertence a mais de um consultório → seleção de consultório). Trava de plano: camada nova que diz quais módulos a conta contratou, consultada **antes** do atalho de `owner`.
 Conclusão: um usuário pertence a duas contas e, na conta ativa, não enxerga **nada** da outra; um módulo fora do plano contratado fica invisível **inclusive para o `owner`**; os 7 passos do portão executados em bench isolado, com parecer explícito.
 Qualidade: **portar a lógica, traduzir os nomes — nunca reescrever a permissão do zero** (`CLAUDE.md` §14); 21 arquivos de migration tocam `profiles` ou `is_account_member`. As políticas de RLS escritas em 03.6–03.8 são **reauditadas uma a uma** para garantir que comparam com a conta **ativa**, e não com "qualquer conta do usuário" — que é vazamento entre clínicas. **A trava de plano não pode viver em `access.module_permissions`:** `access.can()` devolve `TRUE` para `owner` antes de consultar aquela tabela (`003_core_access.sql:162`), e o `owner` é justamente quem contrata o plano — o interruptor aceitaria o clique e não esconderia nada, repetindo em escala o defeito que a 02.12 encontrou no grid de módulos. `access.modules` é catálogo global sem `account_id` e `licensing` guarda só teto de assentos: nenhum dos dois responde "o que esta conta contratou". Guarda permanente no molde do achado F01-b da 02.15: função de auditoria por catálogo mais teste de suíte que falha se ela devolver qualquer linha — sem isso a correção vale só para hoje. **Qual item do MVP entra em qual nível (Bronze/Prata/Ouro/Diamante) é decisão comercial de Max**, preenchida em tabela depois, sem tocar em código — decisão dele de 2026-09-03: a matriz fica para o momento certo, e não atrasa esta subetapa. Consequência de implementação, portanto: **o mecanismo nasce com todos os níveis liberando todos os módulos**, e o corte comercial passa a existir quando a matriz for preenchida. O que precisa estar provado aqui não é o corte, é que ele **funciona quando existir** — inclusive contra o `owner`, que é o caso que a implementação ingênua erra.
@@ -728,6 +728,62 @@ Escalonamento de LLM: Opus do início ao fim — é a subetapa de maior risco da
 **O CODE entrega o parecer e para. Ordenar o merge é atribuição exclusiva de Max** (`CLAUDE.md` §13).
 CHANGELOG: **+1.0**
 **Acréscimo da pesquisa `analise-ice` (2026-09-04) — reforço, não redesenho.** A escada de preço do ICE usa **Clínica** e **Grupo de clínicas** como dois níveis distintos, o que confirma D1/D3 e dá à multiunidade um consumidor concreto além do isolamento: a 03.8.a resolve preço por esses níveis, e sem eles a escada fica truncada. Fonte: `design/benchmark/fontes/ice.md` §5.2 e `RELATORIO_DE_IMPACTO_ICE.md` §3.2.
+
+Status: ⚠️ PENDENTE — portão executado em 2026-09-14 (Opus do início ao fim, `[Manual]`), no bench `bench/03.9-multiunidade-trava-de-nivel`, a partir de `5857cdd`. **Os 7 passos estão feitos e o parecer é favorável ao merge, com ressalvas.** O marcador é `⚠️ PENDENTE`, e não `✅`, por um motivo só, declarado: **a tela e as quatro Edge Functions corrigidas não estão em produção**. Elas acompanham o merge, que é ordem de Max (`CLAUDE.md` §13), pelo mesmo precedente da 02.15. O banco de produção já está na versão nova, e a tela publicada continua compatível com ele para todo usuário de uma clínica só, que hoje são todos. Relatório completo: `docs/RELATORIO_03.9_PORTAO_ADVERSARIAL.md`.
+
+**Migrations:** `054_conta_ativa_por_sessao`, `055_trava_de_nivel_por_modulo`, `056_funcoes_na_conta_ativa_e_convite_hibrido` e `057_guardas_multiunidade_e_nivel`.
+
+**Quatro decisões de Max antes da primeira DDL (2026-09-14)**, porque a conta ativa não tem fonte de porte (a 017 do Maximus trava a membresia única):
+  1. **a conta ativa vive por sessão**, chaveada pelo `session_id` do JWT;
+  2. **convite híbrido**: a conta de origem solitária e vazia migra, como na 037; qualquer outra ganha perfil novo;
+  3. **uma pessoa pode ser dona de duas clínicas**, sem autosserviço;
+  4. **rede (grupo de clínicas) fica fora da 03.9** e virou pendência vigiada.
+
+**O que o bench mediu antes de corrigir** (§11: medido, não deduzido), com a `054` aplicada e as funções ainda antigas:
+  - `ler_evolucoes` chamada com a sessão ativa em B, onde a pessoa é `agent`, **devolveu a evolução inteira da clínica M (21 campos)**. `SELECT … INTO` pega a primeira linha sem erro, e caiu no perfil em que ela é `owner`.
+  - `access.can('health')` respondeu `true` para o mesmo `agent`.
+  - A varredura por catálogo achou `aba_health.evolucoes` e `aba_health.formularios_anamnese` vazando.
+
+**Os achados, todos corrigidos:**
+  - **F01 · grave** — descobrir a conta pela primeira linha de `profiles`: 30 funções e as políticas que dependem delas. A cirurgia central foi `is_account_member` (281 das 319 políticas passam por ela), `access.can` e `pode_acessar`; 23 funções mudaram por uma linha e 5 de equipe foram reescritas.
+  - **F02 · grave (latente)** — `set_member_role`, `transfer_account_ownership` e `remove_account_member` alteravam `profiles WHERE user_id`, sem conta. Com dois perfis, rebaixar numa clínica rebaixaria em todas, e a transferência faria a pessoa virar `owner` de todas.
+  - **F03 · médio (real desde a 013, fora da multiunidade)** — as três políticas de `formularios_anamnese` usavam `pode_acessar(NULL, …)` e nunca comparavam a conta da linha. O `owner` de qualquer clínica **leu e alterou** o formulário de outra (medido numa transação desfeita). Em produção, a exposição foi entre a conta de testes antiga e a de demonstração; não havia cliente real.
+  - **F04 · médio** — `licensing.account_limits`, onde o nível passa a morar, tinha `INSERT/UPDATE/DELETE/TRUNCATE` para `authenticated` desde a 002, e só a RLS barrava.
+  - **F05 · baixo (leitura, não reproduzido)** — a 037 migrava o `owner` de uma conta que tivesse outros membros e apagava essa conta, levando em cascata os perfis deles.
+  - **F06 · processo** — as Edge Functions liam `profiles` por `user_id` com `service_role`: para quem tem duas clínicas, falhavam fechado.
+  - **F07 · processo** — uma varredura que pula tabela ilegível (`42501`) sem avisar dá verde enganoso; a suíte passou a exigir a lista de ilegíveis vazia.
+  - **F08 · processo** — três funções estavam em produção com os comentários podados por transcrição antiga, com lógica idêntica, conferida por hash sem comentário e sem espaço. É a recorrência da lição da 03.8.a, e a 056 devolveu a produção o texto do repositório.
+
+**A trava de nível.** `licensing.tiers`, `tier_modules`, `account_limits.tier_key` e `tier_changes`, e a pergunta única `licensing.module_enabled()`, consultada **antes** do atalho de `owner` em `access.can` e em `pode_acessar`. Os quatro níveis nascem liberando todos os módulos, e as contas nascem em `diamante`: a matriz é decisão de Max. Módulo de núcleo não se corta, e um par nível × módulo sem linha nega. **O que se provou foi o corte contra o `owner`:** num nível de teste com `people`, `health` e `treatment` cortados, o `owner` não os vê em `access.can`, no menu, na tabela, no `pode_acessar` nem nas funções `ler_*`.
+
+**Guardas permanentes**, no molde do F01-b da 02.15, varrendo o catálogo sem lista de schemas cravada:
+  - `politicas_sem_cerca_de_conta`
+  - `funcoes_sem_conta_ativa`
+  - `atalhos_de_owner_sem_nivel`
+  - `modulos_sem_linha_de_nivel`
+
+As quatro devolvem zero nos dois bancos, e `fks_sem_isolamento_de_conta` também.
+
+**Suíte:** `24_adversarial_multiunidade.spec.ts` com **35/35**; o vetor obrigatório é uma varredura de 88 tabelas. **Suíte inteira: 25 arquivos, 362 verdes e 1 pulado** (A06), na primeira execução; eram 329. O único teste antigo reescrito é o de "usuário com dado não resgata convite", por decisão 2 de Max. A 18 (Edge Functions) segue verde contra as funções novas, implantadas no projeto de teste.
+
+**Produção:** as quatro migrations entraram pelo MCP, transcritas com os comentários (a 056 em quatro partes, sem mudar o arquivo), com todas as verificações de pé. **Produção e teste idênticos por hash normalizado:**
+  - funções (42): `ae9d2a980e9ec74d59f1e4f19299c299`
+  - políticas (12): `0ba02e3562e579bb559a8db42e709c35`
+  - restrições (23): `e2f4f099c70dcb6b13a4acd6945804a7`
+  - colunas (31): `67ec797ae59767972548055eb1d7f10d`
+  - privilégios: `1c9fbcb88c0673b64a260d785feb7557`
+  - índices: `0501eaa38bec7b483c1a19784956ddac`
+
+**Evidência de banco em produção: 29/29** em `crm/scripts/evidencia_multiunidade.mjs`, com sessões reais: um login descartável com clínica própria e perfil de `agent` na demonstração (duas sessões), a dona e a recepção. **Resíduo zero**, conferido no catálogo. **`get_advisors`:** 5 avisos novos, todos esperados pelo desenho — `active_accounts` sem política (ninguém lê nem escreve direto) e as quatro portas de escolha executáveis por `authenticated`, nenhuma por `anon`.
+
+**Tela** (no bench, não publicada): login em dois estágios (`EscolherClinicaPage`), troca de clínica no cabeçalho, que esvazia o cache de consultas, e o aceite de convite entrando na clínica que convidou. `tsc` e `npm run build` verdes; precache 1.241,7 KiB. **Evidência de tela não coletada**, conforme a dispensa de Max, e declarada como ressalva do parecer.
+
+**Reportado, não implementado:**
+  - rede (grupo de clínicas);
+  - tela de "criar nova clínica";
+  - custo por linha de `is_account_member`, que agora consulta a conta ativa: não foi medido;
+  - F05 não reproduzido;
+  - D-F18: o adendo nasce assinado por quem o escreveu (decisão de Max de 2026-09-14), com implementação fora deste portão.
 
 ### ONDA 4 — token e comunicação externa (bloco B): uma infraestrutura só
 
@@ -934,6 +990,10 @@ Lista completa e permanente em `docs/00_PLANO_E_CRITERIOS.md` → "Pendências v
 - [ ] **Percurso guiado de todos os caminhos felizes, com captura passo a passo, para virar manual e POP/SOP** — gatilho: **logo depois da Subetapa 03.22** (implantação da UX Versão 03), por decisão de Max de **2026-09-05**, reafirmada em 2026-09-06. O CODE navega o CRM inteiro no navegador de Max — aba por aba, função por função —, executa cada caminho feliz de `docs/08_CAMINHO_FELIZ.md` e registra **cada passo** em `screenshots/`, numerados e nomeados pelo que fazem. **Por que depois da 03.22:** a UX Versão 03 redesenha as telas, e todo passo capturado antes vira material a refazer — o manual nasceria envelhecido. **O ensaio já aconteceu e vale como prova de método** (2026-09-05, tela `/plano`): pilotar a tela publicada com Max assistindo achou, em minutos, dois defeitos que build, `tsc`, 248 testes de RLS e a evidência de banco não pegaram. **A lição de escopo que fica:** percorrer caminho feliz na tela publicada não é conferência de acabamento — é o único teste que exercita a junção de front, rede, RLS e dado real, e é onde mora a classe de defeito que se disfarça de tela plausível (`instrucoes.md` §5).
 
 - [ ] **Matriz Bronze/Prata/Ouro/Diamante — qual módulo e qual funcionalidade entra em cada nível** — gatilho: decisão de Max, no momento que ele julgar correto, e não antes. **Não é bloqueio da Etapa 03.** A Subetapa 03.9 constrói o *mecanismo* (a camada de plano consultada antes do atalho de `owner` em `access.can()`), que nasce com todos os níveis liberando tudo; preencher a matriz depois é dado, não código.
+  - **[Mecanismo pronto — Subetapa 03.9, 2026-09-14.]** `licensing.tiers`, `licensing.tier_modules` e `licensing.account_limits.tier_key`. Os quatro níveis nascem liberando todos os módulos e toda conta nasce em `diamante`. Preencher a matriz é `UPDATE licensing.tier_modules SET enabled = false WHERE …`, feito pelo servidor: nenhum papel de conta escreve ali, e o módulo de núcleo (`settings`) recusa o corte. O corte contra o `owner` está provado na suíte 24. A matriz continua sendo decisão de Max.
+- [ ] **Rede (grupo de clínicas) — fora da 03.9 por decisão de Max (2026-09-14)** — gatilho: decisão de Max, quando uma rede de clínicas virar cliente ou quando o degrau `rede` da escada de preço (03.8.d) precisar de discriminador. A 03.9 entregou **isolamento total** entre contas; rede é o oposto disso (juntar dado e metas entre clínicas) e pede desenho e portão próprios. Hoje o degrau `rede` existe na escada de preço **sem chave** para nenhuma entidade: vale para a conta inteira, pela precedência. **Risco de não decidir:** nenhum para clínica única; uma rede real hoje seria N contas isoladas, sem visão consolidada.
+- [ ] **Publicar a tela e as Edge Functions da 03.9 junto com o merge** — gatilho: **a ordem de merge de Max** do bench `bench/03.9-multiunidade-trava-de-nivel`. O banco de produção já tem as migrations 054–057. A tela publicada (`auth.tsx` antigo) e as quatro Edge Functions de produção (`ia-configurar`, `ia-responder`, `whatsapp-configurar`, `whatsapp-enviar`) continuam funcionando para quem tem **uma** clínica, que hoje são todos (11 perfis, 11 usuários, medido em 2026-09-14). **Risco enquanto não publicar:** quem aceitar um convite tendo clínica própria com dado passa a ter dois perfis (convite híbrido, já ativo no banco), e a tela antiga e as funções antigas não o deixam entrar. Falha fechada, não vazamento. As funções novas estão implantadas só no projeto de teste.
+- [ ] **D-F18 — o adendo nasce assinado por quem o escreveu** — decisão de Max de 2026-09-14, dada na abertura da 03.9 à pendência deixada pela 03.7.b. **Não implementada na 03.9**, porque é `aba_health` e fica fora do escopo do portão. Gatilho: a próxima subetapa que tocar `aba_health.evolucoes` (P-sub). O que muda: o adendo nasce com `travada = true`, carimbado com autor e data. Com isso ele passa a receber recusa (D-F16), e o gatilho de trava da 013 precisa continuar recusando alteração nele.
 - [x] **FECHADA em 2026-09-03 — Max autorizou.** `CLAUDE.md` §14 passou a nomear o CRM Sindcom como fonte de porte para comunicação externa por token, com o mesmo estatuto do Maximus. **A Subetapa 03.10 está desbloqueada.**
 - [x] **FECHADA em 2026-09-03 — Max decidiu: `Resumo do paciente` e `Prescrições de medicamento` entram como itens NOVOS do MVP** (itens 25 e 26). A lista fechada do benchmark foi reaberta por ele, com registro no cabeçalho da Etapa 2 do roteiro. As outras 12 abas do dossiê são interface sobre dado já existente e não ampliam escopo. Prescrições é a única peça com tabela nova em `aba_health`, e por isso leva o regime completo do schema e P-sub próprio. **A Subetapa 03.16.a está desbloqueada quanto a escopo.**
 - [x] **ENDEREÇADA em 2026-09-03 — Max criou a Subetapa 03.21.a para isto.** A pergunta "um dentista precisa ver a situação financeira do paciente?" deixou de ser um item solto da 03.16.a e virou parte de uma varredura geral de acessos, entre a 03.21 e a 03.22: conferir tudo o que as Etapas 01 e 02 distribuíram e distribuir o que a Etapa 03 acrescentou. Continua **aberta como questão de produto** — o que fechou foi o lugar onde ela se responde.

@@ -35,7 +35,7 @@ export function AceitarConvitePage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get("token") ?? "";
-  const { session, signUp } = useAuth();
+  const { session, signUp, escolherClinica } = useAuth();
   const [pendenteConfirmacao, setPendenteConfirmacao] = useState(false);
 
   const peek = useQuery({
@@ -50,8 +50,11 @@ export function AceitarConvitePage() {
 
   const resgatar = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.rpc("resgatar_convite", { p_token: token });
+      const { data, error } = await supabase.rpc("resgatar_convite", { p_token: token });
       if (error) throw error;
+      // Subetapa 03.9 (convite híbrido): quem já tinha clínica agora tem duas.
+      // Aceitar o convite é escolher trabalhar na clínica que convidou.
+      await escolherClinica(data as string);
     },
     onSuccess: () => navigate("/", { replace: true }),
   });
