@@ -2,6 +2,15 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-09-14 (Subetapa 03.7.b — a sessão clínica escreve)
+
+- **A evolução se escreve durante o atendimento.** Na aba Evoluções do prontuário, a sessão aberta tem cinco campos: Avaliação, Conduta, Intercorrência, Resultado e Próximos passos. O profissional escreve enquanto atende e salva quantas vezes quiser. Até aqui o prontuário guardava o desenho do mapa e nenhuma palavra: o texto só entrava depois, como adendo.
+- **A intercorrência tem lugar próprio**, separado do resultado, e aparece destacada no histórico com um selo. Assim um evento adverso não se perde dentro do texto do desfecho.
+- **Assinar grava tudo antes de travar.** "Assinar e encerrar sessão" salva o texto e as marcações do mapa que estiverem pendentes, venha o clique da aba Evoluções ou da aba do mapa. Depois de assinada, a evolução não se altera, e o que vier depois continua entrando como adendo.
+- **A recusa do paciente em assinar fica registrada.** Numa evolução assinada, o profissional clica em "Paciente recusou assinar" e escreve o motivo, ou "não informou". O registro mostra a data, a hora e quem registrou, vale uma única vez e não se desfaz. Antes, a sessão que o paciente se recusou a assinar ficava igual à sessão que ninguém pediu para ele assinar.
+- **A sessão também se abre pela aba Evoluções**, sem precisar escolher um mapa antes.
+- **Correção:** um adendo gravado sobre uma evolução assinada seria tratado pela tela como a sessão em curso, com botão de assinar e marcação de mapa. Adendo deixou de ser confundido com sessão.
+
 ## [+1.0] - 2026-09-14 (Subetapa 03.8.b — o contrato)
 
 - **A opção escolhida vira contrato num clique.** No orçamento aprovado, a recepção clica em "Contratar esta opção". O contrato nasce com o plano e com cada pacote da opção, pelos valores que o profissional aprovou, e as outras opções orçadas ficam registradas como recusadas. Um contrato pode ter, ao mesmo tempo, o plano, um pacote e um procedimento avulso.

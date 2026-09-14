@@ -20,7 +20,9 @@ import {
   useProfissionais,
   useProntuario,
   useSalvarProntuario,
+  type EvolucaoEditavel,
   type ProntuarioEditavel,
+  type TextoSessao,
 } from "./api";
 import { LISTA_MAPAS, MAPAS, ehTipoMapa, marcacoesValidas, type Marcacao, type TipoMapa } from "./mapas";
 import { idadeEmAnos, registrosDeMarcacoes, type RegistroDente } from "./odontograma";
@@ -252,9 +254,27 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
   const [profissionalId, setProfissionalId] = useState<string>("");
   const [fichaAberta, setFichaAberta] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  /**
+   * O rascunho do TEXTO da sessão mora aqui, ao lado do rascunho das
+   * marcações, e não dentro da aba Evoluções (Subetapa 03.7.b). O motivo é o
+   * botão "Assinar e encerrar sessão", que existe nas duas vistas: assinar
+   * trava a linha (013), e o que não tiver sido gravado antes do fecho está
+   * perdido — só volta como adendo. Com os dois rascunhos no mesmo lugar,
+   * assinar grava texto e marcações pendentes antes de travar, venha o
+   * clique de qual aba vier.
+   */
+  const [textoRascunho, setTextoRascunho] = useState<TextoSessao | null>(null);
 
   const cliente = clientes.find((c) => c.id === clienteId);
-  const sessaoAberta = useMemo(() => evolucoes.find((e) => !e.travada) ?? null, [evolucoes]);
+  /**
+   * Adendo NÃO é sessão aberta. O adendo nasce com `travada = false` (a 013
+   * não o carimba), e sem este filtro o primeiro adendo gravado sobre uma
+   * evolução assinada passaria a ser tratado como "a sessão em curso" —
+   * recebendo marcação de mapa e o botão de assinar. Latente até aqui (0
+   * adendos em produção, medido em 2026-09-14), e a 03.7.b é quem pôs texto
+   * editável na sessão aberta.
+   */
+  const sessaoAberta = useMemo(() => evolucoes.find((e) => !e.travada && !e.adendoDeId) ?? null, [evolucoes]);
   const sessoesAnteriores = useMemo(() => evolucoes.filter((e) => e.travada).slice(0, 3), [evolucoes]);
 
   /**
@@ -308,6 +328,15 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
   }, [evolucaoExibida, mapaAtivo]);
   const marcacoes = rascunho ?? marcacoesPersistidas;
   const sujo = rascunho !== null;
+
+  const textoAtual: TextoSessao = textoRascunho ?? {
+    avaliacao: sessaoAberta?.avaliacao ?? null,
+    notasProcedimento: sessaoAberta?.notasProcedimento ?? null,
+    intercorrencia: sessaoAberta?.intercorrencia ?? null,
+    resultado: sessaoAberta?.resultado ?? null,
+    proximosPassos: sessaoAberta?.proximosPassos ?? null,
+  };
+  const textoSujo = textoRascunho !== null;
 
   // ============================================================
   // Odontograma (Subetapa 03.7.a)
@@ -371,7 +400,14 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
 
   const podeEscrever = podeCriar === true || podeAtualizar === true;
 
-  async function abrirSessao() {
+  /**
+   * Aberta pela aba de um mapa, a sessão nasce naquele mapa. Aberta pela aba
+   * Evoluções, nasce SEM mapa (`mapa_tipo` nulo): gravar `facial` só porque é
+   * o primeiro da lista poria na sessão um mapa que ninguém escolheu, e a aba
+   * do mapa ganharia a marca de "a sessão registra aqui". O mapa entra quando
+   * alguém marcar e salvar.
+   */
+  async function abrirSessao(mapaTipo: TipoMapa | null = mapaAtivo) {
     setErro(null);
     if (!profissionalId) {
       setErro("Cadastre um profissional na conta antes de abrir uma sessão — toda evolução tem responsável.");
@@ -384,10 +420,12 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
         notasProcedimento: null,
         resultado: null,
         proximosPassos: null,
-        mapaTipo: mapaAtivo,
+        intercorrencia: null,
+        mapaTipo,
         marcacoes: [],
       });
       setRascunho(null);
+      setTextoRascunho(null);
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não foi possível abrir a sessão.");
     }
@@ -422,18 +460,43 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
     setRascunho(marcacoes.filter((m) => m.regiao !== regiaoChave));
   }
 
+  /**
+   * O que está pendente vai num `UPDATE` só, e cada metade só entra se
+   * estiver suja. As duas condições não são enfeite: salvar só o texto a
+   * partir da aba Evoluções mandaria `mapa_tipo = mapaAtivo`, que fora de uma
+   * aba de mapa é o `facial` de reserva — e trocaria o mapa da sessão por um
+   * que ninguém escolheu.
+   *
+   * Texto vazio vira `null`, e não string vazia: "nada escrito" tem um jeito
+   * só de estar no banco.
+   */
+  async function gravarPendencias(id: string) {
+    const valores: { id: string } & Partial<EvolucaoEditavel> = { id };
+    if (sujo) {
+      valores.mapaTipo = mapaAtivo;
+      valores.marcacoes = marcacoesParaGravar();
+    }
+    if (textoSujo) {
+      const limpo = (v: string | null) => (v && v.trim() ? v : null);
+      valores.avaliacao = limpo(textoAtual.avaliacao);
+      valores.notasProcedimento = limpo(textoAtual.notasProcedimento);
+      valores.intercorrencia = limpo(textoAtual.intercorrencia);
+      valores.resultado = limpo(textoAtual.resultado);
+      valores.proximosPassos = limpo(textoAtual.proximosPassos);
+    }
+    if (!sujo && !textoSujo) return;
+    await atualizarEvolucao.mutateAsync(valores);
+    setRascunho(null);
+    setTextoRascunho(null);
+  }
+
   async function salvarRascunho() {
     setErro(null);
     if (!sessaoAberta) return;
     try {
-      await atualizarEvolucao.mutateAsync({
-        id: sessaoAberta.id,
-        mapaTipo: mapaAtivo,
-        marcacoes: marcacoesParaGravar(),
-      });
-      setRascunho(null);
+      await gravarPendencias(sessaoAberta.id);
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Não foi possível salvar as marcações.");
+      setErro(e instanceof Error ? e.message : "Não foi possível salvar a sessão.");
     }
   }
 
@@ -441,18 +504,19 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
     setErro(null);
     if (!sessaoAberta) return;
     try {
-      if (sujo) {
-        await atualizarEvolucao.mutateAsync({
-          id: sessaoAberta.id,
-          mapaTipo: mapaAtivo,
-          marcacoes: marcacoesParaGravar(),
-        });
-      }
+      // Grava ANTES de travar: depois do fecho, o texto pendente só voltaria
+      // como adendo.
+      await gravarPendencias(sessaoAberta.id);
       await assinarEvolucao.mutateAsync(sessaoAberta.id);
       setRascunho(null);
+      setTextoRascunho(null);
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não foi possível assinar a sessão.");
     }
+  }
+
+  function alterarTexto(chave: keyof TextoSessao, valor: string) {
+    setTextoRascunho({ ...textoAtual, [chave]: valor });
   }
 
   const alergias = prontuario?.alergias?.trim();
@@ -557,6 +621,23 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
                 evolucoes={evolucoes}
                 podeEscrever={podeEscrever}
                 carregando={carregandoEvolucoes}
+                sessao={{
+                  evolucao: sessaoAberta,
+                  texto: textoAtual,
+                  textoSujo,
+                  marcacoesSujas: sujo,
+                  aoAlterarTexto: alterarTexto,
+                  aoSalvar: () => void salvarRascunho(),
+                  aoAssinar: () => void assinarSessao(),
+                  aoAbrir: () => void abrirSessao(null),
+                  salvando: atualizarEvolucao.isPending,
+                  assinando: assinarEvolucao.isPending || atualizarEvolucao.isPending,
+                  abrindo: criarEvolucao.isPending,
+                  podeCriar: podeCriar === true,
+                  profissionalId,
+                  aoEscolherProfissional: setProfissionalId,
+                  erro,
+                }}
               />
             )}
             {aba === "anexos" && <AnexosTab clienteId={clienteId} evolucoes={evolucoes} podeEscrever={podeEscrever} />}
@@ -764,13 +845,25 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
             {erro && <span className="px-3.5 pb-1 text-[10.5px] text-destructive">{erro}</span>}
 
             {sessaoAberta && podeEscrever && (
-              <div className="mt-auto flex gap-2 border-t px-3 py-2.5">
+              <div className="mt-auto flex flex-wrap items-center gap-2 border-t px-3 py-2.5">
+                {/* O texto da sessão se escreve na aba Evoluções; daqui só se
+                    avisa que há texto pendente, que salvar e assinar gravam
+                    junto com as marcações. */}
+                <button
+                  type="button"
+                  onClick={() => setAba("evolucoes")}
+                  className="basis-full text-left text-[10.5px] text-primary underline-offset-2 hover:underline"
+                >
+                  {textoSujo
+                    ? "Texto da sessão com alterações não salvas — salvar e assinar gravam o texto junto."
+                    : "Escrever a evolução da sessão (avaliação, conduta, intercorrência)"}
+                </button>
                 <Button
                   size="sm"
                   variant="outline"
                   className="flex-1"
                   onClick={() => void salvarRascunho()}
-                  disabled={!sujo || atualizarEvolucao.isPending}
+                  disabled={(!sujo && !textoSujo) || atualizarEvolucao.isPending}
                 >
                   Salvar rascunho
                 </Button>

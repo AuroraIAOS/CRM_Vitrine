@@ -44,6 +44,9 @@ Tomadas por Max em **2026-09-06**, na conversa que revisou o fluxo dele.
 | **D-F12** | Como se mede o trabalho das linhas de pacote e de avulso | **Pacote pelo saldo de sessões** (vendido na dupla assinatura e ligado à linha); **avulso por registro de execução** com data e autor. As três formas entram na trava dupla | **Max, 2026-09-14**, à pergunta da 03.8.b |
 | **D-F13** | Onde fica a view do cardápio (D-V3) | **`aba_finance.ofertas`**, e não `aba_catalog.ofertas`: a view lê `aba_treatment.planos`, e no catálogo inverteria a dependência entre módulos. É `security_invoker` | **Max, 2026-09-14**, à pergunta da 03.8.b |
 | **D-F14** | A venda de pacote do Financeiro (02.8), que criava contrato `ativo` sem assinatura | **Passa pelo contrato novo.** Nenhum contrato nasce nem passa a `ativo`; o saldo de sessões só nasce na dupla assinatura; `vender_pacote` deixa de ser executável por `authenticated`. Os contratos antigos ficam intactos | **Max, 2026-09-14**, à pergunta da 03.8.b |
+| **D-F15** | Onde a intercorrência se registra, se o bloco da 03.7.b pedia "lugar próprio" e "nenhuma coluna de texto nova" | **Coluna própria**, `aba_health.evolucoes.intercorrencia`, com o regime das outras quatro (sem `SELECT` direto, leitura por `ler_evolucoes`). As colunas que existiam são avaliação, conduta, resultado e próximos passos, e nenhuma é evento adverso; dentro de `resultado`, um relatório não distinguiria desfecho de evento | **Max, 2026-09-14**, à pergunta da 03.7.b |
+| **D-F16** | Quando a recusa do paciente em assinar pode ser registrada | **Depois do fecho, uma única vez.** O paciente recusa o texto que ouviu, e o texto só fica final quando o profissional assina. O gatilho de trava da 013 ganha uma exceção só para preencher os três campos da recusa, que só a função `registrar_recusa_assinatura` escreve. A mesma porta serve à recusa remota da 03.12 | **Max, 2026-09-14**, à pergunta da 03.7.b |
+| **D-F17** | A aceitação presencial do paciente na evolução entra na 03.7.b? | **Não, fica para a 03.12**, junto com o canal por link. Custo declarado e aceito: até lá, evolução travada sem recusa não distingue "o paciente assinou" de "ninguém perguntou" | **Max, 2026-09-14**, à pergunta da 03.7.b |
 
 ---
 
@@ -214,11 +217,11 @@ Levantado em **2026-09-06**, contra o repositório e o banco de produção.
 | Etapa | Já executa | Falta |
 |---|---|---|
 | **E1** Captação | mensageria (02.5), lead (02.3), `converter_lead()`, agenda (02.6) | converter no ato de agendar → **03.19** |
-| **E2** Diagnóstico | sala de espera (03.4), anamnese (02.9), odontograma (03.7.a) | **evolução com texto** → **03.7.b** |
+| **E2** Diagnóstico | sala de espera (03.4), anamnese (02.9), odontograma (03.7.a); **evolução com texto (03.7.b)** | alertas clínicos da anamnese na abertura → **03.16** (passo 11 do artefato; a linha dizia só 03.7.b, e "—" aqui esconderia o passo) |
 | **E3** Proposta | matriz no banco (03.8), preço resolvido e aprovação (03.8.a); **plano montado pela tela a partir do odontograma, opção com procedimento ou pacote, pacote subindo a escada, aprovação só por quem executa (03.8.c)** | — |
 | **E4** Negociação | trava de alçada: só `admin` mexe em dinheiro (03.8.a); **recepção chega ao orçamento sem alcance clínico, alterar dinheiro devolve a rascunho com aviso, reaprovação (03.8.c)**; **orçamento aprovado impresso (03.8.b)** | — |
 | **E5** Contrato | recusa implícita da opção perdedora (03.8); **contrato cópia fiel da opção, documento com hash, assinatura do profissional derivada da aprovação, assinatura presencial do paciente, e a execução liberada só com as duas (03.8.b)** | token (**03.10**), assinatura por link (**03.12**) |
-| **E6** Execução | agenda; **faces executadas com data e autor gravados pelo banco, e nenhuma execução sem contrato assinado ou dispensa do owner (03.8.b)** | evolução textual e **recusa de assinar** → **03.7.b**; prescrição → **03.16.a** |
+| **E6** Execução | agenda; **faces executadas com data e autor gravados pelo banco, e nenhuma execução sem contrato assinado ou dispensa do owner (03.8.b)**; **evolução escrita durante a sessão com intercorrência em lugar próprio, e a recusa do paciente em assinar registrada com data e autor (03.7.b)** | prescrição → **03.16.a**; assinatura do paciente na evolução, por link ou presencial → **03.12** (D-F17) |
 | **E7** Financeiro | faturas e comissões (02.8); **faturas previstas nascendo da dupla assinatura e o contrato aberto enquanto faltar dinheiro ou trabalho (03.8.b)** | **fila de aprovação de faturas** → **03.18** |
 
 **Duas subetapas novas nasceram deste levantamento** — 03.7.b e 03.8.c —, e

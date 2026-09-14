@@ -378,11 +378,21 @@ export type Evolucao = {
   notasProcedimento: string | null;
   resultado: string | null;
   proximosPassos: string | null;
+  /** Coluna própria desde a 053 (D-F15): evento adverso não se mistura com resultado. */
+  intercorrencia: string | null;
   anexos: AnexoEvolucao[];
   mapaTipo: TipoMapa | null;
   marcacoes: unknown;
   registradoEm: string;
   travada: boolean;
+  /**
+   * A recusa do paciente em assinar (D-F16) — fato com data e autor
+   * gravados pelo banco, só sobre evolução travada. Os três vêm juntos ou
+   * nenhum (CHECK `evolucoes_recusa_completa`).
+   */
+  recusaAssinaturaEm: string | null;
+  recusaAssinaturaPor: string | null;
+  recusaAssinaturaMotivo: string | null;
 };
 
 export function useEvolucoes(clienteId: string | null) {
@@ -405,11 +415,15 @@ export function useEvolucoes(clienteId: string | null) {
           notasProcedimento: (e.notas_procedimento as string) ?? null,
           resultado: (e.resultado as string) ?? null,
           proximosPassos: (e.proximos_passos as string) ?? null,
+          intercorrencia: (e.intercorrencia as string) ?? null,
           anexos: Array.isArray(e.anexos) ? (e.anexos as AnexoEvolucao[]) : [],
           mapaTipo: (e.mapa_tipo as TipoMapa) ?? null,
           marcacoes: e.marcacoes,
           registradoEm: e.registrado_em as string,
           travada: e.travada === true,
+          recusaAssinaturaEm: (e.recusa_assinatura_em as string) ?? null,
+          recusaAssinaturaPor: (e.recusa_assinatura_por as string) ?? null,
+          recusaAssinaturaMotivo: (e.recusa_assinatura_motivo as string) ?? null,
         }))
         .sort((a, b) => b.registradoEm.localeCompare(a.registradoEm));
     },
@@ -422,10 +436,17 @@ export type EvolucaoEditavel = {
   notasProcedimento: string | null;
   resultado: string | null;
   proximosPassos: string | null;
+  intercorrencia?: string | null;
   mapaTipo: TipoMapa | null;
   marcacoes: Marcacao[];
   anexos?: AnexoEvolucao[];
 };
+
+/** Os cinco campos de texto da sessão, na ordem em que a tela os oferece. */
+export type TextoSessao = Pick<
+  EvolucaoEditavel,
+  "avaliacao" | "notasProcedimento" | "resultado" | "proximosPassos"
+> & { intercorrencia: string | null };
 
 export function useCriarEvolucao(clienteId: string | null) {
   const { profile } = useAuth();
@@ -443,6 +464,7 @@ export function useCriarEvolucao(clienteId: string | null) {
           notas_procedimento: input.notasProcedimento,
           resultado: input.resultado,
           proximos_passos: input.proximosPassos,
+          intercorrencia: input.intercorrencia ?? null,
           mapa_tipo: input.mapaTipo,
           marcacoes: input.marcacoes,
           anexos: input.anexos ?? [],
@@ -470,6 +492,7 @@ export function useAtualizarEvolucao(clienteId: string | null) {
       if (input.notasProcedimento !== undefined) valores.notas_procedimento = input.notasProcedimento;
       if (input.resultado !== undefined) valores.resultado = input.resultado;
       if (input.proximosPassos !== undefined) valores.proximos_passos = input.proximosPassos;
+      if (input.intercorrencia !== undefined) valores.intercorrencia = input.intercorrencia;
       if (input.mapaTipo !== undefined) valores.mapa_tipo = input.mapaTipo;
       if (input.marcacoes !== undefined) valores.marcacoes = input.marcacoes;
       if (input.anexos !== undefined) valores.anexos = input.anexos;
@@ -500,6 +523,56 @@ export function useAssinarEvolucao(clienteId: string | null) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["health-evolucoes", clienteId] });
       void qc.invalidateQueries({ queryKey: ["health-log", clienteId] });
+    },
+  });
+}
+
+/**
+ * "O paciente recusou assinar" (Subetapa 03.7.b, D-F16).
+ *
+ * Só pela função: `authenticated` não tem `UPDATE` nas colunas da recusa
+ * (migration 053), e é a função que grava data e autor — a tela não manda
+ * nenhum dos dois. Ela recusa com mensagem própria o que a regra recusa:
+ * evolução ainda aberta (o paciente recusa o texto FINAL), motivo em branco
+ * e recusa já registrada.
+ */
+export function useRegistrarRecusaAssinatura(clienteId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { evolucaoId: string; motivo: string }) => {
+      const { error } = await db().rpc("registrar_recusa_assinatura", {
+        p_evolucao_id: input.evolucaoId,
+        p_motivo: input.motivo,
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["health-evolucoes", clienteId] });
+      void qc.invalidateQueries({ queryKey: ["health-log", clienteId] });
+    },
+  });
+}
+
+/**
+ * Nome de quem registrou (a recusa grava `auth.users.id`). Mesma leitura de
+ * `public.profiles` por `user_id` que o relatório de ações usa — nome de
+ * membro da conta não é dado clínico.
+ */
+export function useNomesDeUsuarios(userIds: string[]) {
+  const { profile } = useAuth();
+  const accountId = profile?.accountId;
+  const chave = [...new Set(userIds)].sort();
+  return useQuery({
+    queryKey: ["health-nomes-usuarios", accountId, chave],
+    enabled: !!accountId && chave.length > 0,
+    queryFn: async (): Promise<Record<string, string>> => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, email")
+        .eq("account_id", accountId!)
+        .in("user_id", chave);
+      if (error) throw error;
+      return Object.fromEntries((data ?? []).map((p) => [p.user_id as string, (p.full_name || p.email) as string]));
     },
   });
 }

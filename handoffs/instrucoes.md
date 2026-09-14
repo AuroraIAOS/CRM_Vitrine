@@ -983,6 +983,28 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Regra que fica:** é a irmã de "estado novo num CHECK exige revisar quem filtrava pelo estado antigo". **Ao criar uma trava de banco sobre um objeto que já tem tela, procure todo controle da tela que escreve nele** e decida, para cada um, se some, congela ou explica. E confira as capturas da evidência olhando, não só pelas asserções: foi olhando a captura que isto apareceu.
 - **Fonte:** Subetapa 03.8.b, 2026-09-14.
 
+### Exceção num gatilho de trava precisa de DOIS cadeados, e cada um provado sozinho — e a revogação inócua vale também para escrita
+- **Gatilho:** Subetapa 03.7.b, D-F16. A recusa do paciente se registra sobre evolução **travada**, e `impedir_alteracao_evolucao_travada` (013) recusava qualquer `UPDATE` nela. Era preciso abrir uma exceção num gatilho que protege prontuário assinado.
+- **A tentação:** escrever só a exceção no gatilho ("se só as colunas da recusa mudaram, deixe passar"). Sozinha, ela abre a recusa a qualquer `UPDATE` direto de quem tem alcance clínico, que é o profissional inteiro, e a data e o autor passam a vir do navegador.
+- **A medição que mudou o desenho:** `authenticated` tinha `INSERT`/`UPDATE` na **tabela** `evolucoes`, pelo `GRANT` amplo da 013. `REVOKE UPDATE (coluna)` com esse privilégio de pé não dá erro e não protege nada: é a lição da 047 (`SELECT`), valendo igual para escrita.
+- **Ação (migration 053):** (1) o privilégio de tabela virou concessão **coluna a coluna**, montada pelo catálogo, com as três colunas da recusa de fora, e só a função `SECURITY DEFINER` as escreve; (2) o gatilho só aceita a linha em que **nada** além delas mudou (`to_jsonb(NEW) - cols = to_jsonb(OLD) - cols`, sem coluna gerada na tabela, o que foi medido e é guardado por verificação). A suíte prova **cada cadeado sem o outro**: o `UPDATE` direto do `agent` morre em `42501` (privilégio), e o `service_role`, que tem o privilégio, é barrado pelo gatilho ao mudar texto junto com a recusa, ao destravar e ao sobrescrever (`23514`). Uma verificação conta os `RETURN NEW` do corpo do gatilho e recusa a migration se aparecer uma segunda saída.
+- **Regra que fica:** **exceção em trava de dado assinado = privilégio de coluna + comparação da linha inteira, e um teste por cadeado com o outro ausente.** Se os dois só são testados juntos, nenhum dos dois está provado. E, antes de revogar por coluna, confira `has_table_privilege` para o mesmo verbo.
+- **Fonte:** Subetapa 03.7.b, 2026-09-14.
+
+### Estado derivado pela AUSÊNCIA de uma bandeira pega linhas de outro tipo — o adendo virava "a sessão aberta"
+- **Gatilho:** Subetapa 03.7.b, ao pôr texto editável na sessão aberta. `ProntuarioPage` definia `sessaoAberta = evolucoes.find(e => !e.travada)`.
+- **A causa, lida no código e no catálogo:** o adendo é uma linha de `evolucoes` que nasce com `travada = false` (a 013 não o carimba). O primeiro adendo gravado sobre uma evolução assinada passaria a ser "a sessão em curso": receberia marcação de mapa, o botão "Assinar e encerrar sessão" e, com a 03.7.b, os cinco campos de texto. O defeito estava latente porque produção tem **0 adendos**, medido antes de corrigir.
+- **Ação:** `!e.travada && !e.adendoDeId`.
+- **Regra que fica:** quando uma tabela guarda **dois tipos de linha** (sessão e adendo, aqui), todo filtro que define um estado pela falta de uma bandeira precisa excluir o outro tipo **por nome**. É a mesma família de "contador de ausência erra para cima" (02.12): ausência de uma marca não diz de que tipo a linha é.
+- **Fonte:** Subetapa 03.7.b, 2026-09-14.
+
+### Salvar parcial que envia um valor de reserva reescreve o que ninguém tocou
+- **Gatilho:** Subetapa 03.7.b, ao permitir salvar o texto da sessão a partir da aba Evoluções. `salvarRascunho()` sempre enviava `mapa_tipo: mapaAtivo`, e `mapaAtivo`, fora de uma aba de mapa, é `mapaDaSessao ?? "facial"`.
+- **O efeito, se nada mudasse:** numa sessão aberta sem mapa, salvar o texto gravaria `facial` como o mapa da sessão, verde e sem erro. A aba Facial ganharia a marca "a sessão registra aqui" sem ninguém ter escolhido isso.
+- **Ação:** o `UPDATE` monta os valores só com as partes que têm alteração pendente (`sujo` para marcações, `textoSujo` para texto). A sessão aberta pela aba Evoluções nasce com `mapa_tipo` nulo.
+- **Regra que fica:** **valor de reserva de TELA nunca vai para o banco num salvar parcial.** O que a tela usa para decidir o que desenhar não é afirmação do usuário, e só o que ele afirmou deve ser escrito. É a mesma lição da 03.7.a sobre dentição ("derivação nunca é gravada"), agora no caminho de escrita.
+- **Fonte:** Subetapa 03.7.b, 2026-09-14.
+
 ---
 
 ## 6. Armadilhas conhecidas (não repetir)

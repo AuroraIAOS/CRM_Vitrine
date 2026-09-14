@@ -26,7 +26,7 @@
 | 03.6.b | Vocabulário do domínio: procedimento, pacote, plano e nível | Onda 2 · bench isolado | Opus | ✅ CONCLUÍDA |
 | 03.7 | Odontograma | Onda 2 · P-sub | Opus | ✅ CONCLUÍDA · 🔁 revisada pela 03.7.a |
 | 03.7.a | Odontograma autoral (substitui a implementação da 03.7) | Onda 2 · P-sub | Opus | ✅ CONCLUÍDA |
-| 03.7.b | A sessão clínica escreve: evolução em texto, intercorrência e recusa de assinatura | Onda 2 · P-sub | Opus | ⬜ não iniciada |
+| 03.7.b | A sessão clínica escreve: evolução em texto, intercorrência e recusa de assinatura | Onda 2 · P-sub | Opus | ✅ CONCLUÍDA |
 | 03.8 | Plano de tratamento: a entidade clínica | Onda 2 · P-sub | Opus | ✅ CONCLUÍDA |
 | 03.8.a | Orçamento: o preço que se resolve, e a tabela que tem vigência | Onda 2 · P-sub | Opus | ✅ CONCLUÍDA |
 | 03.8.d | Preço por grupo de pacientes: o degrau que o convênio vai usar | Onda 2 · P-sub | Opus | ✅ CONCLUÍDA |
@@ -50,7 +50,7 @@
 | 03.22 | Implantação da UX Versão 03 | Etapa 3 do roteiro | Sonnet | ⬜ não iniciada |
 | 03.23 | Portão de segurança adversarial do MVP | Etapa 4 do roteiro · **PORTÃO COMPLETO** | Opus | ⬜ não iniciada |
 
-**Progresso: 16 de 35 concluídas** (03.0, 03.0.a, 03.2, 03.3, 03.4, 03.5, 03.6, 03.6.a, 03.6.b, 03.7, 03.7.a, 03.8, 03.8.a, 03.8.d, 03.8.c, 03.8.b) · **1 adiada** (03.1) · **18 restantes** *(contagem de 2026-09-14 — a de 2026-09-06 dizia 14 e não fora atualizada na 03.8.c; foi 26 em 2026-09-03, 30 em 2026-09-04 por D-I5, 32 em 2026-09-04 por D-V2/D-V6 34 em 2026-09-06 e 35 em 2026-09-10 (03.8.d, por D-F5) — número sem data não denuncia que envelheceu, `handoffs/instrucoes.md` §5)*. **As duas últimas nasceram do caminho feliz** (`docs/08_CAMINHO_FELIZ.md`, 2026-09-06): **03.7.b** e **03.8.c**, inseridas sem renumerar as seguintes, no mesmo padrão da 03.16.a e da 03.21.a. Elas não vêm de revisão de escritório — vêm de Max **usar o produto**: a demonstração ao vivo da tela `/plano` (2026-09-05) achou em minutos dois defeitos que build, `tsc`, 248 testes de RLS e a evidência de banco não pegaram. Três portões completos aguardam (03.9, 03.15, 03.23) — nenhum sem bench isolado, e nenhum termina em merge por conta do CODE (`CLAUDE.md` §13).
+**Progresso: 17 de 35 concluídas** (03.0, 03.0.a, 03.2, 03.3, 03.4, 03.5, 03.6, 03.6.a, 03.6.b, 03.7, 03.7.a, 03.8, 03.8.a, 03.8.d, 03.8.c, 03.8.b, 03.7.b) · **1 adiada** (03.1) · **17 restantes** *(contagem de 2026-09-14, depois da 03.7.b — a de 2026-09-06 dizia 14 e não fora atualizada na 03.8.c; foi 26 em 2026-09-03, 30 em 2026-09-04 por D-I5, 32 em 2026-09-04 por D-V2/D-V6 34 em 2026-09-06 e 35 em 2026-09-10 (03.8.d, por D-F5) — número sem data não denuncia que envelheceu, `handoffs/instrucoes.md` §5)*. **As duas últimas nasceram do caminho feliz** (`docs/08_CAMINHO_FELIZ.md`, 2026-09-06): **03.7.b** e **03.8.c**, inseridas sem renumerar as seguintes, no mesmo padrão da 03.16.a e da 03.21.a. Elas não vêm de revisão de escritório — vêm de Max **usar o produto**: a demonstração ao vivo da tela `/plano` (2026-09-05) achou em minutos dois defeitos que build, `tsc`, 248 testes de RLS e a evidência de banco não pegaram. Três portões completos aguardam (03.9, 03.15, 03.23) — nenhum sem bench isolado, e nenhum termina em merge por conta do CODE (`CLAUDE.md` §13).
 
 
 > **Status no próprio título.** Padrão fixado por Max em 2026-09-03: além do campo `Status:` no corpo da subetapa (`CLAUDE.md` §8), o mesmo marcador aparece **no fim da linha do `###`** — `· Status: ✅ CONCLUÍDA`, `· Status: ⏸️ ADIADA`, `· Status: ⚠️ PENDENTE`, `· Status: 🛑 ABANDONADA`. Subetapa não iniciada não leva marcador nenhum, e é essa ausência que a distingue. O motivo é de leitura: o sumário do editor e um `grep` por `^### Subetapa` passam a responder "onde estamos" sem abrir nenhum bloco. Vale nos **dois** planos, gravado no mesmo commit, como todo o resto do Status.
@@ -371,7 +371,7 @@ Status: ✅ CONCLUÍDA — executada em 2026-09-04 (Opus do início ao fim, `[Go
 
 **Três defeitos que a execução encontrou, todos medidos antes de escritos como causa** (`CLAUDE.md` §11), com entrada própria em `handoffs/instrucoes.md` §5: (a) a evidência escrevia dentro de sessão pré-existente de outra pessoa na conta de demonstração pública — limpeza por diferença de conjunto protege contra *apagar* o que não é seu e não contra *escrever* nele; a linha contaminada foi **restaurada** ao valor medido no início da sessão, não excluída; (b) `innerText` devolve o texto renderizado, e `text-transform: uppercase` deixou uma asserção vermelha sem defeito atrás dela; (c) a arcada permanente inferior caiu **abaixo da dobra** com 47/48 verdes — contagem no DOM e largura não somam "está visível", e a asserção nova mede o `bottom` das quatro linhas.
 
-### Subetapa 03.7.b — A sessão clínica escreve: evolução em texto, intercorrência e recusa de assinatura [Goal] [Manual] [LLM: Opus] · P-sub
+### Subetapa 03.7.b — A sessão clínica escreve: evolução em texto, intercorrência e recusa de assinatura [Goal] [Manual] [LLM: Opus] · P-sub · Status: ✅ CONCLUÍDA
 Objetivo: **corrigir um defeito, não acrescentar recurso.** `aba_health.evolucoes` tem `avaliacao`, `notas_procedimento`, `resultado` e `proximos_passos` desde a migration `013`, e `crm/src/features/health/api.ts` os aceita — **mas a tela nunca os oferece**. Medido em 2026-09-06: `abrirSessao()` cria a evolução com os quatro campos **nulos**, `salvarRascunho()` grava só `mapa_tipo` e `marcacoes`, e `EvolucoesTab.tsx` (161 linhas) apenas lista e permite **adendo em evolução já assinada**. **Hoje o prontuário registra desenho e não registra palavra:** não há onde escrever avaliação, conduta ou intercorrência durante a sessão, que é exatamente quando a evolução clínica acontece. Achado por Max ao usar o produto, e é a etapa **E2/E6** do caminho feliz (`docs/08_CAMINHO_FELIZ.md`).
 Conclusão: o profissional abre a sessão, escreve durante o atendimento, salva quantas vezes quiser enquanto está aberta, lê para o paciente e assina — e o que ele escreveu está na evolução, não num adendo posterior. Intercorrência tem lugar próprio, e **a recusa do paciente em assinar se registra como fato**, com data e autor, em vez de virar sessão sem assinatura, que é indistinguível de sessão esquecida.
 Qualidade:
@@ -385,6 +385,59 @@ Esforço máximo do /goal: 4 tentativas
 Escalonamento de LLM: Opus do início ao fim.
 Se esgotar: parar e emitir relatório curto.
 CHANGELOG: **+1.0**
+
+Status: ✅ CONCLUÍDA — executada em 2026-09-14 (Opus do início ao fim, `[Goal]`, uma tentativa das 4). **Migration nova:** `053_evolucao_texto_intercorrencia_recusa.sql` (arquivo único, 5 seções). **Escopo: BANCO + TELA.** Passo do caminho feliz fechado: **34**. Os passos **35** e **38** receberam a parte que cabia a esta subetapa (a intercorrência e a recusa) e continuam em falta pela outra parte, agora atribuídos a quem a entrega: **03.16.a** (prescrição) e **03.12** (assinatura por link). O artefato foi de 33 para **34 de 44**, republicado no mesmo endereço.
+
+**O texto não pediu DDL, como o bloco previa, e isso foi medido antes de escrever.** No catálogo de produção: as quatro colunas existem, com `SELECT` revogado para `authenticated` e `UPDATE` concedido, e os gatilhos `impedir_alteracao_evolucao_travada` e `registrar_escrita_clinica` estão pendurados. O defeito era só de tela.
+
+**Três perguntas a Max antes da primeira linha de DDL, porque cada uma mudava o modelo — registradas em `docs/08_CAMINHO_FELIZ.md` §1:**
+  - **D-F15 — a intercorrência tem coluna própria**, `intercorrencia`. O bloco pedia "lugar próprio" e, na mesma página, "nenhuma coluna de texto nova". As quatro colunas que existem são avaliação, conduta, resultado e próximos passos, e nenhuma é evento adverso. É a única coluna de texto nova, e segue o regime das outras quatro.
+  - **D-F16 — a recusa se registra sobre a evolução TRAVADA, uma vez.** O paciente recusa o texto final; uma recusa antes do fecho se referiria a um texto que ainda pode mudar. Por isso o gatilho de trava ganhou uma única exceção, e a mesma porta vai servir à recusa remota da 03.12.
+  - **D-F17 — a aceitação do paciente fica para a 03.12**, junto com o canal por link.
+
+**O que a 053 constrói.** As colunas `recusa_assinatura_em`, `recusa_assinatura_por` e `recusa_assinatura_motivo`, com dois CHECKs: os três juntos ou nenhum (com `btrim` no motivo) e recusa só em evolução travada. A função `aba_health.registrar_recusa_assinatura(evolucao, motivo)`, `SECURITY DEFINER`: trata `auth.uid()` nulo **no topo, com mensagem própria**; reafirma a conta e o alcance de `atualizacao`; e recusa evolução aberta, motivo em branco e segunda recusa, cada caso com a sua frase.
+
+A exceção do gatilho é protegida por **dois cadeados independentes**:
+  1. `authenticated` perdeu `INSERT`/`UPDATE` nas três colunas. Para isso, o privilégio de TABELA virou concessão coluna a coluna, montada pelo catálogo — revogar por coluna com o privilégio de tabela de pé seria inócuo, a lição da 047.
+  2. O gatilho só deixa passar a linha em que **nada** além das três colunas mudou, comparando `to_jsonb(NEW)` com `to_jsonb(OLD)`. A tabela não tem coluna gerada; isso foi medido e fica guardado pela verificação (g).
+
+O log de escrita vem do gatilho que já existia, sem segundo caminho. As sete verificações da §5 recusam a migration se o privilégio de tabela voltar, se a recusa ficar escrevível, se alguma coluna da sessão perder a escrita, se o gatilho ganhar outra saída ou se a função ficar executável por `anon`.
+
+**P-sub: 21/21** na suíte nova `crm/tests/rls/23_evolucao_sessao.spec.ts`. O profissional é o `agent` com concessão nominal e a recepção é o `admin` sem alcance clínico, **nunca o `owner`**. A suíte cobre:
+  - o texto em duas gravações, recuperado íntegro por `ler_evolucoes`;
+  - a intercorrência ilegível direto (`42501`) e o rastro de criação, gravação e leitura;
+  - a recepção sem escrita na sessão;
+  - a evolução assinada recusando texto novo (`23514`, com a mensagem lida) e o adendo funcionando;
+  - as recusas barradas: antes do fecho; sem sessão (com a mensagem própria, e **não** o nome do CHECK); por `anon`; com motivo em branco; pela recepção; e sobre paciente fora do alcance;
+  - a recusa válida, com autor e data gravados pelo banco, e a segunda recusa barrada;
+  - **cada cadeado provado sozinho**: o `UPDATE` e o `INSERT` diretos morrem em `42501`; o caminho de servidor, que tem o privilégio, é barrado pelo gatilho ao mudar texto junto com a recusa, ao destravar e ao sobrescrever;
+  - os dois CHECKs, conferidos pelo nome, e o privilégio medido no catálogo.
+
+**329/329 na suíte inteira**, rodada uma vez (1 pulado: A06); eram 308.
+
+**Aplicada no banco de TESTES duas vezes** (idempotência provada). Em produção entrou pelo MCP numa parte só, transcrita **com** os comentários, e a §5 passou lá. **Produção e repositório idênticos** por hash normalizado (`replace(…, chr(13), '')`): funções `fc188a959e5da8c06517b358872d0f4c`, restrições `80d5bd92550a426cc2a7fe63de396a93`, colunas e comentários `8331c74f6e875517c79cff7b9f2b544e`, privilégios por coluna `baee6156dba53031fe8c8ed70348a188` e gatilhos `1167750fa4a2a87542f0854bc70be750`.
+
+**Evidência de banco: 16/16** em `crm/scripts/evidencia_evolucao.mjs`, contra produção, com sessões reais de profissional (`agent`) e recepção (`admin`) abertas por link mágico. O serviço só preparou os dados, fez os dois ataques de servidor e limpou. Resíduo conferido **zero**: 13 evoluções, como antes, e nenhuma com campo novo preenchido. **Evidência de tela não coletada**, conforme a instrução da sessão. A tela está coberta pelo `tsc`/build e pela revisão dos caminhos de escrita descrita abaixo.
+
+**Tela.** Na aba **Evoluções** do prontuário:
+  - o bloco **Sessão em curso**, com os cinco campos (Avaliação, Conduta, Intercorrência, Resultado, Próximos passos), "Salvar rascunho" e "Assinar e encerrar sessão";
+  - "Abrir sessão" também a partir dali; a sessão nasce sem mapa, em vez de receber `facial` por reserva;
+  - o rascunho do texto mora na página, ao lado do das marcações, e **assinar grava os dois antes de travar**, venha o clique de qual aba vier;
+  - no histórico, o selo "intercorrência" e o texto dela em destaque;
+  - em evolução assinada, o gesto **"Paciente recusou assinar"**, com motivo, que depois mostra data, hora e nome de quem registrou.
+
+A barra do mapa ganhou o atalho para o texto e o aviso de texto pendente. Chunk `ProntuarioPage` **10,92 kB gzip**; precache **1.239,6 KiB** (teto 1.400). `npm run build` verde, publicado por FTP (45 arquivos, 0 divergências). **`get_advisors` sem achado novo:** os mesmos 13 lints, nenhum citando `aba_health`.
+
+**Dois defeitos de tela encontrados ao ligar o texto, os dois medidos antes de corrigidos:**
+  1. **Adendo tomado por sessão aberta.** `sessaoAberta` era `evolucoes.find(e => !e.travada)`, e o adendo nasce com `travada = false`. O primeiro adendo sobre uma evolução assinada viraria "a sessão em curso", recebendo marcação e o botão de assinar. O defeito estava latente (0 adendos em produção), e foi a 03.7.b que pôs texto editável ali. O filtro passou a excluir adendo.
+  2. **Salvar só o texto trocaria o mapa da sessão.** O `salvarRascunho` antigo sempre enviava `mapa_tipo = mapaAtivo`, que fora de uma aba de mapa é o `facial` de reserva. O `UPDATE` passou a levar só as partes com alteração pendente.
+
+**Reportado, não implementado:**
+  - **D-F17:** a aceitação do paciente na evolução, presencial ou por link, é da 03.12. Até lá, evolução travada sem recusa não distingue "assinou" de "ninguém perguntou".
+  - **Adendo nasce com `travada = false`** e por isso não recebe recusa, que exige evolução travada. O nascimento do adendo não mudou, porque o bloco manda que ele "continue existindo e não mude". Fica para decisão de Max se o adendo deve nascer assinado.
+  - **O nome de quem registrou a recusa** a tela lê de `public.profiles`, e não de `ler_evolucoes`, que devolve só a linha da tabela. Nome de membro da conta não é dado clínico, e é a mesma leitura do relatório de ações.
+  - **Prescrição** continua sendo da 03.16.a, sem mudança.
+  - **Pendências de Max que continuam abertas, sem mudança:** preço por profissional específico; se o `agent` remove item proposto (03.21.a); o orçamento aprovado sem profissional em produção; distrato de contrato assinado; corrigir face marcada por engano.
 
 ### Subetapa 03.8 — Plano de tratamento: a entidade clínica [Goal] [Manual] [LLM: Opus] · P-sub
 Objetivo: item 1 na sua **metade clínica**, mais os itens **34** e **36** e o consumo do **35** (os três entraram no MVP por D-I5). Schema novo **`aba_treatment`**, chave de módulo **`treatment`**, label **"Planos de tratamento"** (D-I2, Max, 2026-09-03) — **"Orçamento" continua sendo a palavra da interface**, onde o paciente e a recepção a esperam. **A entidade não é uma lista de itens com preço: é uma matriz.** Linha = **fase clínica** (Emergency · Systemic · Acute · Disease Control · Definitive · Maintenance, configuráveis; o ordenamento é clínico, não comercial). Coluna = **opção de tratamento concorrente** (A, B, …, número livre). **O diagnóstico atravessa as colunas e o procedimento mora dentro de uma delas**, de modo que duas alternativas para a mesma cárie fiquem lado a lado. Diagnóstico ainda não fasado fica numa **fila de trabalho** à parte. Cada procedimento carrega código, dente, **faces do trabalho** (nunca as do achado), fase, opção, diagnóstico vinculado (opcional) e **estado** (`proposto → planejado → em_execucao → executado | nao_mais_necessario`). **Sem preço, sem contrato, sem fatura** — isso é a 03.8.a.

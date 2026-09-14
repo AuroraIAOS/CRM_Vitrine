@@ -168,8 +168,8 @@
     display: flex;
   }
   .barra i { display: block; height: 100%; }
-  .barra .b-pronto { background: var(--pronto); width: 75%; }
-  .barra .b-falta  { background: var(--falta); opacity: 0.55; width: 25%; }
+  .barra .b-pronto { background: var(--pronto); width: 77.3%; }
+  .barra .b-falta  { background: var(--falta); opacity: 0.55; width: 22.7%; }
 
   /* ---------- legenda ---------- */
   .legenda {
@@ -368,17 +368,17 @@
     <p class="lide">
       O percurso completo de um atendimento odontológico — do primeiro contato ao procedimento
       executado e assinado. Escrito por Max a partir da prática de consultório, revisado contra o
-      que o sistema faz hoje, e fechado em catorze decisões.
+      que o sistema faz hoje, e fechado em dezessete decisões.
     </p>
 
     <div class="medidor">
       <div>
-        <div class="numero">33<span style="color:var(--ink-faint); font-size:19px">/44</span></div>
+        <div class="numero">34<span style="color:var(--ink-faint); font-size:19px">/44</span></div>
       </div>
       <p class="rotulo">
-        passos que o CRM já executa hoje. Os outros 11 têm subetapa responsável — nenhum ficou sem dono.
+        passos que o CRM já executa hoje. Os outros 10 têm subetapa responsável — nenhum ficou sem dono.
       </p>
-      <div class="barra" role="img" aria-label="33 de 44 passos já executam">
+      <div class="barra" role="img" aria-label="34 de 44 passos já executam">
         <i class="b-pronto"></i><i class="b-falta"></i>
       </div>
     </div>
@@ -513,11 +513,11 @@
         <ol class="passos">
           <li><span class="n">32</span><span class="texto"><span class="chip c-recepcao quem">recepção</span>Agenda a sessão do procedimento contratado</span><span class="estado e-pronto">pronto</span></li>
           <li><span class="n">33</span><span class="texto"><span class="chip c-recepcao quem">recepção</span>Acolhimento, sala de espera e chamada, como na primeira vez</span><span class="estado e-pronto">pronto</span></li>
-          <li><span class="n">34</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Registra a evolução durante a sessão</span><span class="estado e-falta">falta · 03.7.b</span></li>
-          <li><span class="n">35</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Registra intercorrências e prescrições no mesmo lugar</span><span class="estado e-falta">falta · 03.7.b</span></li>
+          <li><span class="n">34</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Registra a evolução durante a sessão</span><span class="estado e-pronto">pronto</span></li>
+          <li><span class="n">35</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Registra intercorrências e prescrições no mesmo lugar</span><span class="estado e-falta">falta · 03.16.a</span></li>
           <li><span class="n">36</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Marca as faces executadas, com data e autor</span><span class="estado e-pronto">pronto</span></li>
           <li><span class="n">37</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Lê a evolução ao paciente e envia para assinatura</span><span class="estado e-falta">falta · 03.12</span></li>
-          <li><span class="n">38</span><span class="texto"><span class="chip c-paciente quem">paciente</span>Assina por link ou QR; a recusa também se registra</span><span class="estado e-falta">falta · 03.7.b</span></li>
+          <li><span class="n">38</span><span class="texto"><span class="chip c-paciente quem">paciente</span>Assina por link ou QR; a recusa também se registra</span><span class="estado e-falta">falta · 03.12</span></li>
           <li><span class="n">39</span><span class="texto"><span class="chip c-sistema quem">sistema</span>Evolução assinada encerra a sessão</span><span class="estado e-pronto">pronto</span></li>
         </ol>
       </div>
@@ -547,7 +547,7 @@
   </main>
 
   <section class="decisoes">
-    <h3>As catorze decisões que fecharam este caminho</h3>
+    <h3>As dezessete decisões que fecharam este caminho</h3>
     <p class="sub">
       Tomadas por Max entre 6 e 14 de setembro de 2026, na revisão do fluxo original de 27 passos.
     </p>
@@ -655,6 +655,27 @@
         <dd>
           <b>Vender pacote no balcão também passa pelo contrato.</b> As sessões e a fatura só nascem quando
           profissional e paciente tiverem assinado.
+        </dd>
+      </div>
+      <div>
+        <dt>D-F15</dt>
+        <dd>
+          <b>A intercorrência tem lugar próprio na evolução</b>, separado do resultado. Evento adverso não se
+          mistura com desfecho, e dá para encontrar um sem ler o outro.
+        </dd>
+      </div>
+      <div>
+        <dt>D-F16</dt>
+        <dd>
+          <b>A recusa do paciente em assinar se registra sobre a evolução já assinada pelo profissional</b>, uma
+          única vez, com data e nome de quem registrou. O paciente recusa o texto final, não um rascunho.
+        </dd>
+      </div>
+      <div>
+        <dt>D-F17</dt>
+        <dd>
+          <b>A assinatura do paciente na evolução chega com o link da 03.12.</b> Até lá, a recusa fica registrada,
+          e a evolução sem recusa ainda não diz se o paciente assinou.
         </dd>
       </div>
     </dl>
