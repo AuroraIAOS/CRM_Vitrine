@@ -82,12 +82,24 @@ export const DEGRAUS: { escopo: EscopoTabela | "catalogo"; rotulo: string; nota:
   {
     escopo: "catalogo",
     rotulo: "Preço de tabela do procedimento",
-    nota: "Quando nenhuma tabela alcança, vale o preço do próprio procedimento.",
+    nota: "Quando nenhuma tabela alcança, vale o preço do próprio cadastro — do procedimento ou do pacote.",
   },
 ];
 
 export function rotuloDoDegrau(escopo: string): string {
   return DEGRAUS.find((d) => d.escopo === escopo)?.rotulo ?? escopo;
+}
+
+/**
+ * O rótulo do "Preço aplicado" numa linha de orçamento, sabendo o TIPO do
+ * item (Subetapa 03.8.c). O fundo da escada é o preço do CADASTRO, e ele
+ * tem nome diferente para cada tipo: `preco_base` do procedimento,
+ * `preco_total` do pacote. Dizer "preço de tabela do procedimento" numa
+ * linha de pacote seria a tela afirmando uma origem que o número não tem.
+ */
+export function rotuloDoPrecoAplicado(degrau: string, tipo: "procedimento" | "pacote" = "procedimento"): string {
+  if (degrau === "catalogo" && tipo === "pacote") return "Preço de tabela do pacote";
+  return rotuloDoDegrau(degrau);
 }
 
 // ============================================================
@@ -261,7 +273,8 @@ export function useTabelasPreco() {
   });
 }
 
-export type Tarifa = { id: string; procedimento_id: string; valor: number };
+/** Arco exclusivo desde a 051: exatamente um de `procedimento_id` e `pacote_id` vem preenchido. */
+export type Tarifa = { id: string; procedimento_id: string | null; pacote_id: string | null; valor: number };
 
 export function useTarifas(tabelaId: string | null) {
   return useQuery({
@@ -270,7 +283,7 @@ export function useTarifas(tabelaId: string | null) {
     queryFn: async (): Promise<Tarifa[]> => {
       const { data, error } = await finance()
         .from("tarifas")
-        .select("id, procedimento_id, valor")
+        .select("id, procedimento_id, pacote_id, valor")
         .eq("tabela_preco_id", tabelaId!);
       if (error) throw error;
       return (data ?? []) as Tarifa[];
@@ -314,23 +327,30 @@ export function useDefinirTarifa() {
   return useMutation({
     mutationFn: async ({
       tabelaId,
-      procedimentoId,
+      item,
       valor,
     }: {
       tabelaId: string;
-      procedimentoId: string;
+      /** O braço do arco: a tarifa é de um procedimento OU de um pacote (051). */
+      item: { tipo: "procedimento" | "pacote"; id: string };
       valor: number;
     }) => {
-      // `upsert` pela chave natural: a mesma tabela não tem duas tarifas
-      // para o mesmo procedimento (`UNIQUE (tabela_preco_id,
-      // procedimento_id)`). Em tabela comprometida o gatilho recusa —
-      // corretamente, e é por isso que a tela só oferece isto em rascunho.
+      // `upsert` pela chave natural do braço: a mesma tabela não tem duas
+      // tarifas para o mesmo procedimento (`UNIQUE (tabela_preco_id,
+      // procedimento_id)`) nem para o mesmo pacote (`tarifas_tabela_pacote_
+      // key`). Em tabela comprometida o gatilho recusa — corretamente, e é
+      // por isso que a tela só oferece isto em rascunho.
+      const linha: Record<string, string | number> = {
+        account_id: profile!.accountId,
+        tabela_preco_id: tabelaId,
+        [item.tipo === "pacote" ? "pacote_id" : "procedimento_id"]: item.id,
+        valor,
+      };
       const { error } = await finance()
         .from("tarifas")
-        .upsert(
-          { account_id: profile!.accountId, tabela_preco_id: tabelaId, procedimento_id: procedimentoId, valor },
-          { onConflict: "tabela_preco_id,procedimento_id" },
-        );
+        .upsert(linha, {
+          onConflict: item.tipo === "pacote" ? "tabela_preco_id,pacote_id" : "tabela_preco_id,procedimento_id",
+        });
       if (error) throw error;
     },
     onSuccess: recarregar,

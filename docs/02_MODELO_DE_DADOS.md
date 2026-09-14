@@ -346,6 +346,13 @@ O procedimento do catálogo precisa das duas marcas juntas: **`aceita_faces`** (
 > - **Só `admin` mexe em dinheiro, e a trava é de COLUNA.** `aba_finance.exigir_alcada_financeira()` compara OLD × NEW com a lista de colunas em `TG_ARGV` e vale em `orcamentos`, **`contratos` e `parcelas_contrato`** — a regra de Max é sobre o produto, não sobre o código escrito hoje. Policy não serve: ela decide quais LINHAS, e a pergunta aqui é quais COLUNAS (`instrucoes.md` §5).
 > - **Aprovar o orçamento NÃO gera fatura.** Congela o acordo com autor e data; a cobrança que nasce da aprovação — a inversão brasileira de §12.5 — é do **contrato**, na Subetapa 03.8.b. A verificação (k) da migration lê o corpo de cada função nova e recusa a migration se alguma escrever nas tabelas de `aba_finance` mantidas por gatilho.
 
+> **✅ AMPLIADO na Subetapa 03.8.c, 2026-09-13** — migration `051_opcao_heterogenea_e_reaprovacao.sql`.
+>
+> - **O pacote sobe a MESMA escada, e `aba_catalog.pacotes.preco_total` é o fundo dela** (degrau `catalogo`), exatamente como `preco_base` é para o procedimento. A tarifa ganhou o braço `pacote_id` em arco exclusivo com `procedimento_id`. Descartados, com motivo escrito na migration: "`preco_total` sempre vence" (tiraria o pacote do convênio e da cortesia) e "soma dos avulsos" (desfaz a promoção).
+> - **A escada é uma só:** `aba_finance.resolver_preco_item(procedimento, pacote, cliente, profissional, data)`. `resolver_preco()` manteve a assinatura e virou repasse — e a verificação (f) recusa a migration se ela voltar a carregar regra própria.
+> - **Quem aprova é o profissional que vai executar (D-F7), e mexer em dinheiro num orçamento aprovado o devolve a rascunho (D-F3)** — as duas regras num gatilho, `trg_orcamentos_aprovacao`, porque a policy de `UPDATE` autoriza qualquer `agent`. A trilha fica em `aba_finance.eventos_orcamento`, só leitura para `authenticated`.
+> - **A recepção chega ao orçamento por `aba_finance.planos_orcados_do_cliente()`** — identificador, data e contagens, nada clínico e nenhum log —, porque `ler_planos` (corretamente) não lhe devolve nada e ela não tinha como descobrir o `plano_id`.
+
 
 ### 11.3 Item de catálogo e lote em estoque são um-para-muitos (A8)
 
@@ -457,6 +464,8 @@ O contrato é a **estrutura documental dentro da qual se registra tudo o que foi
 - **`aba_catalog.ofertas`, uma VIEW** — o "cardápio": `UNION` dos três com uma coluna `tipo`, e o plano aparecendo só para o paciente dono dele. View, e não tabela: cardápio não guarda dado, e guardar duplicaria preço.
 - **O item de contrato guarda o valor acordado congelado, com proveniência** — nunca lê o preço do catálogo na hora de exibir. Senão reajustar a tabela reescreve contrato assinado, que é o mesmo mal que o item 41 existe para impedir.
 - **Quantidade e validade são do item de contrato, não do cardápio.** No cardápio são a oferta ("vale 180 dias"); no contrato são o fato ("comprou 3, vence em 12/03"). São tempos de vida diferentes.
+
+> **A OPÇÃO DO PLANO usa o mesmo padrão, com DOIS braços (D-F1 + D-F6, Subetapa 03.8.c, migration `051`).** A célula `aba_treatment.procedimentos_plano` guarda `procedimento_id` OU `pacote_id`, com `CHECK (num_nonnulls(...) = 1)` e chave composta em cada braço; `aba_finance.itens_orcamento` e `aba_finance.tarifas` repetem o arco. **Não há braço `plano` na opção:** a opção já pertence a um plano, e quando a 03.8.b copiar a opção aceita, `itens_contrato.plano_id` recebe o **plano dono da opção**. O nome da célula ficou mais estreito que o conteúdo — dívida de vocabulário registrada para a 03.22.
 
 **Aditivo de contrato não existe no MVP (D-V4):** acréscimo de serviço ou de tempo é **contrato novo**, ligado ao anterior pelo `cliente_id` compartilhado. Aditivo como documento vinculado ao contrato-pai é versionamento futuro declarado.
 

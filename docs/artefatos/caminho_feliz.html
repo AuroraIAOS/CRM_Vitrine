@@ -168,8 +168,8 @@
     display: flex;
   }
   .barra i { display: block; height: 100%; }
-  .barra .b-pronto { background: var(--pronto); width: 47.7%; }
-  .barra .b-falta  { background: var(--falta); opacity: 0.55; width: 52.3%; }
+  .barra .b-pronto { background: var(--pronto); width: 59.1%; }
+  .barra .b-falta  { background: var(--falta); opacity: 0.55; width: 40.9%; }
 
   /* ---------- legenda ---------- */
   .legenda {
@@ -363,22 +363,22 @@
 <div class="folha">
 
   <header class="capa">
-    <p class="eyebrow">CRM Vitrine · Protocolo operacional · 6 set 2026</p>
+    <p class="eyebrow">CRM Vitrine · Protocolo operacional · 6 set 2026 · atualizado 13 set 2026</p>
     <h1>Caminho Feliz do Atendimento</h1>
     <p class="lide">
       O percurso completo de um atendimento odontológico — do primeiro contato ao procedimento
       executado e assinado. Escrito por Max a partir da prática de consultório, revisado contra o
-      que o sistema faz hoje, e fechado em quatro decisões.
+      que o sistema faz hoje, e fechado em sete decisões.
     </p>
 
     <div class="medidor">
       <div>
-        <div class="numero">21<span style="color:var(--ink-faint); font-size:19px">/44</span></div>
+        <div class="numero">26<span style="color:var(--ink-faint); font-size:19px">/44</span></div>
       </div>
       <p class="rotulo">
-        passos que o CRM já executa hoje. Os outros 23 têm subetapa responsável — nenhum ficou sem dono.
+        passos que o CRM já executa hoje. Os outros 18 têm subetapa responsável — nenhum ficou sem dono.
       </p>
-      <div class="barra" role="img" aria-label="21 de 44 passos já executam">
+      <div class="barra" role="img" aria-label="26 de 44 passos já executam">
         <i class="b-pronto"></i><i class="b-falta"></i>
       </div>
     </div>
@@ -443,13 +443,13 @@
         <h2>Proposta e orçamento</h2>
         <p class="resumo">
           Do odontograma nasce o plano: fase clínica na linha, opções concorrentes na coluna. Cada
-          opção pode conter procedimento, pacote ou plano. Gerar orçamento resolve o preço sozinho,
+          opção pode conter procedimento ou pacote. Gerar orçamento resolve o preço sozinho,
           sem ninguém escolher tabela. O profissional aprova antes de o paciente ver.
         </p>
         <ol class="passos">
-          <li><span class="n">13</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Monta o plano a partir do odontograma e do diagnóstico</span><span class="estado e-falta">falta · 03.8.c</span></li>
-          <li><span class="n">14</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Monta a opção A e a opção B para a mesma necessidade</span><span class="estado e-falta">falta · 03.8.c</span></li>
-          <li><span class="n">15</span><span class="texto"><span class="chip c-sistema quem">sistema</span>Cada opção aceita procedimento, pacote ou plano</span><span class="estado e-falta">falta · 03.8.c</span></li>
+          <li><span class="n">13</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Monta o plano a partir do odontograma e do diagnóstico</span><span class="estado e-pronto">pronto</span></li>
+          <li><span class="n">14</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Monta a opção A e a opção B para a mesma necessidade</span><span class="estado e-pronto">pronto</span></li>
+          <li><span class="n">15</span><span class="texto"><span class="chip c-sistema quem">sistema</span>Cada opção aceita procedimento ou pacote</span><span class="estado e-pronto">pronto</span></li>
           <li><span class="n">16</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Gera o orçamento das duas opções</span><span class="estado e-pronto">pronto</span></li>
           <li><span class="n">17</span><span class="texto"><span class="chip c-sistema quem">sistema</span>O preço se resolve e a linha guarda de onde ele veio</span><span class="estado e-pronto">pronto</span></li>
           <li><span class="n">18</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Aprova os orçamentos antes de irem ao paciente</span><span class="estado e-pronto">pronto</span></li>
@@ -471,8 +471,8 @@
           <li><span class="n">19</span><span class="texto"><span class="chip c-recepcao quem">recepção</span>Imprime ou mostra em tela os orçamentos aprovados</span><span class="estado e-falta">falta · 03.8.b</span></li>
           <li><span class="n">20</span><span class="texto"><span class="chip c-paciente quem">paciente</span>Pode levar o orçamento para casa e decidir depois</span><span class="estado e-pronto">pronto</span></li>
           <li><span class="n">21</span><span class="texto"><span class="chip c-recepcao quem">recepção</span>Só ela altera desconto, parcela, juros e mora</span><span class="estado e-pronto">pronto</span></li>
-          <li><span class="n">22</span><span class="texto"><span class="chip c-sistema quem">sistema</span>Alteração de valor devolve o orçamento a rascunho</span><span class="estado e-falta">falta · 03.8.c</span></li>
-          <li><span class="n">23</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Reaprova o orçamento que foi alterado</span><span class="estado e-falta">falta · 03.8.c</span></li>
+          <li><span class="n">22</span><span class="texto"><span class="chip c-sistema quem">sistema</span>Alteração de valor devolve o orçamento a rascunho</span><span class="estado e-pronto">pronto</span></li>
+          <li><span class="n">23</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Reaprova o orçamento que foi alterado</span><span class="estado e-pronto">pronto</span></li>
           <li><span class="n">24</span><span class="texto"><span class="chip c-paciente quem">paciente</span>Escolhe a opção vencedora</span><span class="estado e-pronto">pronto</span></li>
         </ol>
       </div>
@@ -515,7 +515,7 @@
           <li><span class="n">33</span><span class="texto"><span class="chip c-recepcao quem">recepção</span>Acolhimento, sala de espera e chamada, como na primeira vez</span><span class="estado e-pronto">pronto</span></li>
           <li><span class="n">34</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Registra a evolução durante a sessão</span><span class="estado e-falta">falta · 03.7.b</span></li>
           <li><span class="n">35</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Registra intercorrências e prescrições no mesmo lugar</span><span class="estado e-falta">falta · 03.7.b</span></li>
-          <li><span class="n">36</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Marca as faces executadas, com data e autor</span><span class="estado e-falta">falta · 03.8.c</span></li>
+          <li><span class="n">36</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Marca as faces executadas, com data e autor</span><span class="estado e-falta">falta · 03.8.b</span></li>
           <li><span class="n">37</span><span class="texto"><span class="chip c-profissional quem">profissional</span>Lê a evolução ao paciente e envia para assinatura</span><span class="estado e-falta">falta · 03.12</span></li>
           <li><span class="n">38</span><span class="texto"><span class="chip c-paciente quem">paciente</span>Assina por link ou QR; a recusa também se registra</span><span class="estado e-falta">falta · 03.7.b</span></li>
           <li><span class="n">39</span><span class="texto"><span class="chip c-sistema quem">sistema</span>Evolução assinada encerra a sessão</span><span class="estado e-pronto">pronto</span></li>
@@ -547,15 +547,15 @@
   </main>
 
   <section class="decisoes">
-    <h3>As quatro decisões que fecharam este caminho</h3>
+    <h3>As sete decisões que fecharam este caminho</h3>
     <p class="sub">
-      Tomadas por Max entre 6 e 10 de setembro de 2026, na revisão do fluxo original de 27 passos.
+      Tomadas por Max entre 6 e 13 de setembro de 2026, na revisão do fluxo original de 27 passos.
     </p>
     <dl class="dec">
       <div>
         <dt>D-F1</dt>
         <dd>
-          A opção A/B aceita <b>procedimento, pacote ou plano</b>. Uma proposta que é um pacote não
+          A opção A/B aceita <b>item heterogêneo</b> — hoje, procedimento ou pacote (D-F6). Uma proposta que é um pacote não
           cabia na matriz anterior, e o contrato passa a ser cópia fiel da opção aceita — sem
           tradução no meio, que é onde o preço costuma divergir.
         </dd>
@@ -589,6 +589,22 @@
           <b>O vocabulário de preço muda na tela.</b> “Escada”, “degrau” e “veio de” descrevem bem o
           mecanismo e mal o trabalho de quem atende: a tela passa a dizer <i>como o preço é
           decidido</i>, <i>a quem se aplica</i> e <i>preço aplicado</i>.
+        </dd>
+      </div>
+      <div>
+        <dt>D-F6</dt>
+        <dd>
+          <b>A opção tem dois braços: procedimento ou pacote.</b> Plano dentro da opção de um plano
+          não tem sentido — a opção já pertence a um. Quando a proposta vira contrato, o plano entra
+          como o próprio dono da opção aceita.
+        </dd>
+      </div>
+      <div>
+        <dt>D-F7</dt>
+        <dd>
+          <b>Quem aprova o orçamento é o profissional que vai executar</b> — o tipo dele move o preço e
+          é ele quem responde pelo número. Sem exceção para o proprietário, que muitas vezes não é
+          dentista.
         </dd>
       </div>
     </dl>

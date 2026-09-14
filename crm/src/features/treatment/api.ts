@@ -41,11 +41,17 @@ const finance = () => supabase.schema("aba_finance");
 // A matriz clínica
 // ============================================================
 
+/**
+ * A célula da matriz. Desde a migration `051` (Subetapa 03.8.c) ela carrega
+ * procedimento OU pacote — arco exclusivo, exatamente um dos dois vem
+ * preenchido (D-F1, D-F6).
+ */
 export type CelulaPlano = {
   id: string;
   opcao_id: string;
   fase_id: string;
-  procedimento_id: string;
+  procedimento_id: string | null;
+  pacote_id: string | null;
   diagnostico_id: string | null;
   dente: string | null;
   faces: string[] | null;
@@ -124,7 +130,10 @@ export function useFases() {
 export type ItemOrcamento = {
   id: string;
   procedimento_plano_id: string;
-  procedimento_id: string;
+  tipo: "procedimento" | "pacote";
+  procedimento_id: string | null;
+  pacote_id: string | null;
+  /** O nome do item — do procedimento ou do pacote. */
   procedimento: string;
   valor_resolvido: number;
   tabela_preco_id: string | null;
@@ -153,6 +162,18 @@ export type Orcamento = {
   valor_bruto: number;
   valor_liquido: number;
   aprovado_em: string | null;
+  aprovado_por: string | null;
+  /**
+   * O BANCO responde se quem está olhando é o profissional que vai executar
+   * — o único que aprova (D-F7). A tela não recalcula isso: ela usa a
+   * resposta para mostrar o botão ou explicar por que ele não está lá.
+   */
+  sou_quem_aprova: boolean;
+  /**
+   * Preenchido quando o orçamento está em rascunho porque a recepção mexeu
+   * em dinheiro depois de aprovado (D-F3). É o aviso de nova aprovação.
+   */
+  ultima_devolucao: { em: string; por: string | null; por_nome: string | null; colunas: string[] } | null;
   com_detalhe_clinico: boolean;
   itens: ItemOrcamento[];
 };
@@ -171,12 +192,33 @@ export function useOrcamentos(planoId: string | null) {
   });
 }
 
+export type PlanoOrcado = { plano_id: string; criado_em: string; orcamentos: number; aprovados: number };
+
+/**
+ * A PORTA DA RECEPÇÃO (Subetapa 03.8.c). Quem não tem alcance clínico
+ * recebe `ler_planos` vazio — correto —, e sem isto não teria como abrir o
+ * orçamento em que precisa dar desconto. Devolve só identificador, data e
+ * contagens: nada clínico, e por isso nada registrado em `log_acesso`.
+ */
+export function usePlanosOrcados(clienteId: string | null) {
+  return useQuery({
+    queryKey: ["treatment-planos-orcados", clienteId],
+    enabled: !!clienteId,
+    queryFn: async (): Promise<PlanoOrcado[]> => {
+      const { data, error } = await finance().rpc("planos_orcados_do_cliente", { p_cliente_id: clienteId });
+      if (error) throw error;
+      return (data ?? []) as PlanoOrcado[];
+    },
+  });
+}
+
 /** Invalida as duas leituras registradas de um plano de uma vez só. */
 function useRecarregarPlano(planoId: string | null, clienteId: string | null) {
   const qc = useQueryClient();
   return () => {
     void qc.invalidateQueries({ queryKey: ["treatment-orcamentos", planoId] });
     void qc.invalidateQueries({ queryKey: ["treatment-planos", clienteId] });
+    void qc.invalidateQueries({ queryKey: ["treatment-planos-orcados", clienteId] });
     void qc.invalidateQueries({ queryKey: ["health-log", clienteId] });
   };
 }
@@ -344,6 +386,256 @@ export function useProfissionaisComTipo() {
         nome: p.nome_exibicao as string,
         tipoId: (p.tipo_profissional_id as string) ?? null,
         tipo: p.tipo_profissional_id ? (porId.get(p.tipo_profissional_id as string) ?? null) : null,
+      }));
+    },
+  });
+}
+
+// ============================================================
+// Montar o plano pela tela (Subetapa 03.8.c)
+// ============================================================
+//
+// A 03.8 foi só banco e a 03.8.a entregou a leitura: o plano da
+// demonstração de 2026-09-05 precisou nascer por SQL. Estas mutações fecham
+// a corrente `odontograma → plano → orçamento` pela interface.
+//
+// NENHUMA DELAS DECIDE PERMISSÃO. Quem pode montar é
+// `aba_treatment.pode_planejar` — na RLS de cada `insert` e na pergunta de
+// `usePodePlanejar`, que a tela usa só para EXPLICAR a recusa (Qualidade fixa
+// da Etapa 03: a tela não recalcula permissão no client).
+//
+// E NENHUMA DELAS PEDE COLUNA CLÍNICA DE VOLTA. `dente`, `faces`, `titulo` e
+// `descricao` têm `SELECT` revogado (047): um `insert(...).select("*")`
+// voltaria `42501` e pareceria falha de RLS. Quando o `id` é preciso, pede-se
+// só o `id` — que é metadado legível.
+
+export type AcaoPlano = "leitura" | "criacao" | "atualizacao" | "exclusao";
+
+export function usePodePlanejar(clienteId: string | null, acao: AcaoPlano) {
+  return useQuery({
+    queryKey: ["treatment-pode-planejar", clienteId, acao],
+    enabled: !!clienteId,
+    queryFn: async (): Promise<boolean> => {
+      const { data, error } = await treatment().rpc("pode_planejar", { p_cliente_id: clienteId, p_acao: acao });
+      // Falha fechada: erro vira "não pode". A recusa de verdade vem da RLS.
+      if (error) return false;
+      return data === true;
+    },
+  });
+}
+
+export function useCriarPlano(clienteId: string | null) {
+  const { profile } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ titulo, profissionalId }: { titulo: string; profissionalId: string | null }) => {
+      const { data, error } = await treatment()
+        .from("planos")
+        .insert({
+          account_id: profile!.accountId,
+          cliente_id: clienteId,
+          titulo: titulo.trim() || "Plano de tratamento",
+          profissional_id: profissionalId,
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      return data.id as string;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["treatment-planos", clienteId] });
+    },
+  });
+}
+
+export function useCriarOpcao(clienteId: string | null) {
+  const { profile } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ planoId, rotulo, ordem }: { planoId: string; rotulo: string; ordem: number }) => {
+      const { data, error } = await treatment()
+        .from("opcoes")
+        .insert({ account_id: profile!.accountId, plano_id: planoId, rotulo, ordem })
+        .select("id")
+        .single();
+      if (error) throw error;
+      return data.id as string;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["treatment-planos", clienteId] });
+    },
+  });
+}
+
+export function useCriarDiagnostico(clienteId: string | null) {
+  const { profile } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (d: { planoId: string; dente: string | null; faces: string[]; descricao: string }) => {
+      // Sem `.select()`: `descricao`, `dente` e `faces` não são legíveis
+      // por coluna, e o `id` não é preciso aqui — a leitura registrada
+      // recarrega a matriz inteira.
+      const { error } = await treatment().from("diagnosticos").insert({
+        account_id: profile!.accountId,
+        plano_id: d.planoId,
+        dente: d.dente,
+        faces: d.faces,
+        descricao: d.descricao,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["treatment-planos", clienteId] });
+    },
+  });
+}
+
+export type NovoItemDaOpcao = {
+  planoId: string;
+  opcaoId: string;
+  faseId: string;
+  /** O braço do arco (D-F6): procedimento OU pacote. */
+  item: { tipo: "procedimento" | "pacote"; id: string };
+  dente: string | null;
+  faces: string[];
+  diagnosticoId: string | null;
+};
+
+/**
+ * "Selecionar N faces cria N linhas, uma por DENTE" (03.8): a célula tem UM
+ * dente. Quem quiser a mesma restauração em três dentes acrescenta três
+ * vezes — e a forma da tabela recusa a linha com três dentes antes de
+ * qualquer regra de tela.
+ */
+export function useAcrescentarItem(planoId: string | null, clienteId: string | null) {
+  const { profile } = useAuth();
+  const recarregar = useRecarregarPlano(planoId, clienteId);
+  return useMutation({
+    mutationFn: async (n: NovoItemDaOpcao) => {
+      const pacote = n.item.tipo === "pacote";
+      const { error } = await treatment()
+        .from("procedimentos_plano")
+        .insert({
+          account_id: profile!.accountId,
+          plano_id: n.planoId,
+          opcao_id: n.opcaoId,
+          fase_id: n.faseId,
+          procedimento_id: pacote ? null : n.item.id,
+          pacote_id: pacote ? n.item.id : null,
+          // Pacote não se lança por dente nem por face — o banco recusa
+          // (`procedimentos_plano_pacote_sem_dente`); a tela nem manda.
+          dente: pacote ? null : n.dente,
+          faces: pacote ? [] : n.faces,
+          diagnostico_id: n.diagnosticoId,
+        });
+      if (error) throw error;
+    },
+    onSuccess: recarregar,
+  });
+}
+
+/**
+ * Só `proposto` não recusado se apaga (policy da 045). O `DELETE` que a
+ * policy nega não dá erro — volta ZERO linhas —, e "não deu erro" não é
+ * "apagou" (`instrucoes.md` §5). Por isso a contagem é conferida e a
+ * ausência de efeito vira mensagem.
+ */
+export function useRemoverItem(planoId: string | null, clienteId: string | null) {
+  const recarregar = useRecarregarPlano(planoId, clienteId);
+  return useMutation({
+    mutationFn: async (celulaId: string) => {
+      const { data, error } = await treatment()
+        .from("procedimentos_plano")
+        .delete()
+        .eq("id", celulaId)
+        .select("id");
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error(
+          "Nada foi removido. Só sai do plano o item ainda proposto e não recusado, e remover exige a permissão de exclusão do módulo Plano.",
+        );
+      }
+    },
+    onSuccess: recarregar,
+  });
+}
+
+/** Gera os orçamentos de TODAS as opções de uma vez — é o gesto do caminho feliz (E3). */
+export function useMontarTodosOsOrcamentos(planoId: string | null, clienteId: string | null) {
+  const recarregar = useRecarregarPlano(planoId, clienteId);
+  return useMutation({
+    mutationFn: async ({ opcoes, profissionalId }: { opcoes: string[]; profissionalId: string | null }) => {
+      for (const opcaoId of opcoes) {
+        const { error } = await finance().rpc("montar_orcamento", {
+          p_opcao_id: opcaoId,
+          p_profissional_id: profissionalId,
+        });
+        // Orçamento já aprovado não se remonta — e isso não é falha do
+        // gesto "gerar todos": as outras opções seguem.
+        if (error && !/não se remonta/.test(error.message)) throw error;
+      }
+    },
+    onSuccess: recarregar,
+  });
+}
+
+export type ProcedimentoDoCatalogo = {
+  id: string;
+  nome: string;
+  unidade: string | null;
+  facesMinimo: number | null;
+  facesMaximo: number | null;
+};
+
+/** O que a tela precisa para ajudar a montar a célula: se o item pede dente e quantas faces aceita. */
+export function useProcedimentosDoCatalogo() {
+  const { profile } = useAuth();
+  return useQuery({
+    queryKey: ["treatment-catalogo-procedimentos", profile?.accountId],
+    enabled: !!profile?.accountId,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<ProcedimentoDoCatalogo[]> => {
+      const { data, error } = await supabase
+        .schema("aba_catalog")
+        .from("procedimentos")
+        .select("id, nome, unidade_lancamento, faces_minimo, faces_maximo")
+        .eq("account_id", profile!.accountId)
+        .eq("ativo", true)
+        .order("nome");
+      if (error) throw error;
+      return (data ?? []).map((p) => ({
+        id: p.id as string,
+        nome: p.nome as string,
+        unidade: (p.unidade_lancamento as string) ?? null,
+        facesMinimo: (p.faces_minimo as number) ?? null,
+        facesMaximo: (p.faces_maximo as number) ?? null,
+      }));
+    },
+  });
+}
+
+export type PacoteDoCatalogo = { id: string; nome: string; precoTotal: number; ativo: boolean };
+
+/** Todos os pacotes, ativos e inativos — o inativo ainda precisa de NOME onde já estava num plano. */
+export function usePacotesDoCatalogo() {
+  const { profile } = useAuth();
+  return useQuery({
+    queryKey: ["treatment-catalogo-pacotes", profile?.accountId],
+    enabled: !!profile?.accountId,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<PacoteDoCatalogo[]> => {
+      const { data, error } = await supabase
+        .schema("aba_catalog")
+        .from("pacotes")
+        .select("id, nome, preco_total, ativo")
+        .eq("account_id", profile!.accountId)
+        .order("nome");
+      if (error) throw error;
+      return (data ?? []).map((p) => ({
+        id: p.id as string,
+        nome: p.nome as string,
+        precoTotal: Number(p.preco_total),
+        ativo: p.ativo === true,
       }));
     },
   });

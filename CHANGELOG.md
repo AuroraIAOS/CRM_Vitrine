@@ -2,6 +2,17 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-09-13 (Subetapa 03.8.c — o plano se monta na tela)
+
+- **O plano de tratamento nasce na tela.** O profissional cria o plano, abre as opções concorrentes (A, B, …), registra diagnósticos e põe cada item na fase certa, sem que ninguém precise mexer no banco. Até aqui a tela só mostrava um plano que já existisse.
+- **O plano nasce do odontograma.** O botão "Trazer do odontograma" mostra o que foi marcado no prontuário: o achado vira diagnóstico com um clique, e o trabalho vai para o formulário já com o dente e as faces **do trabalho** preenchidos. As faces da cárie não são as da restauração, e o sistema não confunde as duas.
+- **Uma opção pode ser um pacote.** "Sessão avulsa × combo de clareamento" agora cabe lado a lado. O pacote não se lança por dente, e o preço dele segue a mesma regra de todo o resto: se a clínica tiver tabela para aquele pacote (convênio, cortesia, preço da casa), vale a tabela; se não tiver, vale o preço cadastrado no pacote. As tabelas de preço em Configurações aceitam pacote.
+- **"Gerar orçamento de todas as opções"**, num clique, com o preço de cada item decidido pelas tabelas e a origem escrita ao lado, em "Preço aplicado".
+- **Só o profissional que vai executar aprova o orçamento**, e o botão só aparece para ele; os outros veem quem aprova. Nem o proprietário aprova no lugar de quem responde pelo número. A regra está no banco, e uma aprovação forjada por fora da tela é recusada.
+- **Mexer em dinheiro depois de aprovado devolve o orçamento a rascunho.** Se a recepção dá desconto, muda a parcela ou os juros num orçamento aprovado, ele volta a rascunho, com um aviso de quem alterou e o quê, e o profissional precisa aprovar de novo antes de ele ir ao paciente. Toda aprovação e toda devolução ficam registradas.
+- **A recepção chega ao orçamento sem ver o plano clínico.** Sem acesso ao prontuário, ela abre direto os orçamentos do paciente, com valores, itens e condições, sem dente e sem face, e é ali que negocia.
+- **Correção:** o profissional que recebeu acesso a um paciente específico conseguia abrir o plano, mas não gravava nenhum item, porque não enxergava a lista de fases clínicas. Passou a enxergar.
+
 ## [+1.0] - 2026-09-10 (Subetapa 03.8.d — preço por convênio ou grupo)
 
 - **A clínica pode dar um preço a um conjunto de pacientes de uma vez.** Convênio de empresa, promoção do mês, tabela de servidor público: cria-se o grupo, marca-se quem está nele, e o orçamento de qualquer um deles passa a resolver por aquela tabela. Antes, uma cortesia para quarenta pessoas exigiria quarenta tabelas de preço — uma por paciente, todas dizendo a mesma coisa e nenhuma sabendo que eram a mesma regra.

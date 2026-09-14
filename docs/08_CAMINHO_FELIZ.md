@@ -35,6 +35,8 @@ Tomadas por Max em **2026-09-06**, na conversa que revisou o fluxo dele.
 | **D-F3** | Quem autoriza o preço, e quando | **O profissional aprova o ORÇAMENTO antes de ele ir ao paciente** — e não assina o contrato depois do aceite, como o fluxo original previa. A recepção só apresenta orçamento aprovado; se ela alterar desconto, parcela, juros ou mora, **o orçamento volta a rascunho** e exige nova aprovação. Motivo: na ordem original, promete-se um preço ao paciente antes de quem responde por ele ter autorizado, e desdizer valor já aceito é o pior momento possível da relação | **Max, 2026-09-06** |
 | **D-F4** | O vocabulário de preço na interface | **Troca.** "Escada", "degrau" e "veio de" são vocabulário de quem construiu, não de quem usa. Os termos internos (`escopo`, `degrau`) ficam no banco, onde são precisos; a tela passa a falar a língua da clínica. Mapa completo na §4 | **Max, 2026-09-06** |
 | **D-F5** | O mecanismo de preço por grupo entra na Etapa 03 | **Sim.** *"Embora os convênios sejam tratados fora do MVP, já podemos deixar o mecanismo do orçamento pronto para recebê-los."* Vira a **Subetapa 03.8.d**: o degrau entra na posição **2** — `Paciente > Grupo > Tipo de profissional > Clínica > Rede > Prática` —, a cortesia individual vence o convênio e o convênio vence o tipo de profissional. **Nenhuma linha de convênio se cria**: operadora, apólice, carência e cobertura seguem fora do MVP por D-V5; o que entra é o lugar onde eles vão encaixar. Junto vem um renome que a D-V1 exige: `grupo` já significava *grupo de clínicas* no `escopo`, e passa a `rede` — uma palavra, um dono | **Max, 2026-09-10** |
+| **D-F6** | O que é um item "plano" dentro da opção de um plano | **Não existe: o arco da opção tem dois braços, procedimento OU pacote.** A D-F1 listava três; a pergunta que a execução da 03.8.c fez foi o que seria um *plano* dentro da opção de um plano, se a opção já pertence a um. Quando a 03.8.b copiar a opção aceita para o contrato, `itens_contrato.plano_id` recebe o **próprio plano dono da opção** — sem plano dentro de plano, sem ciclo a vigiar e sem "preço de plano" a inventar. O terceiro braço continua onde a D-V3 o desenhou: no contrato. **A D-F1 não se apaga**: ela decidiu que a opção é heterogênea, e a D-F6 decide quais são os tipos | **Max, 2026-09-13**, à pergunta da 03.8.c |
+| **D-F7** | Quem é "o profissional" que aprova o orçamento (D-F3) | **Quem vai executar** — o login por trás do profissional do orçamento, cujo tipo move o preço e que responde pelo número. Sem profissional definido, não se aprova. **Sem exceção para o `owner`**: é comum ele não ser dentista (D-V7), e aprovar o preço clínico no lugar de quem executa é a vinculação "sem ele saber" que a D-F3 existe para impedir. A regra mora num gatilho, porque a policy de `UPDATE` autoriza qualquer `agent` | **Max, 2026-09-13**, à pergunta da 03.8.c |
 
 ---
 
@@ -206,8 +208,8 @@ Levantado em **2026-09-06**, contra o repositório e o banco de produção.
 |---|---|---|
 | **E1** Captação | mensageria (02.5), lead (02.3), `converter_lead()`, agenda (02.6) | converter no ato de agendar → **03.19** |
 | **E2** Diagnóstico | sala de espera (03.4), anamnese (02.9), odontograma (03.7.a) | **evolução com texto** → **03.7.b** |
-| **E3** Proposta | matriz no banco (03.8), preço resolvido e aprovação (03.8.a) | **montar o plano pela tela**, **opção heterogênea**, **voltar a rascunho** → **03.8.c** |
-| **E4** Negociação | trava de alçada: só `admin` mexe em dinheiro (03.8.a) | impressão do orçamento → **03.8.b** |
+| **E3** Proposta | matriz no banco (03.8), preço resolvido e aprovação (03.8.a); **plano montado pela tela a partir do odontograma, opção com procedimento ou pacote, pacote subindo a escada, aprovação só por quem executa (03.8.c)** | — |
+| **E4** Negociação | trava de alçada: só `admin` mexe em dinheiro (03.8.a); **recepção chega ao orçamento sem alcance clínico, alterar dinheiro devolve a rascunho com aviso, reaprovação (03.8.c)** | impressão do orçamento → **03.8.b** |
 | **E5** Contrato | recusa implícita da opção perdedora (03.8) | contrato (**03.8.b**), token (**03.10**), assinatura por link (**03.12**) |
 | **E6** Execução | agenda, faces executadas com data e autor (03.7.a) | evolução textual e **recusa de assinar** → **03.7.b**; prescrição → **03.16.a** |
 | **E7** Financeiro | faturas e comissões (02.8), régua (03.18) | **fila de aprovação de faturas** → **03.18** |
@@ -235,5 +237,6 @@ passos carrega **quem o executa** (recepção, profissional, paciente ou
 sistema) e **se o CRM já o executa hoje**, com a subetapa responsável quando
 não. Isso responde de relance a pergunta que o plano por subetapas não
 responde — *quanto do atendimento real já funciona?* — e a resposta, em
-2026-09-06, é **21 de 44**. Toda vez que uma subetapa fechar, esse número
+2026-09-06, é **21 de 44**; em **2026-09-13**, depois da 03.8.c, é **26 de 44** (o passo 36, que o artefato atribuía à
+03.8.c sem que o bloco dela o incluísse, foi reatribuído à 03.8.b). Toda vez que uma subetapa fechar, esse número
 muda; mantê-lo em dia é o que impede o documento de virar retrato antigo.

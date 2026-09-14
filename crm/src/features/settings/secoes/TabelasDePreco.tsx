@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
-import { useNomesDeProcedimento, useProfissionaisComTipo } from "@/features/treatment/api";
+import { useNomesDeProcedimento, usePacotesDoCatalogo, useProfissionaisComTipo } from "@/features/treatment/api";
 import { useClientesDaConta } from "@/features/health/api";
 import {
   DEGRAUS,
@@ -56,6 +56,8 @@ export function TabelasDePreco() {
   const { data: tabelas = [], isPending, error } = useTabelasPreco();
   const { data: profissionais = [] } = useProfissionaisComTipo();
   const { data: nomes } = useNomesDeProcedimento();
+  const { data: pacotes = [] } = usePacotesDoCatalogo();
+  const nomeDoPacote = new Map(pacotes.map((p) => [p.id, p.nome]));
 
   const criar = useCriarTabelaPreco();
   const comprometer = useComprometerTabela();
@@ -97,8 +99,8 @@ export function TabelasDePreco() {
     <div className="flex flex-col gap-3">
       <CardSecao>
         <TituloSecao
-          titulo="A escada de preço"
-          descricao="O preço se resolve percorrendo os degraus, do mais específico para o mais geral. Ninguém escolhe tabela na hora do lançamento."
+          titulo="Como o preço é decidido"
+          descricao="O sistema faz estas perguntas em ordem, da mais específica para a mais geral, e para na primeira que tem resposta. Ninguém escolhe tabela na hora do orçamento."
         />
         <div className="flex flex-col">
           {DEGRAUS.map((d, i) => (
@@ -113,9 +115,9 @@ export function TabelasDePreco() {
           ))}
         </div>
         <Nota>
-          A primeira tabela <strong>comprometida e vigente</strong> que tiver tarifa para o procedimento vence. Se
-          nenhuma alcançar, vale o <code>preco_base</code> do catálogo — e o orçamento diz de qual degrau o número
-          veio.
+          A primeira tabela <strong>comprometida e vigente</strong> que tiver preço para o procedimento ou pacote vence. Se
+          nenhuma alcançar, vale o preço do próprio cadastro — e o orçamento mostra, em “Preço aplicado”, de onde o
+          número veio.
         </Nota>
       </CardSecao>
 
@@ -130,7 +132,7 @@ export function TabelasDePreco() {
           <div className="flex flex-col">
             <div className="grid grid-cols-[1fr_130px_80px_100px_1fr] gap-2 border-b border-border pb-1.5 font-mono text-[9.5px] uppercase tracking-[0.08em] text-muted-foreground">
               <span>Tabela</span>
-              <span>Degrau</span>
+              <span>A quem se aplica</span>
               <span>Tarifas</span>
               <span>Estado</span>
               <span>Vigência</span>
@@ -164,7 +166,11 @@ export function TabelasDePreco() {
                           key={tf.id}
                           className="flex items-baseline justify-between border-b border-hairline py-1 text-[11px] text-secondary-foreground last:border-b-0"
                         >
-                          <span className="truncate">{nomes?.get(tf.procedimento_id) ?? tf.procedimento_id}</span>
+                          <span className="truncate">
+                            {tf.pacote_id
+                              ? `${nomeDoPacote.get(tf.pacote_id) ?? tf.pacote_id} (pacote)`
+                              : (nomes?.get(tf.procedimento_id ?? "") ?? tf.procedimento_id)}
+                          </span>
                           <span className="font-mono">
                             {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
                               Number(tf.valor),
@@ -180,17 +186,30 @@ export function TabelasDePreco() {
                       <div className="flex flex-col gap-2">
                         <Rotulo>Acrescentar tarifa</Rotulo>
                         <div className="flex flex-wrap gap-2">
+                          {/* O valor carrega o braço do arco — `procedimento:<id>`
+                              ou `pacote:<id>` —, porque a tarifa é de um OU de
+                              outro (migration 051). */}
                           <select
                             value={procedimentoId}
                             onChange={(e) => setProcedimentoId(e.target.value)}
+                            aria-label="Procedimento ou pacote da tarifa"
                             className="min-w-[200px] flex-1 rounded-[5px] border border-input bg-background px-2 py-1 text-[11px]"
                           >
-                            <option value="">Escolha o procedimento…</option>
-                            {Array.from(nomes ?? new Map()).map(([id, n]) => (
-                              <option key={id} value={id}>
-                                {n}
-                              </option>
-                            ))}
+                            <option value="">Escolha o procedimento ou o pacote…</option>
+                            <optgroup label="Procedimentos">
+                              {Array.from(nomes ?? new Map()).map(([id, n]) => (
+                                <option key={id} value={`procedimento:${id}`}>
+                                  {n}
+                                </option>
+                              ))}
+                            </optgroup>
+                            <optgroup label="Pacotes">
+                              {pacotes.filter((p) => p.ativo).map((p) => (
+                                <option key={p.id} value={`pacote:${p.id}`}>
+                                  {p.nome}
+                                </option>
+                              ))}
+                            </optgroup>
                           </select>
                           <input
                             type="number"
@@ -207,7 +226,14 @@ export function TabelasDePreco() {
                             disabled={!procedimentoId || !valor || definirTarifa.isPending}
                             onClick={() =>
                               definirTarifa.mutate(
-                                { tabelaId: t.id, procedimentoId, valor: Number(valor) },
+                                {
+                                  tabelaId: t.id,
+                                  item: {
+                                    tipo: procedimentoId.startsWith("pacote:") ? "pacote" : "procedimento",
+                                    id: procedimentoId.slice(procedimentoId.indexOf(":") + 1),
+                                  },
+                                  valor: Number(valor),
+                                },
                                 { onSuccess: () => { setProcedimentoId(""); setValor(""); } },
                               )
                             }
@@ -219,7 +245,7 @@ export function TabelasDePreco() {
                             variant="secondary"
                             disabled={t.tarifas === 0 || comprometer.isPending}
                             onClick={() => comprometer.mutate({ tabelaId: t.id })}
-                            title="A partir daqui a tarifa é imutável e a tabela entra na escada."
+                            title="A partir daqui o preço é imutável e a tabela passa a decidir o preço."
                           >
                             Comprometer
                           </Button>
@@ -261,7 +287,7 @@ export function TabelasDePreco() {
                             variant="ghost"
                             disabled={encerrar.isPending}
                             onClick={() => encerrar.mutate(t.id)}
-                            title="Tira a tabela da escada sem substituí-la. Ela continua existindo como proveniência."
+                            title="A tabela deixa de decidir o preço, sem ser substituída. Ela continua existindo como origem dos valores já acordados."
                           >
                             Encerrar
                           </Button>
@@ -289,7 +315,7 @@ export function TabelasDePreco() {
         />
         {grupos.length === 0 ? (
           <Vazio>
-            Nenhum grupo criado. Sem grupos, o degrau “preço por convênio ou grupo” não tem o que resolver.
+            Nenhum grupo criado. Sem grupos, a pergunta “preço por convênio ou grupo” não tem o que responder.
           </Vazio>
         ) : (
           <div className="flex flex-col">
@@ -354,7 +380,7 @@ export function TabelasDePreco() {
                             variant="ghost"
                             disabled={alternarGrupo.isPending}
                             onClick={() => alternarGrupo.mutate({ grupoId: g.id, ativo: !g.ativo })}
-                            title="Grupo inativo sai da escada — o preço dele deixa de resolver, sem apagar nada."
+                            title="Grupo inativo deixa de decidir o preço, sem apagar nada."
                           >
                             {g.ativo ? "Desativar grupo" : "Reativar grupo"}
                           </Button>
@@ -420,7 +446,7 @@ export function TabelasDePreco() {
 
       {ehAdmin && (
         <CardSecao>
-          <TituloSecao titulo="Nova tabela de preço" descricao="Nasce em rascunho: só entra na escada quando for comprometida." />
+          <TituloSecao titulo="Nova tabela de preço" descricao="Nasce em rascunho: só passa a decidir o preço quando for comprometida." />
           <div className="flex flex-wrap gap-2">
             <input
               value={nome}
@@ -493,7 +519,7 @@ export function TabelasDePreco() {
           </div>
           {criar.error && <span className="text-[10.5px] text-destructive">{(criar.error as Error).message}</span>}
           <Nota>
-            O degrau <strong>preço só deste paciente</strong> não se cria aqui: ele é o preço pessoal de alguém —
+            O <strong>preço só deste paciente</strong> não se cria aqui: ele é o preço pessoal de alguém —
             cortesia ou acordo pontual — e nasce na ficha do próprio paciente. Para vários pacientes de uma vez —
             convênio, promoção, categoria — use <strong>preço por convênio ou grupo</strong>, logo acima.
           </Nota>

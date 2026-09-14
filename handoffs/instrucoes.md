@@ -922,6 +922,37 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Regra que fica:** **ao levar dado de saúde para um schema novo, o porte do regime é ATÔMICO — alcance, revogação por coluna, leitura registrada e escrita registrada.** Entregar um subconjunto e chamar o resto de pendência cria uma superfície que parece protegida. E, na dúvida sobre o que o porte inclui, a lista está nas migrations que existem **só** porque alguém antes portou pela metade: `053` (leitura sem log) e `070` (escrita sem log).
 - **Fonte:** Subetapa 03.8, 2026-09-04, por ordem de Max.
 
+### Policy de CATÁLOGO que pergunta pelo alcance clínico GERAL cega justamente quem recebeu o paciente por concessão nominal
+- **Gatilho:** Subetapa 03.8.c, evidência de tela. O profissional de demonstração, com concessão nominal de prontuário para o paciente, abria o plano, criava opção e diagnóstico, e o botão "Gravar na opção" **nunca habilitava**. Sem erro, sem mensagem.
+- **Medido antes de escrito como causa** (`CLAUDE.md` §11), com a sessão dele simulada em produção por `request.jwt.claims`: `access.can('treatment','read')` = true, `aba_health.pode_acessar(NULL,'leitura')` = **false**, fases visíveis = **0**. O formulário exige fase, e a lista de fases vinha vazia.
+- **A causa:** `aba_treatment.fases_select` (migration `045`) usava `pode_planejar(NULL, 'leitura')`, o padrão de `formularios_anamnese`. Com `cliente_id` nulo, `pode_acessar` responde se a pessoa **enxerga prontuário em geral**. A concessão nominal existe exatamente para dar um paciente **sem** abrir todos, e por definição responde "não" a essa pergunta. Quem tinha o paciente não tinha as linhas da matriz.
+- **Por que ficou invisível desde a 03.8:** toda suíte e toda evidência montaram plano como `owner`, que passa por atalho em `pode_acessar`. O caminho do produto (profissional com concessão) nunca foi exercitado ponta a ponta.
+- **Ação (migration `051` §8c):** `fases` é catálogo da conta (chave, rótulo, ordem), sem nada de paciente, e passou a ser lida pelo **módulo** (`access.can('treatment','read')`). A escrita continua `admin` com alcance clínico. A verificação (j2) recusa a migration se a policy voltar a exigir alcance geral **ou** se a tabela ganhar coluna de paciente, que é o que tornaria a leitura pelo módulo inaceitável.
+- **Regra que fica:** **alcance clínico "geral" (`pode_acessar(NULL, …)`) serve para CONTAR ausência (lição da 02.12), não para liberar CATÁLOGO de quem trabalha num paciente.** Antes de reusar o padrão de outra tabela, pergunte qual pessoa ficaria de fora; e todo fluxo clínico novo precisa de pelo menos uma prova com o **papel que o usa de verdade**, nunca só com `owner`, que atalha tudo.
+- **Fonte:** Subetapa 03.8.c, 2026-09-13.
+
+### A porta financeira existia e estava trancada por fora: função que recebe `plano_id` é inalcançável para quem não consegue descobrir o `plano_id`
+- **Gatilho:** Subetapa 03.8.c, ao escrever a evidência da Conclusão ("a recepção dá 10% de desconto"). `aba_finance.ler_orcamentos(plano_id)` servia a recepção desde a 03.8.a, escondendo dente e face de quem não tem alcance. Mas a tela lista planos por `ler_planos()`, que exige alcance clínico, e a policy de `planos` também. A recepção via "Este paciente ainda não tem plano" num paciente com dois orçamentos.
+- **Por que as suítes não pegaram:** o teste de `ler_orcamentos` sem alcance **recebia o `plano_id` pronto da fixture**. Provou que a função responde certo a quem já tem a chave, e nada disse sobre como alguém chega à chave.
+- **Ação:** `aba_finance.planos_orcados_do_cliente(cliente_id)`, uma leitura financeira que devolve identificador, data e contagens; nada clínico, logo nenhum log. A verificação lê o retorno no catálogo e recusa `titulo|dente|faces|…`. Na tela, a "vista da recepção" aparece quando `ler_planos` vem vazio e há orçamento.
+- **Regra que fica:** **ao desenhar uma porta por papel, prove o PERCURSO até ela, não só a resposta dela.** Teste que entrega o identificador na mão do chamador mede a função e esconde a navegação. É a mesma família do "está no DOM ≠ está visível": a peça certa, sem caminho até ela.
+- **Fonte:** Subetapa 03.8.c, 2026-09-13.
+
+### `puppeteer.launch()` com o Edge 153 falha com "Code: 0" e sem saída — o navegador SUBIU; quem saiu foi o processo lançador
+- **Gatilho:** Subetapa 03.8.c, primeira execução de `evidencia_plano_na_tela.mjs`: *"Failed to launch the browser process: Code: 0"*, stderr vazio, com `headless: "new"`, `true` ou `"shell"`, com `pipe` ou sem.
+- **Duas hipóteses fortes, e as duas erradas:** sandbox da ferramenta (fora dele falhou igual) e política corporativa do Edge (nada em `HKLM/HKCU\SOFTWARE\Policies\Microsoft\Edge`). O teste que decidiu custou um minuto: abrir `msedge.exe --headless --remote-debugging-port=9333` direto e consultar `/json/version`. **A porta respondeu** (`Edg/153.0.4234.32`) e o processo lançado já tinha saído com código 0. O Edge desta versão entrega a sessão a outro processo e encerra o chamado, e o puppeteer vê o filho morrer e desiste.
+- **Pista que estava na mesa:** a terceira tentativa, com perfil próprio, respondeu *"The browser is already running for <perfil>"*, ou seja, o navegador da tentativa anterior estava vivo.
+- **Ação:** a evidência abre o navegador ela mesma (`spawn` destacado, perfil temporário, porta aleatória), espera `/json/version` e usa `puppeteer.connect({ browserURL })`; `browser.close()` encerra pelo protocolo. Os processos órfãos das tentativas foram fechados **filtrando pela linha de comando** (perfil de teste), sem tocar no Edge de uso de Max.
+- **Regra que fica:** **"falhou ao lançar" com código 0 é saída limpa, não falha.** Antes de culpar sandbox ou política, pergunte à porta se o processo está de pé.
+- **Fonte:** Subetapa 03.8.c, 2026-09-13.
+
+### Caso negativo que viola DOIS CHECKs ao mesmo tempo prova o CHECK errado
+- **Gatilho:** Subetapa 03.8.c, suíte 21. O caso "a célula recusa dois itens" enviava `procedimento_id`, `pacote_id` **e** `dente`. Veio `23514`, e a mensagem citava `procedimentos_plano_pacote_sem_dente`, não `procedimentos_plano_um_item`.
+- **Por que importa:** com a asserção só no SQLSTATE, o caso ficaria verde e provaria a regra do dente, deixando o arco sem prova. É a lição da 03.6.a (savepoint + SQLSTATE) com uma terceira exigência.
+- **Ação:** o caso envia só o que fere a regra testada, e a asserção exige o **nome do constraint** na mensagem. Junto, do lado do produto: o gatilho `BEFORE` de validação sai do caminho (`RETURN NEW`) quando o arco está quebrado. Ele rodaria antes do CHECK e recusaria com "procedimento não existe no catálogo", mensagem verdadeira sobre a consulta e falsa sobre a causa.
+- **Regra que fica:** **caso negativo fere UMA regra e confere o NOME dela.** Gatilho `BEFORE` que lê catálogo precisa sair do caminho quando o dado é estruturalmente inválido, para o CHECK falar com o nome certo.
+- **Fonte:** Subetapa 03.8.c, 2026-09-13.
+
 ---
 
 ## 6. Armadilhas conhecidas (não repetir)
