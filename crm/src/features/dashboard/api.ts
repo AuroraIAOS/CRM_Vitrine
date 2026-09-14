@@ -180,8 +180,8 @@ export function useResumoDashboard() {
             : Promise.resolve([]),
           podeAgenda
             ? db("aba_scheduling")
-                .from("agendamento_servicos")
-                .select("agendamento_id, servico_id")
+                .from("agendamento_procedimentos")
+                .select("agendamento_id, procedimento_id")
                 .eq("account_id", accountId!)
                 .then(desembrulhar)
             : Promise.resolve([]),
@@ -400,7 +400,7 @@ export function useResumoDashboard() {
       const contagemPorServico = new Map<string, number>();
       for (const s of servicosAgendados as ServAg[]) {
         if (!idsNoDonut.has(s.agendamento_id)) continue;
-        contagemPorServico.set(s.servico_id, (contagemPorServico.get(s.servico_id) ?? 0) + 1);
+        contagemPorServico.set(s.procedimento_id, (contagemPorServico.get(s.procedimento_id) ?? 0) + 1);
       }
 
       // Catálogo inteiro da conta, não só os serviços do donut: os
@@ -409,7 +409,7 @@ export function useResumoDashboard() {
       // deixaria o painel com "—" no lugar do nome do serviço.
       let nomesServico: Record<string, string> = {};
       if (podeCatalogo) {
-        const { data, error } = await db("aba_catalog").from("servicos").select("id, nome").eq("account_id", accountId!);
+        const { data, error } = await db("aba_catalog").from("procedimentos").select("id, nome").eq("account_id", accountId!);
         if (error) throw error;
         nomesServico = Object.fromEntries((data ?? []).map((s) => [s.id, s.nome]));
       }
@@ -443,7 +443,7 @@ export function useResumoDashboard() {
       const servicoDoAgendamento = new Map<string, string>();
       for (const s of servicosAgendados as ServAg[]) {
         if (!servicoDoAgendamento.has(s.agendamento_id)) {
-          servicoDoAgendamento.set(s.agendamento_id, nomesServico[s.servico_id] ?? "");
+          servicoDoAgendamento.set(s.agendamento_id, nomesServico[s.procedimento_id] ?? "");
         }
       }
 
@@ -546,7 +546,7 @@ type Ag = {
   fim: string;
   status: string;
 };
-type ServAg = { agendamento_id: string; servico_id: string };
+type ServAg = { agendamento_id: string; procedimento_id: string };
 type Prof = { id: string; nome_exibicao: string; ativo: boolean };
 type Hor = { profissional_id: string; dia_semana: number; inicio: string; fim: string; ativo: boolean };
 type Aus = { profissional_id: string; inicio: string; fim: string };

@@ -11,13 +11,25 @@ import {
   useDefinirExpedientePadrao,
   useAgendamentosIntervalo,
   useAtualizarStatusAgendamento,
+  useAtualizarMarcadorAgendamento,
   useCancelarAgendamento,
   useCriarAusencia,
+  useRecursos,
+  useCriarRecurso,
+  useAtualizarRecurso,
+  useHorariosTodosRecursos,
+  calcularOcupacaoRecursos,
+  useMarcadores,
+  useCriarMarcador,
+  useAtualizarMarcador,
+  contarPorMarcador,
   STATUS_LABEL,
   STATUS_TONE,
   mensagemErroAgendamento,
   type Agendamento,
   type Profissional,
+  type Recurso,
+  type Marcador,
 } from "./api";
 
 // Grade 07:00–20:00 — cobre um dia comercial comum; profissional com
@@ -70,7 +82,16 @@ function BlocoAgendamento({ agendamento, onSelecionar }: { agendamento: Agendame
       style={{ top, height: altura, borderLeftColor: agendamento.profissionalCor }}
       className={`absolute left-1 right-1 flex flex-col gap-0.5 overflow-hidden rounded-[5px] border-l-[3px] bg-content px-2 py-1 text-left ${cancelado ? "opacity-45" : ""}`}
     >
-      <span className="truncate text-[10.5px] font-semibold text-foreground">{agendamento.clienteNome}</span>
+      <span className="flex items-center gap-1 truncate text-[10.5px] font-semibold text-foreground">
+        {agendamento.marcadorCor && (
+          <span
+            className="h-1.5 w-1.5 flex-shrink-0 rounded-full"
+            style={{ backgroundColor: agendamento.marcadorCor }}
+            title={agendamento.marcadorNome ?? undefined}
+          />
+        )}
+        {agendamento.clienteNome}
+      </span>
       <span className="truncate text-[9.5px] text-muted-foreground">
         {agendamento.servicos.map((s) => s.nome).join(", ") || agendamento.profissionalNome}
       </span>
@@ -81,8 +102,9 @@ function BlocoAgendamento({ agendamento, onSelecionar }: { agendamento: Agendame
   );
 }
 
-function PainelDetalhe({ agendamento, onFechar }: { agendamento: Agendamento; onFechar: () => void }) {
+function PainelDetalhe({ agendamento, onFechar, marcadores }: { agendamento: Agendamento; onFechar: () => void; marcadores: Marcador[] }) {
   const atualizarStatus = useAtualizarStatusAgendamento();
+  const atualizarMarcador = useAtualizarMarcadorAgendamento();
   const cancelar = useCancelarAgendamento();
   const [erro, setErro] = useState<string | null>(null);
   const inicioLocal = new Date(agendamento.inicio);
@@ -123,6 +145,25 @@ function PainelDetalhe({ agendamento, onFechar }: { agendamento: Agendamento; on
         {agendamento.motivoCancelamento && <span>Motivo do cancelamento: {agendamento.motivoCancelamento}</span>}
       </div>
 
+      {marcadores.length > 0 && (
+        <div className="flex flex-col gap-1 border-t border-hairline pt-2.5">
+          <label className="text-[11px] font-medium text-secondary-foreground">Marcador</label>
+          <select
+            className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
+            value={agendamento.marcadorId ?? ""}
+            disabled={atualizarMarcador.isPending}
+            onChange={(e) => acionar(() => atualizarMarcador.mutateAsync({ id: agendamento.id, marcadorId: e.target.value || null }))}
+          >
+            <option value="">Sem marcador</option>
+            {marcadores.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {agendamento.status !== "cancelado" && agendamento.status !== "concluido" && (
         <div className="flex flex-col gap-1.5 border-t border-hairline pt-3">
           {agendamento.status === "agendado" && (
@@ -131,6 +172,15 @@ function PainelDetalhe({ agendamento, onFechar }: { agendamento: Agendamento; on
             </Button>
           )}
           {(agendamento.status === "agendado" || agendamento.status === "confirmado") && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => acionar(() => atualizarStatus.mutateAsync({ id: agendamento.id, status: "sala_de_espera" }))}
+            >
+              Marcar chegada (sala de espera)
+            </Button>
+          )}
+          {(agendamento.status === "agendado" || agendamento.status === "confirmado" || agendamento.status === "sala_de_espera") && (
             <Button size="sm" onClick={() => acionar(() => atualizarStatus.mutateAsync({ id: agendamento.id, status: "em_andamento" }))}>
               Iniciar atendimento
             </Button>
@@ -230,13 +280,177 @@ function AvisoSemJornada() {
   );
 }
 
+/** Painel "Recursos e cadeiras" (item 11) — cadastro + ocupação da semana em curso, mesmo toggle das demais ações de agenda. */
+function PainelRecursos({
+  recursos,
+  horarios,
+  agendamentos,
+  inicioSemana,
+  fimSemana,
+}: {
+  recursos: Recurso[];
+  horarios: { recursoId: string; diaSemana: number; inicio: string; fim: string }[];
+  agendamentos: Agendamento[];
+  inicioSemana: Date;
+  fimSemana: Date;
+}) {
+  const criar = useCriarRecurso();
+  const atualizar = useAtualizarRecurso();
+  const [nome, setNome] = useState("");
+  const [tipo, setTipo] = useState<"sala" | "equipamento">("sala");
+  const [cor, setCor] = useState("#64748b");
+  const [erro, setErro] = useState<string | null>(null);
+
+  const ocupacao = useMemo(
+    () => calcularOcupacaoRecursos(recursos, horarios, agendamentos, inicioSemana, fimSemana),
+    [recursos, horarios, agendamentos, inicioSemana, fimSemana],
+  );
+
+  return (
+    <Card className="flex flex-col gap-3 p-3.5">
+      <span className="text-[12.5px] font-medium text-foreground">Cadeiras e recursos — cadastro e ocupação da semana</span>
+
+      {recursos.length === 0 ? (
+        <span className="text-[11px] text-muted-foreground">Nenhum recurso cadastrado ainda.</span>
+      ) : (
+        <div className="flex flex-col gap-1.5">
+          {recursos.map((r) => {
+            const o = ocupacao.find((x) => x.recursoId === r.id);
+            return (
+              <div key={r.id} className="flex items-center justify-between gap-2 rounded-[5px] border border-hairline px-2.5 py-1.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: r.cor }} />
+                  <span className="text-[11.5px] text-foreground">{r.nome}</span>
+                  <span className="text-[10px] text-muted-foreground">({r.tipo === "sala" ? "sala/cadeira" : "equipamento"})</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[10.5px] text-muted-foreground">
+                    {o?.percentual === null || o?.percentual === undefined ? "sem grade" : `${o.percentual.toFixed(0)}% ocupado`}
+                  </span>
+                  <Button size="sm" variant="outline" onClick={() => atualizar.mutate({ id: r.id, ativo: !r.ativo })}>
+                    {r.ativo ? "Desativar" : "Ativar"}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <form
+        className="flex flex-wrap items-end gap-2 border-t border-hairline pt-2.5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setErro(null);
+          criar.mutate(
+            { nome, tipo, cor },
+            { onSuccess: () => setNome(""), onError: (err) => setErro(mensagemErroAgendamento(err)) },
+          );
+        }}
+      >
+        <input
+          required
+          placeholder="Nome (ex.: Cadeira 1)"
+          className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+        />
+        <select
+          className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
+          value={tipo}
+          onChange={(e) => setTipo(e.target.value as "sala" | "equipamento")}
+        >
+          <option value="sala">Sala/cadeira</option>
+          <option value="equipamento">Equipamento</option>
+        </select>
+        <input type="color" className="h-[30px] w-10 rounded-[5px] border border-input" value={cor} onChange={(e) => setCor(e.target.value)} />
+        <Button type="submit" size="sm" disabled={criar.isPending}>
+          {criar.isPending ? "Salvando..." : "Adicionar"}
+        </Button>
+        {erro && <span className="text-[11px] text-destructive">{erro}</span>}
+      </form>
+    </Card>
+  );
+}
+
+/** Painel "Marcadores" (item 9) — cadastro + relatório de uso na semana em curso. */
+function PainelMarcadores({ marcadores, agendamentos }: { marcadores: Marcador[]; agendamentos: Agendamento[] }) {
+  const criar = useCriarMarcador();
+  const atualizar = useAtualizarMarcador();
+  const [nome, setNome] = useState("");
+  const [cor, setCor] = useState("#3b82f6");
+  const [erro, setErro] = useState<string | null>(null);
+
+  const relatorio = useMemo(() => contarPorMarcador(agendamentos, marcadores), [agendamentos, marcadores]);
+
+  return (
+    <Card className="flex flex-col gap-3 p-3.5">
+      <span className="text-[12.5px] font-medium text-foreground">Marcadores — cadastro e relatório da semana</span>
+
+      {marcadores.length === 0 ? (
+        <span className="text-[11px] text-muted-foreground">Nenhum marcador cadastrado ainda.</span>
+      ) : (
+        <div className="flex flex-col gap-1.5">
+          {marcadores.map((m) => {
+            const uso = relatorio.find((r) => r.marcadorId === m.id)?.total ?? 0;
+            return (
+              <div key={m.id} className="flex items-center justify-between gap-2 rounded-[5px] border border-hairline px-2.5 py-1.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: m.cor }} />
+                  <span className="text-[11.5px] text-foreground">{m.nome}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[10.5px] text-muted-foreground">{uso} nesta semana</span>
+                  <Button size="sm" variant="outline" onClick={() => atualizar.mutate({ id: m.id, ativo: !m.ativo })}>
+                    {m.ativo ? "Desativar" : "Ativar"}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <form
+        className="flex flex-wrap items-end gap-2 border-t border-hairline pt-2.5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setErro(null);
+          criar.mutate(
+            { nome, cor },
+            { onSuccess: () => setNome(""), onError: (err) => setErro(mensagemErroAgendamento(err)) },
+          );
+        }}
+      >
+        <input
+          required
+          placeholder="Nome (ex.: Convênio X)"
+          className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+        />
+        <input type="color" className="h-[30px] w-10 rounded-[5px] border border-input" value={cor} onChange={(e) => setCor(e.target.value)} />
+        <Button type="submit" size="sm" disabled={criar.isPending}>
+          {criar.isPending ? "Salvando..." : "Adicionar"}
+        </Button>
+        {erro && <span className="text-[11px] text-destructive">{erro}</span>}
+      </form>
+    </Card>
+  );
+}
+
 export function AgendaSemanaPage() {
   const [referencia, setReferencia] = useState(() => new Date());
   const [mostrarNovo, setMostrarNovo] = useState(false);
   const [mostrarBloqueio, setMostrarBloqueio] = useState(false);
+  const [mostrarRecursos, setMostrarRecursos] = useState(false);
+  const [mostrarMarcadores, setMostrarMarcadores] = useState(false);
   const [selecionadoId, setSelecionadoId] = useState<string | null>(null);
 
   const { data: profissionais } = useProfissionais();
+  const { data: recursos } = useRecursos(false);
+  const { data: horariosRecursos } = useHorariosTodosRecursos();
+  const { data: marcadores } = useMarcadores(false);
   const seg = useMemo(() => inicioDaSemana(referencia), [referencia]);
   const dias = useMemo(() => Array.from({ length: 7 }, (_, i) => addDias(seg, i)), [seg]);
   const fimIntervalo = useMemo(() => addDias(seg, 7), [seg]);
@@ -285,6 +499,12 @@ export function AgendaSemanaPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => setMostrarRecursos((v) => !v)}>
+            {mostrarRecursos ? "Fechar recursos" : "Cadeiras/recursos"}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setMostrarMarcadores((v) => !v)}>
+            {mostrarMarcadores ? "Fechar marcadores" : "Marcadores"}
+          </Button>
           <Button size="sm" variant="outline" onClick={() => setMostrarBloqueio((v) => !v)}>
             {mostrarBloqueio ? "Fechar bloqueio" : "Bloquear horário"}
           </Button>
@@ -295,6 +515,18 @@ export function AgendaSemanaPage() {
       </Card>
 
       <AvisoSemJornada />
+
+      {mostrarRecursos && (
+        <PainelRecursos
+          recursos={recursos ?? []}
+          horarios={horariosRecursos ?? []}
+          agendamentos={agendamentos ?? []}
+          inicioSemana={seg}
+          fimSemana={fimIntervalo}
+        />
+      )}
+
+      {mostrarMarcadores && <PainelMarcadores marcadores={marcadores ?? []} agendamentos={agendamentos ?? []} />}
 
       {mostrarBloqueio && (profissionais?.length ?? 0) > 0 && (
         <FormularioBloquearHorario profissionais={profissionais!} onFeito={() => setMostrarBloqueio(false)} />
@@ -344,7 +576,9 @@ export function AgendaSemanaPage() {
           </div>
         </Card>
 
-        {selecionado && <PainelDetalhe agendamento={selecionado} onFechar={() => setSelecionadoId(null)} />}
+        {selecionado && (
+          <PainelDetalhe agendamento={selecionado} onFechar={() => setSelecionadoId(null)} marcadores={(marcadores ?? []).filter((m) => m.ativo)} />
+        )}
       </div>
     </div>
   );

@@ -5,7 +5,8 @@ import {
   useClientesParaSelecao,
   useCriarAgendamento,
   useRecursos,
-  useServicos,
+  useMarcadores,
+  useProcedimentos,
   usePlanosClienteAtivos,
   mensagemErroAgendamento,
   type Profissional,
@@ -38,15 +39,17 @@ export function NovoAtendimentoForm({
   onCancelar: () => void;
 }) {
   const { data: clientes } = useClientesParaSelecao();
-  const { data: servicos } = useServicos();
+  const { data: servicos } = useProcedimentos();
   const { data: recursos } = useRecursos();
+  const { data: marcadores } = useMarcadores();
   const criar = useCriarAgendamento();
 
   const [clienteId, setClienteId] = useState("");
   const [profissionalId, setProfissionalId] = useState(profissionalIdPadrao ?? "");
   const [recursoId, setRecursoId] = useState("");
-  const [servicoId, setServicoId] = useState("");
-  const [planoClienteId, setPlanoClienteId] = useState("");
+  const [marcadorId, setMarcadorId] = useState("");
+  const [procedimentoId, setServicoId] = useState("");
+  const [pacoteClienteId, setPlanoClienteId] = useState("");
   const { data: planosCliente } = usePlanosClienteAtivos(clienteId || undefined);
   const [data, setData] = useState(hojeISO());
   const [horaInicio, setHoraInicio] = useState("09:00");
@@ -54,7 +57,7 @@ export function NovoAtendimentoForm({
   const [observacoes, setObservacoes] = useState("");
   const [erro, setErro] = useState<string | null>(null);
 
-  const servicoSelecionado = servicos?.find((s) => s.id === servicoId);
+  const servicoSelecionado = servicos?.find((s) => s.id === procedimentoId);
 
   function handleSelecionarServico(id: string) {
     setServicoId(id);
@@ -80,19 +83,21 @@ export function NovoAtendimentoForm({
               clienteId,
               profissionalId,
               recursoId: recursoId || undefined,
+              marcadorId: marcadorId || undefined,
               inicio: inicioLocal.toISOString(),
               fim: fimLocal.toISOString(),
               observacoes: observacoes || undefined,
               servico: servicoSelecionado
-                ? { servicoId: servicoSelecionado.id, preco: servicoSelecionado.precoBase, duracaoMinutos }
+                ? { procedimentoId: servicoSelecionado.id, preco: servicoSelecionado.precoBase, duracaoMinutos }
                 : undefined,
-              planoClienteId: planoClienteId || undefined,
+              pacoteClienteId: pacoteClienteId || undefined,
             },
             {
               onSuccess: () => {
                 setClienteId("");
                 setServicoId("");
                 setPlanoClienteId("");
+                setMarcadorId("");
                 setObservacoes("");
                 onCriado();
               },
@@ -126,16 +131,16 @@ export function NovoAtendimentoForm({
 
           {planosCliente && planosCliente.length > 0 && (
             <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-medium text-secondary-foreground">Consumir sessão do plano</label>
+              <label className="text-[11px] font-medium text-secondary-foreground">Consumir sessão do pacote</label>
               <select
                 className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
-                value={planoClienteId}
+                value={pacoteClienteId}
                 onChange={(e) => setPlanoClienteId(e.target.value)}
               >
-                <option value="">Não consumir plano</option>
+                <option value="">Não consumir pacote</option>
                 {planosCliente.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.planoNome}
+                    {p.pacoteNome}
                   </option>
                 ))}
               </select>
@@ -165,7 +170,7 @@ export function NovoAtendimentoForm({
             <label className="text-[11px] font-medium text-secondary-foreground">Serviço (opcional)</label>
             <select
               className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
-              value={servicoId}
+              value={procedimentoId}
               onChange={(e) => handleSelecionarServico(e.target.value)}
             >
               <option value="">Sem serviço vinculado</option>
@@ -179,7 +184,7 @@ export function NovoAtendimentoForm({
 
           {recursos && recursos.length > 0 && (
             <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-medium text-secondary-foreground">Sala/recurso (opcional)</label>
+              <label className="text-[11px] font-medium text-secondary-foreground">Sala/cadeira (opcional)</label>
               <select
                 className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
                 value={recursoId}
@@ -189,6 +194,24 @@ export function NovoAtendimentoForm({
                 {recursos.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {marcadores && marcadores.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium text-secondary-foreground">Marcador (opcional)</label>
+              <select
+                className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
+                value={marcadorId}
+                onChange={(e) => setMarcadorId(e.target.value)}
+              >
+                <option value="">Sem marcador</option>
+                {marcadores.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nome}
                   </option>
                 ))}
               </select>

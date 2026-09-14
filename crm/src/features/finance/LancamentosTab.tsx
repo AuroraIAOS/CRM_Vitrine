@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import {
   useClientesParaSelecao,
   usePlanosDisponiveis,
   useCriarFaturaAvulsa,
-  useVenderPlano,
+  useVenderPacote,
   useRegistrarPagamento,
   usePlanoVendidoPorFatura,
   useEstornarSessao,
@@ -43,16 +44,17 @@ function FormularioNovoLancamento({ onFeito, onCancelar }: { onFeito: () => void
   const { data: clientes } = useClientesParaSelecao();
   const { data: planos } = usePlanosDisponiveis();
   const criarAvulsa = useCriarFaturaAvulsa();
-  const venderPlano = useVenderPlano();
+  const venderPlano = useVenderPacote();
 
   const [clienteId, setClienteId] = useState("");
   const [descricao, setDescricao] = useState("");
-  const [planoId, setPlanoId] = useState("");
+  const [pacoteId, setPlanoId] = useState("");
   const [valor, setValor] = useState("");
   const [vencimento, setVencimento] = useState("");
   const [erro, setErro] = useState<string | null>(null);
+  const [contratoCriadoPara, setContratoCriadoPara] = useState<string | null>(null);
 
-  const planoSelecionado = (planos ?? []).find((p) => p.id === planoId);
+  const planoSelecionado = (planos ?? []).find((p) => p.id === pacoteId);
   const pendente = criarAvulsa.isPending || venderPlano.isPending;
 
   return (
@@ -70,7 +72,7 @@ function FormularioNovoLancamento({ onFeito, onCancelar }: { onFeito: () => void
           onClick={() => setTipo("plano")}
           className={`rounded-[5px] px-3 py-1.5 text-[11px] font-medium ${tipo === "plano" ? "bg-content text-primary" : "text-secondary-foreground"}`}
         >
-          Venda de plano
+          Venda de pacote
         </button>
       </div>
 
@@ -88,15 +90,15 @@ function FormularioNovoLancamento({ onFeito, onCancelar }: { onFeito: () => void
             );
           } else {
             if (!planoSelecionado) return;
+            // D-F14: a venda vira contrato em rascunho. Não há valor a
+            // digitar — o preço se resolve —, e o saldo de sessões só nasce
+            // na dupla assinatura, na tela do paciente.
             venderPlano.mutate(
+              { clienteId, pacoteId: planoSelecionado.id },
               {
-                clienteId,
-                planoId: planoSelecionado.id,
-                planoNome: planoSelecionado.nome,
-                precoTotal: Number(valor.replace(",", ".")) || planoSelecionado.precoTotal,
-                dataVencimento: vencimento || undefined,
+                onSuccess: () => setContratoCriadoPara(clienteId),
+                onError: (err) => setErro(mensagemErroFinanceiro(err)),
               },
-              { onSuccess: onFeito, onError: (err) => setErro(mensagemErroFinanceiro(err)) },
             );
           }
         }}
@@ -134,11 +136,11 @@ function FormularioNovoLancamento({ onFeito, onCancelar }: { onFeito: () => void
             </div>
           ) : (
             <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-medium text-secondary-foreground">Plano</label>
+              <label className="text-[11px] font-medium text-secondary-foreground">Pacote</label>
               <select
                 required
                 className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
-                value={planoId}
+                value={pacoteId}
                 onChange={(e) => {
                   setPlanoId(e.target.value);
                   const p = (planos ?? []).find((pl) => pl.id === e.target.value);
@@ -157,31 +159,50 @@ function FormularioNovoLancamento({ onFeito, onCancelar }: { onFeito: () => void
             </div>
           )}
 
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-secondary-foreground">Valor (R$)</label>
-            <input
-              required
-              className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
-              value={valor}
-              onChange={(e) => setValor(e.target.value)}
-              placeholder="0,00"
-              inputMode="decimal"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-secondary-foreground">Vencimento (opcional)</label>
-            <input
-              type="date"
-              className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
-              value={vencimento}
-              onChange={(e) => setVencimento(e.target.value)}
-            />
-          </div>
+          {tipo === "avulso" ? (
+            <>
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-medium text-secondary-foreground">Valor (R$)</label>
+                <input
+                  required
+                  className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
+                  value={valor}
+                  onChange={(e) => setValor(e.target.value)}
+                  placeholder="0,00"
+                  inputMode="decimal"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-medium text-secondary-foreground">Vencimento (opcional)</label>
+                <input
+                  type="date"
+                  className="rounded-[5px] border border-input bg-background px-2 py-1.5 text-[12px]"
+                  value={vencimento}
+                  onChange={(e) => setVencimento(e.target.value)}
+                />
+              </div>
+            </>
+          ) : (
+            <p className="col-span-2 text-[11px] leading-relaxed text-muted-foreground">
+              A venda cria um <strong>contrato em rascunho</strong> com o pacote, pelo preço das tabelas de preço. As
+              sessões e a fatura só nascem quando o contrato tiver as duas assinaturas — o profissional e o paciente —,
+              na tela do paciente, em Plano → Contratos.
+            </p>
+          )}
         </div>
+
+        {contratoCriadoPara && (
+          <p className="rounded-md border border-success bg-success-tint px-2.5 py-2 text-[11px] text-foreground" role="status">
+            Contrato criado em rascunho.{" "}
+            <Link to={`/plano/${contratoCriadoPara}`} className="text-primary underline-offset-2 hover:underline">
+              Abrir os contratos do paciente para emitir o documento e colher as assinaturas →
+            </Link>
+          </p>
+        )}
 
         <div className="flex items-center gap-2">
           <Button type="submit" size="sm" disabled={pendente}>
-            {pendente ? "Salvando..." : tipo === "avulso" ? "Criar lançamento" : "Vender plano"}
+            {pendente ? "Salvando..." : tipo === "avulso" ? "Criar lançamento" : "Vender pacote"}
           </Button>
           <Button type="button" size="sm" variant="outline" onClick={onCancelar}>
             Cancelar
@@ -249,7 +270,7 @@ function SecaoPlanoVendido({ faturaId }: { faturaId: string }) {
   return (
     <div className="flex flex-col gap-2 border-t border-hairline pt-3">
       <span className="text-[11.5px] font-medium text-foreground">
-        Plano vendido: {plano.planoNome} <Badge tone={plano.status === "ativo" ? "success" : "neutral"}>{plano.status}</Badge>
+        Plano vendido: {plano.pacoteNome} <Badge tone={plano.status === "ativo" ? "success" : "neutral"}>{plano.status}</Badge>
       </span>
       <div className="flex flex-col gap-1.5">
         {plano.saldos.map((s) => (
@@ -265,7 +286,7 @@ function SecaoPlanoVendido({ faturaId }: { faturaId: string }) {
                 onClick={() => {
                   setErro(null);
                   estornar.mutate(
-                    { planoClienteId: plano.id, servicoId: s.servicoId },
+                    { pacoteClienteId: plano.id, procedimentoId: s.procedimentoId },
                     { onError: (err) => setErro(mensagemErroFinanceiro(err)) },
                   );
                 }}
@@ -315,7 +336,7 @@ function DetalheFatura({ fatura, onFechar }: { fatura: Fatura; onFechar: () => v
         </div>
       )}
 
-      {fatura.planoClienteId && <SecaoPlanoVendido faturaId={fatura.id} />}
+      {fatura.pacoteClienteId && <SecaoPlanoVendido faturaId={fatura.id} />}
     </Card>
   );
 }

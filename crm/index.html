@@ -6,12 +6,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#3d7396" />
     <title>CRM Vitrine</title>
-    <!-- docs/04_DESIGN_E_MARCA.md §5.1 — mesma URL usada em design/wireframes-crm-sa-de-e-est-tica/project/Shell.dc.html -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Fonte auto-hospedada desde a Subetapa 03.3. O <link rel="stylesheet">
+         para fonts.googleapis.com que vivia aqui saiu por dois motivos, na
+         ordem: LGPD (LG München I, 3 O 17493/20 — buscar a fonte remota
+         transmite o IP do visitante, e este CRM trata dado de saúde) e peso
+         (21,7 KB de CSS + DNS/TLS de terceiro no caminho crítico do primeiro
+         desenho). As @font-face vivem em src/fontes.css; docs/04 §5.1 segue
+         valendo para QUAIS faces, só mudou de onde vêm.
+
+         Preload de uma face só, e é de propósito: a IBM Plex Sans do Google
+         v23 é variável (tabela `fvar` medida na 03.3), então este arquivo
+         cobre 400, 500 e 600 — os três pesos que o app usa. O mono fica sem
+         preload porque é vocabulário de metadado, não de primeiro desenho,
+         e a serifa nem declarada está: entra por src/fontes-serifa.css
+         quando a conta a escolhe. -->
     <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:wght@300;400;500;600&display=swap"
+      rel="preload"
+      href="/fonts/ibm-plex-sans-var.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
     />
   </head>
   <body>

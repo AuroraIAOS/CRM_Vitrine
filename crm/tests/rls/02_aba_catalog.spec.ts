@@ -13,7 +13,7 @@ async function criarServicoFixture(admin: ReturnType<typeof adminClient>, accoun
 
   const { data: servico, error: servErr } = await admin
     .schema("aba_catalog")
-    .from("servicos")
+    .from("procedimentos")
     .insert({ account_id: accountId, categoria_id: categoria.id, nome: "Serviço Fictício 01.3" })
     .select("id")
     .single();
@@ -21,10 +21,10 @@ async function criarServicoFixture(admin: ReturnType<typeof adminClient>, accoun
 
   const { data: variantePadrao, error: v1Err } = await admin
     .schema("aba_catalog")
-    .from("variantes_servico")
+    .from("variantes_procedimento")
     .insert({
       account_id: accountId,
-      servico_id: servico.id,
+      procedimento_id: servico.id,
       nome: "Padrão",
       preco: 100,
       duracao_minutos: 60,
@@ -36,18 +36,18 @@ async function criarServicoFixture(admin: ReturnType<typeof adminClient>, accoun
 
   const { data: varianteExtra, error: v2Err } = await admin
     .schema("aba_catalog")
-    .from("variantes_servico")
-    .insert({ account_id: accountId, servico_id: servico.id, nome: "Premium", preco: 200, duracao_minutos: 90 })
+    .from("variantes_procedimento")
+    .insert({ account_id: accountId, procedimento_id: servico.id, nome: "Premium", preco: 200, duracao_minutos: 90 })
     .select("id")
     .single();
   if (v2Err) throw v2Err;
 
-  return { categoriaId: categoria.id as string, servicoId: servico.id as string, variantePadraoId: variantePadrao.id as string, varianteExtraId: varianteExtra.id as string };
+  return { categoriaId: categoria.id as string, procedimentoId: servico.id as string, variantePadraoId: variantePadrao.id as string, varianteExtraId: varianteExtra.id as string };
 }
 
-async function apagarServicoFixture(admin: ReturnType<typeof adminClient>, categoriaId: string, servicoId: string) {
-  await admin.schema("aba_catalog").from("variantes_servico").delete().eq("servico_id", servicoId);
-  await admin.schema("aba_catalog").from("servicos").delete().eq("id", servicoId);
+async function apagarServicoFixture(admin: ReturnType<typeof adminClient>, categoriaId: string, procedimentoId: string) {
+  await admin.schema("aba_catalog").from("variantes_procedimento").delete().eq("procedimento_id", procedimentoId);
+  await admin.schema("aba_catalog").from("procedimentos").delete().eq("id", procedimentoId);
   await admin.schema("aba_catalog").from("categorias").delete().eq("id", categoriaId);
 }
 
@@ -62,12 +62,12 @@ describe("aba_catalog — RLS por papel (Subetapa 01.3)", () => {
   });
 
   afterAll(async () => {
-    await apagarServicoFixture(admin, fx.categoriaId, fx.servicoId);
+    await apagarServicoFixture(admin, fx.categoriaId, fx.procedimentoId);
   });
 
   it("viewer lê categorias/serviços/variantes", async () => {
     const client = await clientAs("viewer");
-    const servico = await client.schema("aba_catalog").from("servicos").select("id").eq("id", fx.servicoId);
+    const servico = await client.schema("aba_catalog").from("procedimentos").select("id").eq("id", fx.procedimentoId);
     expect(servico.error).toBeNull();
     expect(servico.data).toHaveLength(1);
   });
@@ -93,11 +93,11 @@ describe("aba_catalog — RLS por papel (Subetapa 01.3)", () => {
 
     const { error: servErr } = await client
       .schema("aba_catalog")
-      .from("servicos")
+      .from("procedimentos")
       .insert({ account_id: ctx.accountId, categoria_id: categoria!.id, nome: "Serviço Criado Por Agent" });
     expect(servErr).toBeNull();
 
-    await admin.schema("aba_catalog").from("servicos").delete().eq("categoria_id", categoria!.id);
+    await admin.schema("aba_catalog").from("procedimentos").delete().eq("categoria_id", categoria!.id);
     await admin.schema("aba_catalog").from("categorias").delete().eq("id", categoria!.id);
   });
 
@@ -110,7 +110,7 @@ describe("aba_catalog — RLS por papel (Subetapa 01.3)", () => {
   it("duas variantes 'padrão' no mesmo serviço violam o índice único parcial", async () => {
     const { error } = await admin
       .schema("aba_catalog")
-      .from("variantes_servico")
+      .from("variantes_procedimento")
       .update({ padrao: true })
       .eq("id", fx.varianteExtraId);
     // A variante padrão já existe (variantePadraoId) — ligar outra sem
@@ -129,9 +129,9 @@ describe("aba_catalog — RLS por papel (Subetapa 01.3)", () => {
 
       const { data: variantes } = await admin
         .schema("aba_catalog")
-        .from("variantes_servico")
+        .from("variantes_procedimento")
         .select("id, padrao")
-        .eq("servico_id", fx.servicoId);
+        .eq("procedimento_id", fx.procedimentoId);
 
       const padroes = variantes?.filter((v) => v.padrao) ?? [];
       expect(padroes).toHaveLength(1);
@@ -153,9 +153,9 @@ describe("aba_catalog — RLS por papel (Subetapa 01.3)", () => {
 
       const { data: variantes } = await admin
         .schema("aba_catalog")
-        .from("variantes_servico")
+        .from("variantes_procedimento")
         .select("id, padrao")
-        .eq("servico_id", fx.servicoId);
+        .eq("procedimento_id", fx.procedimentoId);
       const padroes = variantes?.filter((v) => v.padrao) ?? [];
       expect(padroes).toHaveLength(1);
       expect(padroes[0].id).toBe(fx.varianteExtraId);

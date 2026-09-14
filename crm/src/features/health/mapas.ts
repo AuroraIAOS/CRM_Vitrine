@@ -60,6 +60,16 @@ const AZUL: Pick<EstadoMarcacao, "traco" | "fundo"> = { traco: "#5b87a8", fundo:
 const SAGE: Pick<EstadoMarcacao, "traco" | "fundo"> = { traco: "#8fb4a6", fundo: "#e9f0ec" };
 const TAN: Pick<EstadoMarcacao, "traco" | "fundo"> = { traco: "#c8b79a", fundo: "#faf6ef" };
 const TERRACOTA: Pick<EstadoMarcacao, "traco" | "fundo"> = { traco: "#a8827a", fundo: "#f8f0ee" };
+/**
+ * Dois tons a mais, e nenhuma família a mais. `docs/04_DESIGN_E_MARCA.md`
+ * §5.2 fixa QUATRO famílias, e a Subetapa 03.7.a precisou de seis estados no
+ * odontograma (achado A4). `TAN_FORTE` é o mesmo tan escurecido, para separar
+ * "em execução" de "proposto" sem inventar cor; `NEUTRO` é cinza de propósito
+ * — `nao_mais_necessario` tem de LER como aposentado, e dar-lhe uma cor da
+ * paleta faria um estado morto disputar atenção com os vivos.
+ */
+const TAN_FORTE: Pick<EstadoMarcacao, "traco" | "fundo"> = { traco: "#9a8355", fundo: "#f2e9d8" };
+const NEUTRO: Pick<EstadoMarcacao, "traco" | "fundo"> = { traco: "#9aa4ae", fundo: "#eef1f4" };
 
 // ============================================================
 // Mapa facial — estética
@@ -134,21 +144,74 @@ export const QUADRANTES_FDI: number[][] = [
   [31, 32, 33, 34, 35, 36, 37, 38],
 ];
 
+/**
+ * As 20 posições decíduas (Subetapa 03.7.a, achado A3).
+ *
+ * Ficam SEPARADAS das permanentes, e não juntas numa lista de 52, porque a
+ * grade leve desta tela é o `fallback` do odontograma completo e a boca adulta
+ * é o caso comum: desenhar quatro linhas vazias em toda ficha de adulto
+ * custaria altura em troca de nada. `MapaClinico` só as desenha quando há
+ * marcação decídua de fato.
+ */
+export const QUADRANTES_FDI_DECIDUA: number[][] = [
+  [55, 54, 53, 52, 51],
+  [61, 62, 63, 64, 65],
+  [85, 84, 83, 82, 81],
+  [71, 72, 73, 74, 75],
+];
+
+/**
+ * OS SEIS ESTADOS DO ODONTOGRAMA (Subetapa 03.7.a) — e por que eram três.
+ *
+ * A 02.9 usava `restauracao`/`carie`/`em_tratamento`/`concluido`, que
+ * misturava o ACHADO (o que o dente tem) e o MOMENTO (em que ponto do
+ * tratamento aquilo está). A 03.7 separou os dois e ficou com três estados de
+ * tempo — `existente`, `a_realizar`, `executado` —, com `executado`
+ * **derivado** da comparação entre a sessão assinada anterior e esta.
+ *
+ * A pesquisa `analise-ice` derrubou as duas coisas (achado A4):
+ *
+ *   1. TRÊS ESTADOS SÃO POUCOS. Falta separar rascunho de compromisso
+ *      (`proposto` × `planejado` — só o primeiro se apaga), falta "começou e
+ *      não terminou" (`em_execucao`, que é o tratamento em várias sessões) e
+ *      falta "não é mais preciso" (`nao_mais_necessario`, que hoje só existia
+ *      como desmarcar, o que APAGA o histórico que protege a clínica).
+ *
+ *   2. `executado` NÃO PODE SER DERIVADO. A instrução M1 de Max solta a
+ *      cobrança na aprovação do contrato e faz a finalização depender de "o
+ *      profissional executou em todas as faces planejadas". Trava financeira
+ *      não se apoia em inferência entre duas evoluções: `executado` passa a
+ *      ser fato AFIRMADO, com data e autor gravados no trabalho
+ *      (`odontograma.ts`, restrição 2 da Qualidade da 03.7.a).
+ *
+ * `existente` sobrevive com o sentido que sempre teve: o dente tem achado, ou
+ * dentição afirmada, e nenhum trabalho em aberto.
+ *
+ * TROCA SEGURA, REMEDIDA NA 03.7.a: `select` sobre `aba_health.evolucoes`
+ * agrupado por `mapa_tipo` continua devolvendo ZERO marcação de odontograma
+ * em produção. Nenhum dado existente usa o vocabulário anterior, então trocá-lo
+ * não é migração de dado. Se houvesse linha gravada, a regra de
+ * `handoffs/instrucoes.md` ("estado novo num CHECK exige revisar quem filtrava
+ * pelo estado antigo") pediria conversão, não substituição.
+ */
 const ODONTOGRAMA: MapaClinicoDef = {
   chave: "odontograma",
   rotulo: "Odontograma",
-  subtitulo: "32 dentes · notação FDI",
-  // O odontograma não é desenhado em `<svg>` — é grade de dentes em
-  // HTML, exatamente como no wireframe. viewBox fica só para uniformizar
-  // o tipo; `MapaClinico` desvia deste caso.
+  subtitulo: "52 posições · notação FDI",
+  // A grade leve deste arquivo não é desenhada em `<svg>` — é grade de dentes
+  // em HTML, como no wireframe, e serve de `fallback` enquanto o odontograma
+  // autoral carrega. viewBox fica só para uniformizar o tipo; `MapaClinico`
+  // desvia deste caso.
   viewBox: "0 0 0 0",
   estados: [
-    { chave: "restauracao", rotulo: "restauração", ...AZUL },
-    { chave: "carie", rotulo: "cárie", ...TERRACOTA },
-    { chave: "em_tratamento", rotulo: "em tratamento", ...TAN },
-    { chave: "concluido", rotulo: "concluído", ...SAGE },
+    { chave: "existente", rotulo: "existente", ...AZUL },
+    { chave: "proposto", rotulo: "proposto", ...TAN },
+    { chave: "planejado", rotulo: "planejado", ...TERRACOTA },
+    { chave: "em_execucao", rotulo: "em execução", ...TAN_FORTE },
+    { chave: "executado", rotulo: "executado", ...SAGE },
+    { chave: "nao_mais_necessario", rotulo: "não é mais necessário", ...NEUTRO },
   ],
-  regioes: QUADRANTES_FDI.flat().map((fdi) => ({
+  regioes: [...QUADRANTES_FDI.flat(), ...QUADRANTES_FDI_DECIDUA.flat()].map((fdi) => ({
     chave: String(fdi),
     rotulo: `Dente ${fdi}`,
     cx: 0,
@@ -199,6 +262,39 @@ export type Marcacao = {
   rotulo: string;
   estado: string;
   nota: string;
+  /**
+   * AS FACES DO TRABALHO — só o odontograma preenche.
+   *
+   * Vocabulário em português, o de `db/migrations/043_catalogo_regra_do_
+   * codigo.sql`: `mesial`, `distal`, `vestibular`, `lingual`, `oclusal`,
+   * `incisal`. **A 03.7 gravava aqui as faces do ACHADO, no vocabulário
+   * inglês da biblioteca, e isso era o defeito A2:** a face que se orça é
+   * onde o profissional vai TRABALHAR, não onde há doença — pode coincidir,
+   * pode ser maior (restauração MOD sobre cárie só na oclusal) ou pode não
+   * existir como achado (selante em face hígida). A face do achado agora vive
+   * em `achados[].faces` (ver `odontograma.ts`).
+   *
+   * OPCIONAL DE PROPÓSITO, e não por comodidade: face é conceito de
+   * dente. Mapa facial, corporal e de acupuntura marcam região, que não
+   * tem face nenhuma — dar-lhes um `faces: []` obrigatório seria afirmar
+   * "este mapa tem faces e nenhuma foi marcada", que é falso. `undefined`
+   * ali diz a verdade: a pergunta não se aplica.
+   *
+   * É POR ESTE CAMPO que a Subetapa 03.8 lê dente e face para montar a
+   * linha do orçamento (`plano · procedimento · dente · faces · valor`),
+   * e é ele que a `quantidade_maxima` por unidade da 03.6 valida.
+   */
+  faces?: string[];
+  /**
+   * O registro clínico do dente, só no odontograma. Os três campos são
+   * opcionais pelo mesmo motivo que `faces` é, e o tipo forte deles mora em
+   * `odontograma.ts` — aqui eles atravessam como `unknown` de propósito:
+   * `mapas.ts` é o catálogo dos QUATRO mapas e não deve conhecer o modelo
+   * clínico de um deles. Quem valida a forma é `registrosDeMarcacoes()`.
+   */
+  denticao?: unknown;
+  achados?: unknown;
+  trabalhos?: unknown;
 };
 
 export function ehTipoMapa(valor: string | null | undefined): valor is TipoMapa {
@@ -226,12 +322,27 @@ export function marcacoesValidas(tipo: TipoMapa, bruto: unknown): Marcacao[] {
     const regiao = typeof m.regiao === "string" ? m.regiao : "";
     const estado = typeof m.estado === "string" ? m.estado : "";
     if (!regiaoDoMapa(tipo, regiao) || !estadoDoMapa(tipo, estado)) return [];
+    // `faces` atravessa a validação em vez de ser recriado: quem grava é o
+    // odontograma, que já limitou os valores ao vocabulário das cinco faces.
+    // Aqui só se garante que é array de string — o mesmo cuidado que o resto
+    // da função tem com `nota`.
+    const faces = Array.isArray(m.faces) ? m.faces.filter((f): f is string => typeof f === "string") : undefined;
     return [
       {
         regiao,
         estado,
         rotulo: regiaoDoMapa(tipo, regiao)!.rotulo,
         nota: typeof m.nota === "string" ? m.nota : "",
+        ...(faces && faces.length > 0 ? { faces } : {}),
+        // O registro clínico do dente atravessa CRU e é validado em
+        // `registrosDeMarcacoes()` (`odontograma.ts`), que é quem conhece o
+        // vocabulário de achado, trabalho e dentição. Filtrá-lo aqui, com o
+        // catálogo dos quatro mapas na mão, seria validar com a régua errada
+        // — e o modo de falha é o pior possível: campo clínico descartado em
+        // silêncio no caminho do banco para a tela.
+        ...(m.denticao !== undefined ? { denticao: m.denticao } : {}),
+        ...(m.achados !== undefined ? { achados: m.achados } : {}),
+        ...(m.trabalhos !== undefined ? { trabalhos: m.trabalhos } : {}),
       },
     ];
   });

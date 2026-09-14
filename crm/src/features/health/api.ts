@@ -73,7 +73,19 @@ export function usePodeAcessarClinico(clienteId: string | null, acao: AcaoClinic
 // Clientes com acesso clínico — a lista da esquerda da tela `1h`
 // ============================================================
 
-export type ClienteClinico = { id: string; nome: string };
+export type ClienteClinico = {
+  id: string;
+  nome: string;
+  /**
+   * Data de nascimento, de `aba_people.pessoas` (Subetapa 03.7.a).
+   *
+   * Entra aqui pelo mesmo caminho e pelo mesmo motivo que o nome: é dado
+   * CADASTRAL, e `aba_health` não tem — nem deve ter — cópia de dado cadastral
+   * de paciente. O odontograma a usa só para DERIVAR o estado de dentição de
+   * cada posição (achado A3); derivar não é decidir, e nada disso é gravado.
+   */
+  dataNascimento: string | null;
+};
 
 /**
  * Lista de clientes da conta. Vem de `aba_people` (nome é dado cadastral,
@@ -88,10 +100,22 @@ export function useClientesDaConta() {
     queryKey: ["health-clientes", accountId],
     enabled: !!accountId,
     queryFn: async (): Promise<ClienteClinico[]> => {
+      // `data_nascimento` vem de `clientes`, NUNCA de `pessoas`.
+      //
+      // DEFEITO MEDIDO EM PRODUÇÃO (2026-09-05, demonstração da 03.8.a): a
+      // Subetapa 03.7.a passou a pedir a data de nascimento e a pediu na
+      // tabela errada — a coluna existe em `aba_people.clientes` desde a
+      // migration `004`, e não em `pessoas`. O PostgREST responde **400**,
+      // este `queryFn` lança, e a tela mostra "Nenhum cliente cadastrado
+      // nesta conta". O erro virou um ESTADO VAZIO PLAUSÍVEL — e ficou
+      // assim em produção, nas telas de Prontuário e de Plano, sem nada
+      // vermelho em lugar nenhum. `features/people/api.ts` sempre leu da
+      // tabela certa, que é o que tornou o defeito invisível: uma tela
+      // mostrava os 10 clientes e a outra dizia que não havia nenhum.
       const { data: clientes, error } = await supabase
         .schema("aba_people")
         .from("clientes")
-        .select("id, status")
+        .select("id, status, data_nascimento")
         .eq("account_id", accountId!);
       if (error) throw error;
       if (!clientes?.length) return [];
@@ -106,9 +130,16 @@ export function useClientesDaConta() {
         );
       if (pessoasErr) throw pessoasErr;
 
-      const nomePorId = new Map((pessoas ?? []).map((p) => [p.id as string, p.nome_exibicao as string]));
+      const porId = new Map((pessoas ?? []).map((p) => [p.id as string, p]));
       return clientes
-        .map((c) => ({ id: c.id as string, nome: nomePorId.get(c.id as string) ?? "(sem nome)" }))
+        .map((c) => {
+          const p = porId.get(c.id as string);
+          return {
+            id: c.id as string,
+            nome: (p?.nome_exibicao as string) ?? "(sem nome)",
+            dataNascimento: (c.data_nascimento as string) ?? null,
+          };
+        })
         .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
     },
   });
@@ -501,12 +532,34 @@ export function useProfissionais() {
 // Consentimentos (`aba_health.consentimentos`)
 // ============================================================
 
-export const TIPOS_CONSENTIMENTO = ["tratamento_dados", "procedimento", "uso_imagem"] as const;
+/**
+ * QUATRO TIPOS desde a Subetapa 03.8 — `procedimento_informado` entrou com
+ * a migration `045`.
+ *
+ * O catálogo de procedimentos declara DOIS requisitos de termo desde a
+ * 03.6.a (`exige_consentimento_tratamento` e `exige_consentimento_informado`,
+ * este último para procedimento de risco significativo), e a trava do plano
+ * de tratamento cobra um termo VIGENTE do tipo certo para deixar o
+ * procedimento sair de `proposto`. Sem este quarto valor a recepção não teria
+ * como coletar o termo que a trava exige — a regra existiria no banco e seria
+ * inalcançável pela tela, que é a pior das duas metades.
+ *
+ * `estado novo num CHECK exige revisar quem filtrava pelo estado antigo`
+ * (`handoffs/instrucoes.md` §5): os consumidores são estes dois — a lista e o
+ * seletor de `ConsentimentosTab`, ambos dirigidos por esta constante.
+ */
+export const TIPOS_CONSENTIMENTO = [
+  "tratamento_dados",
+  "procedimento",
+  "procedimento_informado",
+  "uso_imagem",
+] as const;
 export type TipoConsentimento = (typeof TIPOS_CONSENTIMENTO)[number];
 
 export const ROTULO_CONSENTIMENTO: Record<TipoConsentimento, string> = {
   tratamento_dados: "Tratamento de dados",
   procedimento: "Procedimento",
+  procedimento_informado: "Consentimento informado",
   uso_imagem: "Uso de imagem",
 };
 

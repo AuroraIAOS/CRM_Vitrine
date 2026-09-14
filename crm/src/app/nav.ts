@@ -10,6 +10,7 @@ import {
   Workflow,
   Sparkles,
   Settings,
+  ClipboardList,
 } from "lucide-react";
 import type { ReadableModule } from "@/lib/access";
 
@@ -32,6 +33,7 @@ const MODULE_ROUTE: Record<string, string> = {
   sales: "/vendas",
   finance: "/financeiro",
   health: "/prontuario",
+  treatment: "/plano",
   catalog: "/catalogo",
   messaging: "/mensagens",
   automations: "/automacoes",
@@ -45,6 +47,7 @@ const MODULE_ICON: Record<string, LucideIcon> = {
   sales: TrendingUp,
   finance: Wallet,
   health: HeartPulse,
+  treatment: ClipboardList,
   catalog: Package,
   messaging: MessageSquare,
   automations: Workflow,
@@ -61,10 +64,35 @@ function toNavItem(module: ReadableModule): NavItem {
   };
 }
 
+/**
+ * MÓDULOS QUE EXISTEM NO BANCO E AINDA NÃO TÊM TELA.
+ *
+ * A lista nasceu na Subetapa 03.8, quando `treatment` entrou em
+ * `access.modules` numa subetapa que era **só de banco** por decisão de
+ * escopo — e o banco sozinho já mexia na tela, porque a navegação é
+ * derivada de `access.readable_modules()` desde a 02.1. O efeito era
+ * imediato e silencioso: `toNavItem` cai no `/${module_key}` quando não
+ * conhece a rota, e o site publicado passou a mostrar um item "Plano"
+ * apontando para uma rota inexistente.
+ *
+ * **A Subetapa 03.8.a esvaziou a lista**, que era o que o comentário
+ * anterior prometia: `treatment` ganhou `/plano` no `MODULE_ROUTE` acima,
+ * ícone próprio e a página de verdade. A lista FICA — vazia — porque o
+ * mecanismo continua sendo necessário: a próxima linha nova em
+ * `access.modules` acende um item de menu no minuto seguinte, e é aqui
+ * que ela espera a tela dela.
+ *
+ * REGRA QUE FICA: navegação dirigida por dado transforma toda linha nova
+ * de catálogo em mudança de interface. Antes de acrescentar módulo,
+ * pergunte o que a tela publicada fará com ele hoje — e lembre que o
+ * fallback que existe para ser tolerante é o mesmo que esconde a falta.
+ */
+const MODULOS_SEM_TELA = new Set<string>([]);
+
 /** Itens do corpo rolável da sidebar — só módulos não-núcleo, na ordem de `position`. */
 export function buildModuleNav(modules: ReadableModule[]): NavItem[] {
   return modules
-    .filter((m) => !m.is_core)
+    .filter((m) => !m.is_core && !MODULOS_SEM_TELA.has(m.module_key))
     .sort((a, b) => a.module_position - b.module_position)
     .map(toNavItem);
 }

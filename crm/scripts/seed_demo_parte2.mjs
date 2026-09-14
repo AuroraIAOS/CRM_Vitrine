@@ -79,11 +79,11 @@ export async function semearOperacao(db, ctx, u) {
     agendamentos.push(...(await inserir("aba_scheduling", "agendamentos", linhasAgenda.slice(i, i + 100))));
   }
   const linhasServico = agendamentos.map((a, i) => ({
-    account_id: conta, agendamento_id: a.id, servico_id: servicos[i % 4].id,
+    account_id: conta, agendamento_id: a.id, procedimento_id: servicos[i % 4].id,
     preco: [180, 220, 150, 160][i % 4], duracao_minutos: 60,
   }));
   for (let i = 0; i < linhasServico.length; i += 100) {
-    await inserir("aba_scheduling", "agendamento_servicos", linhasServico.slice(i, i + 100));
+    await inserir("aba_scheduling", "agendamento_procedimentos", linhasServico.slice(i, i + 100));
   }
   log(`agenda: ${agendamentos.length} atendimentos em 13 semanas, cobrindo os 6 estados`);
 
@@ -202,8 +202,8 @@ export async function semearOperacao(db, ctx, u) {
   log("financeiro: 22 faturas cobrindo os 6 estados · pagamentos nas 6 formas (2 cada)");
 
   await inserir("aba_finance", "contratos", [
-    { account_id: conta, cliente_id: clientes[0], plano_id: planos[0].id, descricao: "Pacote facial anual", valor: 800, status: "ativo", ciclo_cobranca: "mensal", forma_pagamento: "pix", data_inicio: iso(dia(-30)).slice(0, 10) },
-    { account_id: conta, cliente_id: clientes[1], plano_id: planos[1].id, descricao: "Pacote corporal", valor: 1300, status: "ativo", ciclo_cobranca: "trimestral", forma_pagamento: "credito", data_inicio: iso(dia(-20)).slice(0, 10) },
+    { account_id: conta, cliente_id: clientes[0], pacote_id: planos[0].id, descricao: "Pacote facial anual", valor: 800, status: "ativo", ciclo_cobranca: "mensal", forma_pagamento: "pix", data_inicio: iso(dia(-30)).slice(0, 10) },
+    { account_id: conta, cliente_id: clientes[1], pacote_id: planos[1].id, descricao: "Pacote corporal", valor: 1300, status: "ativo", ciclo_cobranca: "trimestral", forma_pagamento: "credito", data_inicio: iso(dia(-20)).slice(0, 10) },
     { account_id: conta, cliente_id: clientes[2], descricao: "Proposta em elaboração", valor: 500, status: "rascunho", ciclo_cobranca: "unica", data_inicio: iso(dia(2)).slice(0, 10) },
     { account_id: conta, cliente_id: clientes[3], descricao: "Proposta em revisão", valor: 700, status: "rascunho", ciclo_cobranca: "unica", data_inicio: iso(dia(3)).slice(0, 10) },
     { account_id: conta, cliente_id: clientes[4], descricao: "Contrato concluído", valor: 900, status: "encerrado", ciclo_cobranca: "anual", data_inicio: iso(dia(-400)).slice(0, 10) },
@@ -215,7 +215,7 @@ export async function semearOperacao(db, ctx, u) {
     { account_id: conta, cliente_id: clientes[9], descricao: "Plano anual de manutenção", valor: 2400, status: "ativo", ciclo_cobranca: "anual", forma_pagamento: "debito", data_inicio: iso(dia(-10)).slice(0, 10) },
   ]);
 
-  // Planos vendidos: SEMPRE por `vender_plano()`. `planos_cliente` e
+  // Planos vendidos: SEMPRE por `vender_pacote()`. `planos_cliente` e
   // `saldos_plano` não aceitam escrita direta por decisão da Subetapa 02.8, e
   // o seed usa o mesmo caminho do produto em vez de contornar a regra.
   const vendidos = [];
@@ -223,34 +223,34 @@ export async function semearOperacao(db, ctx, u) {
   for (const [idx, planoIdx, expiraOff] of [[0, 0, 150], [1, 1, 200], [2, 0, -5], [3, 1, -10], [4, 0, 120], [5, 1, 90], [6, 0, -20], [7, 1, -30]]) {
     const f = faturas.paga[idx % faturas.paga.length];
     const r = ok(
-      await s("aba_finance").rpc("vender_plano", {
+      await s("aba_finance").rpc("vender_pacote", {
         p_cliente_id: clientes[idx],
-        p_plano_id: planos[planoIdx].id,
+        p_pacote_id: planos[planoIdx].id,
         p_preco_total: planos[planoIdx].preco_total,
         p_fatura_id: f.id,
         p_expira_em: iso(dia(expiraOff)),
       }),
-      "vender_plano",
+      "vender_pacote",
     );
     vendidos.push(r);
   }
   // Estados de plano do cliente: 2 ativos (acima), 2 vencidos (expira no
-  // passado — expirar_planos() do pg_cron os marcará), e 2 marcados à mão.
+  // passado — expirar_pacotes() do pg_cron os marcará), e 2 marcados à mão.
   // 2 por estado: os dois primeiros ficam 'ativo' (como nasceram), e os
   // demais recebem os outros três estados, dois a dois.
-  const pc = ok(await s("aba_finance").from("planos_cliente").select("id").eq("account_id", conta), "planos vendidos");
+  const pc = ok(await s("aba_finance").from("pacotes_cliente").select("id").eq("account_id", conta), "planos vendidos");
   const marcar = async (indices, status) => {
-    for (const i of indices) if (pc[i]) ok(await s("aba_finance").from("planos_cliente").update({ status }).eq("id", pc[i].id), `plano ${status}`);
+    for (const i of indices) if (pc[i]) ok(await s("aba_finance").from("pacotes_cliente").update({ status }).eq("id", pc[i].id), `plano ${status}`);
   };
   await marcar([2, 3], "esgotado");
   await marcar([4, 5], "vencido");
   await marcar([6, 7], "cancelado");
-  log(`4 planos vendidos por vender_plano() · 10 contratos (4 estados · 4 ciclos)`);
+  log(`4 planos vendidos por vender_pacote() · 10 contratos (4 estados · 4 ciclos)`);
 
   await inserir("aba_finance", "regras_comissao", [
     { account_id: conta, profissional_id: profs.prof1, percentual: 30, ativo: true },
     { account_id: conta, profissional_id: profs.prof2, percentual: 35, ativo: true },
-    { account_id: conta, profissional_id: profs.prof3, servico_id: servicos[2].id, percentual: 40, ativo: true },
+    { account_id: conta, profissional_id: profs.prof3, procedimento_id: servicos[2].id, percentual: 40, ativo: true },
     { account_id: conta, profissional_id: profs.profInativo, percentual: 25, ativo: false },
   ]);
   const concluidos = agendamentos.filter((a) => a.status === "concluido");
@@ -268,7 +268,7 @@ export async function semearOperacao(db, ctx, u) {
       // desenho, justamente para comissão fora de atendimento existir).
       agendamento_id: k < concluidos.length ? concluidos[k].id : null,
       profissional_id: profs[["prof1", "prof2", "prof3"][i]],
-      servico_id: servicos[i].id,
+      procedimento_id: servicos[i].id,
       valor_base: 180,
       percentual: 30,
       valor_comissao: 54,

@@ -145,12 +145,37 @@ export function useSalvarPreferencias() {
 }
 
 /**
+ * Carrega as @font-face da serifa só quando a conta a escolhe (Subetapa
+ * 03.3). O `import()` dinâmico faz o Vite emitir `fontes-serifa.css` como
+ * chunk próprio, injetado em tempo de execução — numa conta na tipografia
+ * padrão ele nunca é pedido, e as três faces ficam fora do CSS inicial.
+ *
+ * O guard não é otimização: sem ele, cada repintura de preferência
+ * reimportaria o módulo. O `import()` é idempotente por cache do próprio
+ * bundler, mas a promessa pendente não é — e a troca de tema dispara este
+ * efeito junto com a de tipografia.
+ */
+let serifaPedida = false;
+function garantirFonteSerifa(tipografia: Tipografia) {
+  if (tipografia !== "serif" || serifaPedida) return;
+  serifaPedida = true;
+  // Falha de rede aqui degrada para a pilha de fallback do `font-family`,
+  // que é o comportamento certo: texto legível em fonte de sistema é
+  // melhor que tela sem texto. Não há o que reportar ao usuário.
+  void import("../fontes-serifa.css").catch(() => {
+    serifaPedida = false;
+  });
+}
+
+/**
  * Escreve a preferência no `<html>`. Fora do React state de propósito: o
  * tema precisa valer para a página inteira, inclusive o `body` e qualquer
  * overlay em portal, que não estão dentro de `#root`.
  */
 function aplicarNoDocumento(p: Preferencias) {
   const raiz = document.documentElement;
+
+  garantirFonteSerifa(p.tipografia);
 
   const escuro =
     p.tema === "dark" ||

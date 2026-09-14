@@ -53,7 +53,7 @@ export function usePlanosDisponiveis() {
     queryFn: async (): Promise<PlanoDisponivel[]> => {
       const { data, error } = await supabase
         .schema("aba_catalog")
-        .from("planos")
+        .from("pacotes")
         .select("id, nome, preco_total")
         .eq("account_id", accountId!)
         .eq("ativo", true)
@@ -83,7 +83,7 @@ export type Fatura = {
   saldo: number;
   ultimaFormaPagamento: string | null;
   referencia: string | null;
-  planoClienteId: string | null;
+  pacoteClienteId: string | null;
 };
 
 export function useFaturas() {
@@ -102,7 +102,7 @@ export function useFaturas() {
             .order("data_emissao", { ascending: false }),
           db().from("pagamentos").select("fatura_id, valor, pago_em, forma_pagamento").eq("account_id", accountId!),
           db().from("itens_fatura").select("fatura_id, descricao").eq("account_id", accountId!),
-          db().from("planos_cliente").select("id, fatura_id").eq("account_id", accountId!),
+          db().from("pacotes_cliente").select("id, fatura_id").eq("account_id", accountId!),
         ]);
       if (e1) throw e1;
       if (e2) throw e2;
@@ -123,7 +123,7 @@ export function useFaturas() {
         const pagsFatura = (pagamentos ?? []).filter((p) => p.fatura_id === f.id).sort((a, b) => b.pago_em.localeCompare(a.pago_em));
         const pago = pagsFatura.reduce((acc, p) => acc + Number(p.valor), 0);
         const item = (itens ?? []).find((i) => i.fatura_id === f.id);
-        const planoCliente = (planosCliente ?? []).find((pc) => pc.fatura_id === f.id);
+        const pacoteCliente = (planosCliente ?? []).find((pc) => pc.fatura_id === f.id);
         const vencidaDeFato =
           (f.status === "aberta" || f.status === "enviada" || f.status === "vencida") &&
           !!f.data_vencimento &&
@@ -144,7 +144,7 @@ export function useFaturas() {
           saldo: Number(f.valor) - pago,
           ultimaFormaPagamento: pagsFatura[0]?.forma_pagamento ?? null,
           referencia: item?.descricao ?? null,
-          planoClienteId: planoCliente?.id ?? null,
+          pacoteClienteId: pacoteCliente?.id ?? null,
         };
       });
     },
@@ -179,71 +179,36 @@ export function useCriarFaturaAvulsa() {
 }
 
 /**
- * Venda de plano — `contratos`/faturas/item nascem por INSERT direto
- * (não fazem parte das seis operações protegidas); `saldos_plano`/
- * `planos_cliente` nascem só através de `aba_finance.vender_plano()`
- * (Qualidade da Subetapa 02.8: nunca escrita direta nessas duas
- * tabelas). O contrato é o documento comercial "guarda-chuva" da venda
- * (cadeia `contratos → clientes → pessoas`); a fatura é a cobrança
- * dentro dele, e `vender_plano()` é quem de fato gera o saldo de
- * sessões a consumir.
+ * Venda de pacote — desde a Subetapa 03.8.b, PELO CONTRATO (D-F14).
+ *
+ * Até a 03.8.b esta função criava o contrato já `ativo`, a fatura `aberta`
+ * e o saldo de sessões na hora, sem assinatura de ninguém. A D-V8 fechou
+ * esse caminho no banco: contrato novo não nasce `ativo`, e
+ * `vender_pacote()` deixou de ser executável por usuário autenticado.
+ *
+ * Agora a venda cria o CONTRATO EM RASCUNHO com a linha do pacote, com o
+ * preço resolvido pela escada (ninguém digita valor). O resto é o mesmo
+ * fluxo do plano, na tela do paciente: emitir o documento, o profissional
+ * assinar, a recepção registrar a assinatura do paciente — e é a dupla
+ * assinatura que solta a fatura prevista e o saldo de sessões.
  */
-export function useVenderPlano() {
-  const { profile } = useAuth();
+export function useVenderPacote() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { clienteId: string; planoId: string; planoNome: string; precoTotal: number; dataVencimento?: string }) => {
-      const { data: contrato, error: e0 } = await db()
-        .from("contratos")
-        .insert({
-          account_id: profile!.accountId,
-          cliente_id: input.clienteId,
-          plano_id: input.planoId,
-          descricao: `Plano: ${input.planoNome}`,
-          valor: input.precoTotal,
-          status: "ativo",
-          data_inicio: hojeISO(),
-        })
-        .select("id")
-        .single();
-      if (e0) throw e0;
-
-      const { data: fatura, error } = await db()
-        .from("faturas")
-        .insert({
-          account_id: profile!.accountId,
-          cliente_id: input.clienteId,
-          contrato_id: contrato.id,
-          status: "aberta",
-          data_vencimento: input.dataVencimento || null,
-        })
-        .select("id")
-        .single();
+    mutationFn: async (input: { clienteId: string; pacoteId: string }) => {
+      const { data: contrato, error } = await db().rpc("criar_contrato_avulso", { p_cliente_id: input.clienteId });
       if (error) throw error;
-
-      const { error: e2 } = await db().from("itens_fatura").insert({
-        account_id: profile!.accountId,
-        fatura_id: fatura.id,
-        descricao: `Plano: ${input.planoNome}`,
-        quantidade: 1,
-        valor_unitario: input.precoTotal,
+      const { error: e2 } = await db().rpc("acrescentar_item_contrato", {
+        p_contrato_id: contrato,
+        p_procedimento_id: null,
+        p_pacote_id: input.pacoteId,
+        p_quantidade: 1,
       });
       if (e2) throw e2;
-
-      const { error: e3 } = await db().rpc("vender_plano", {
-        p_cliente_id: input.clienteId,
-        p_plano_id: input.planoId,
-        p_preco_total: input.precoTotal,
-        p_fatura_id: fatura.id,
-      });
-      if (e3) throw e3;
-
-      return fatura.id as string;
+      return contrato as unknown as string;
     },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["faturas"] });
-      void qc.invalidateQueries({ queryKey: ["planos-vendidos"] });
-      void qc.invalidateQueries({ queryKey: ["resumo-financeiro"] });
+    onSuccess: (_id, input) => {
+      void qc.invalidateQueries({ queryKey: ["contratos", input.clienteId] });
     },
   });
 }
@@ -274,45 +239,45 @@ export function useRegistrarPagamento() {
 // ============================================================
 // Plano vendido — saldo por serviço + estorno
 // ============================================================
-export type SaldoPlano = { id: string; servicoId: string; servicoNome: string; sessoesTotais: number; sessoesUsadas: number };
-export type PlanoVendido = { id: string; planoNome: string; status: string; expiraEm: string | null; saldos: SaldoPlano[] };
+export type SaldoPlano = { id: string; procedimentoId: string; servicoNome: string; sessoesTotais: number; sessoesUsadas: number };
+export type PlanoVendido = { id: string; pacoteNome: string; status: string; expiraEm: string | null; saldos: SaldoPlano[] };
 
 export function usePlanoVendidoPorFatura(faturaId: string | null) {
   return useQuery({
     queryKey: ["planos-vendidos", faturaId],
     enabled: !!faturaId,
     queryFn: async (): Promise<PlanoVendido | null> => {
-      const { data: planoCliente, error } = await db()
-        .from("planos_cliente")
-        .select("id, plano_id, status, expira_em")
+      const { data: pacoteCliente, error } = await db()
+        .from("pacotes_cliente")
+        .select("id, pacote_id, status, expira_em")
         .eq("fatura_id", faturaId!)
         .maybeSingle();
       if (error) throw error;
-      if (!planoCliente) return null;
+      if (!pacoteCliente) return null;
 
       const [{ data: plano, error: e2 }, { data: saldos, error: e3 }] = await Promise.all([
-        supabase.schema("aba_catalog").from("planos").select("nome").eq("id", planoCliente.plano_id).single(),
-        db().from("saldos_plano").select("id, servico_id, sessoes_totais, sessoes_usadas").eq("plano_cliente_id", planoCliente.id),
+        supabase.schema("aba_catalog").from("pacotes").select("nome").eq("id", pacoteCliente.pacote_id).single(),
+        db().from("saldos_pacote").select("id, procedimento_id, sessoes_totais, sessoes_usadas").eq("pacote_cliente_id", pacoteCliente.id),
       ]);
       if (e2) throw e2;
       if (e3) throw e3;
 
-      const servicoIds = (saldos ?? []).map((s) => s.servico_id);
-      const { data: servicos, error: e4 } = servicoIds.length
-        ? await supabase.schema("aba_catalog").from("servicos").select("id, nome").in("id", servicoIds)
+      const procedimentoIds = (saldos ?? []).map((s) => s.procedimento_id);
+      const { data: servicos, error: e4 } = procedimentoIds.length
+        ? await supabase.schema("aba_catalog").from("procedimentos").select("id, nome").in("id", procedimentoIds)
         : { data: [] as { id: string; nome: string }[], error: null };
       if (e4) throw e4;
       const nomesServico = Object.fromEntries((servicos ?? []).map((s) => [s.id, s.nome]));
 
       return {
-        id: planoCliente.id,
-        planoNome: plano?.nome ?? "—",
-        status: planoCliente.status,
-        expiraEm: planoCliente.expira_em,
+        id: pacoteCliente.id,
+        pacoteNome: plano?.nome ?? "—",
+        status: pacoteCliente.status,
+        expiraEm: pacoteCliente.expira_em,
         saldos: (saldos ?? []).map((s) => ({
           id: s.id,
-          servicoId: s.servico_id,
-          servicoNome: nomesServico[s.servico_id] ?? "Serviço",
+          procedimentoId: s.procedimento_id,
+          servicoNome: nomesServico[s.procedimento_id] ?? "Serviço",
           sessoesTotais: s.sessoes_totais,
           sessoesUsadas: s.sessoes_usadas,
         })),
@@ -324,10 +289,10 @@ export function usePlanoVendidoPorFatura(faturaId: string | null) {
 export function useEstornarSessao() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { planoClienteId: string; servicoId: string; motivo?: string }) => {
+    mutationFn: async (input: { pacoteClienteId: string; procedimentoId: string; motivo?: string }) => {
       const { error } = await db().rpc("estornar_sessao", {
-        p_plano_cliente_id: input.planoClienteId,
-        p_servico_id: input.servicoId,
+        p_pacote_cliente_id: input.pacoteClienteId,
+        p_procedimento_id: input.procedimentoId,
         p_motivo: input.motivo || undefined,
       });
       if (error) throw error;
@@ -339,7 +304,7 @@ export function useEstornarSessao() {
   });
 }
 
-/** Mapeia o texto de erro de `estornar_sessao`/`vender_plano` para algo legível — os dois já vêm com `RAISE EXCEPTION` descritivo do banco, isto só remove o ruído de SQLSTATE cru quando presente. */
+/** Mapeia o texto de erro de `estornar_sessao`/`vender_pacote` para algo legível — os dois já vêm com `RAISE EXCEPTION` descritivo do banco, isto só remove o ruído de SQLSTATE cru quando presente. */
 export function mensagemErroFinanceiro(error: unknown): string {
   const mensagem = (error as { message?: string } | null)?.message;
   return mensagem || "Não foi possível concluir a operação.";
@@ -370,7 +335,7 @@ export function useLancamentosComissao() {
     queryFn: async (): Promise<LancamentoComissao[]> => {
       const { data: lancamentos, error } = await db()
         .from("lancamentos_comissao")
-        .select("id, profissional_id, servico_id, valor_base, percentual, valor_comissao, status, criado_em")
+        .select("id, profissional_id, procedimento_id, valor_base, percentual, valor_comissao, status, criado_em")
         .eq("account_id", accountId!)
         .order("criado_em", { ascending: false });
       if (error) throw error;
@@ -378,12 +343,12 @@ export function useLancamentosComissao() {
       if (lista.length === 0) return [];
 
       const profissionalIds = Array.from(new Set(lista.map((l) => l.profissional_id)));
-      const servicoIds = Array.from(new Set(lista.map((l) => l.servico_id).filter((v): v is string => !!v)));
+      const procedimentoIds = Array.from(new Set(lista.map((l) => l.procedimento_id).filter((v): v is string => !!v)));
 
       const [{ data: profissionais, error: e2 }, { data: servicos, error: e3 }] = await Promise.all([
         supabase.schema("aba_scheduling").from("profissionais").select("id, nome_exibicao").in("id", profissionalIds),
-        servicoIds.length
-          ? supabase.schema("aba_catalog").from("servicos").select("id, nome").in("id", servicoIds)
+        procedimentoIds.length
+          ? supabase.schema("aba_catalog").from("procedimentos").select("id, nome").in("id", procedimentoIds)
           : Promise.resolve({ data: [] as { id: string; nome: string }[], error: null }),
       ]);
       if (e2) throw e2;
@@ -395,7 +360,7 @@ export function useLancamentosComissao() {
       return lista.map((l) => ({
         id: l.id,
         profissionalNome: nomesProfissional[l.profissional_id] ?? "—",
-        servicoNome: l.servico_id ? (nomesServico[l.servico_id] ?? "—") : "—",
+        servicoNome: l.procedimento_id ? (nomesServico[l.procedimento_id] ?? "—") : "—",
         valorBase: Number(l.valor_base),
         percentual: Number(l.percentual),
         valorComissao: Number(l.valor_comissao),

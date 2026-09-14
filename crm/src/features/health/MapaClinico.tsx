@@ -15,7 +15,14 @@
  * mesmas.
  */
 
-import { MAPAS, QUADRANTES_FDI, estadoDoMapa, type Marcacao, type TipoMapa } from "./mapas";
+import {
+  MAPAS,
+  QUADRANTES_FDI,
+  QUADRANTES_FDI_DECIDUA,
+  estadoDoMapa,
+  type Marcacao,
+  type TipoMapa,
+} from "./mapas";
 
 const TRACO_NEUTRO = "#cfd9de";
 const PREENCHIMENTO_NEUTRO = "#f1f5f7";
@@ -101,33 +108,42 @@ function Odontograma({ marcacoes, onSelecionarRegiao, regiaoSelecionada, compact
     );
   }
 
+  function Linha({ quadrantes, superior }: { quadrantes: number[][]; superior: boolean }) {
+    return (
+      <div className="flex justify-center gap-3.5">
+        {quadrantes.map((quadrante, i) => (
+          <div key={i} className="flex gap-[3px]">
+            {quadrante.map((fdi) => (
+              <Dente key={fdi} fdi={fdi} superior={superior} />
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  /**
+   * As 20 posições decíduas só aparecem quando existe marcação decídua
+   * (Subetapa 03.7.a). Esta grade é o `fallback` do odontograma autoral e o
+   * card da biblioteca de mapas; a boca adulta é o caso comum, e quatro
+   * linhas vazias em toda ficha de adulto custariam altura em troca de nada.
+   * Quem precisa das 52 posições sempre visíveis é o odontograma completo,
+   * que tem espaço para isso.
+   */
+  const temDecidua = marcacoes.some((m) => /^[5-8]\d$/.test(m.regiao));
+
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex justify-center gap-3.5">
-        <div className="flex gap-[3px]">
-          {QUADRANTES_FDI[0].map((fdi) => (
-            <Dente key={fdi} fdi={fdi} superior />
-          ))}
-        </div>
-        <div className="flex gap-[3px]">
-          {QUADRANTES_FDI[1].map((fdi) => (
-            <Dente key={fdi} fdi={fdi} superior />
-          ))}
-        </div>
-      </div>
-      <div className="h-px bg-border" />
-      <div className="flex justify-center gap-3.5">
-        <div className="flex gap-[3px]">
-          {QUADRANTES_FDI[2].map((fdi) => (
-            <Dente key={fdi} fdi={fdi} superior={false} />
-          ))}
-        </div>
-        <div className="flex gap-[3px]">
-          {QUADRANTES_FDI[3].map((fdi) => (
-            <Dente key={fdi} fdi={fdi} superior={false} />
-          ))}
-        </div>
-      </div>
+      <Linha quadrantes={[QUADRANTES_FDI[0], QUADRANTES_FDI[1]]} superior />
+      {temDecidua && (
+        <>
+          <Linha quadrantes={[QUADRANTES_FDI_DECIDUA[0], QUADRANTES_FDI_DECIDUA[1]]} superior />
+          <div className="h-px bg-border" />
+          <Linha quadrantes={[QUADRANTES_FDI_DECIDUA[2], QUADRANTES_FDI_DECIDUA[3]]} superior={false} />
+        </>
+      )}
+      {!temDecidua && <div className="h-px bg-border" />}
+      <Linha quadrantes={[QUADRANTES_FDI[2], QUADRANTES_FDI[3]]} superior={false} />
     </div>
   );
 }

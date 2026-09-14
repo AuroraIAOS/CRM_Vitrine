@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 240"
+     role="img" aria-label="Canino decíduo superior"
+     data-tipo="decidua-superior" data-posicao="3" data-arcada="superior">
+  <title>Canino decíduo superior — faces: mesial, distal, vestibular, lingual, incisal</title>
+  <g class="od-dente">
+    <g class="od-regiao-raiz">
+      <path id="raiz-1" data-regiao="raiz" data-indice="1" class="od-raiz" d="M 38.00 118.00 C 38.00 76.00, 46.00 52.00, 50.00 16.00 C 54.00 52.00, 62.00 76.00, 62.00 118.00 Z" />
+    </g>
+    <g class="od-regiao-coroa">
+      <path id="coroa" data-regiao="coroa" class="od-coroa" d="M 37.00 112.00 L 40.00 166.00 Q 50.00 174.00 60.00 166.00 L 63.00 112.00 Z" />
+    </g>
+    <g class="od-regiao-faces">
+      <path id="face-distal" data-face="distal" class="od-face" d="M 30.91 225.09 A 27 27 0 0 1 30.91 186.91 L 41.60 197.60 A 11.88 11.88 0 0 0 41.60 214.40 Z" />
+      <path id="face-vestibular" data-face="vestibular" class="od-face" d="M 30.91 186.91 A 27 27 0 0 1 69.09 186.91 L 58.40 197.60 A 11.88 11.88 0 0 0 41.60 197.60 Z" />
+      <path id="face-mesial" data-face="mesial" class="od-face" d="M 69.09 186.91 A 27 27 0 0 1 69.09 225.09 L 58.40 214.40 A 11.88 11.88 0 0 0 58.40 197.60 Z" />
+      <path id="face-lingual" data-face="lingual" class="od-face" d="M 69.09 225.09 A 27 27 0 0 1 30.91 225.09 L 41.60 214.40 A 11.88 11.88 0 0 0 58.40 214.40 Z" />
+      <circle id="face-incisal" data-face="incisal" class="od-face" cx="50.00" cy="206.00" r="11.88" />
+    </g>
+  </g>
+</svg>

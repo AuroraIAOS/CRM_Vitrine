@@ -27,6 +27,29 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
+        /**
+         * O PRECACHE JÁ DESFEZ A DIVISÃO POR ROTA UMA VEZ — e a guarda fica.
+         *
+         * `globPatterns` acima varre `dist/` inteiro, e precache é download
+         * ANTECIPADO: tudo que entra nele é buscado na primeira visita, antes
+         * de qualquer navegação. Com `react-advanced-odontogram` instalado, o
+         * manifesto saltou de 1.089 KiB para 4.404 KiB enquanto a saída do
+         * `vite build` mostrava, com toda a razão, um chunk de entrada
+         * praticamente inalterado. Os dois números eram verdadeiros; só um
+         * deles descrevia o que o usuário baixava (Subetapa 03.7).
+         *
+         * A Subetapa 03.7.a removeu a biblioteca, e com ela saíram os seis
+         * `globIgnores` que existiam para domar o peso DELA — o odontograma de
+         * 1.455 KiB, o `jspdf` e o `html2canvas` que ela importava por
+         * `import()` dinâmico, e as 959 KiB de fontes Unicode de chinês e
+         * árabe do relatório em PDF. Não há mais o que ignorar: o odontograma
+         * autoral cabe no precache sem exceção nenhuma, e regra de exceção que
+         * sobrevive ao objeto que a justificava é a próxima a enganar alguém.
+         *
+         * O QUE FICA é `scripts/conferir_precache.mjs`, com o teto de 1.400
+         * KiB no fim do `npm run build`. Ele não é sobre o odontograma: é
+         * sobre a PRÓXIMA dependência pesada, seja qual for.
+         */
       },
     }),
   ],
