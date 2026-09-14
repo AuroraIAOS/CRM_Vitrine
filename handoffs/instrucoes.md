@@ -953,6 +953,36 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Regra que fica:** **caso negativo fere UMA regra e confere o NOME dela.** Gatilho `BEFORE` que lê catálogo precisa sair do caminho quando o dado é estruturalmente inválido, para o CHECK falar com o nome certo.
 - **Fonte:** Subetapa 03.8.c, 2026-09-13.
 
+### Num gatilho `BEFORE`, a coluna GERADA ainda é nula em `NEW` — e comparar `to_jsonb(NEW)` com `to_jsonb(OLD)` nunca bate
+- **Gatilho:** Subetapa 03.8.b, primeira execução da suíte 22. Todo contrato com pacote era recusado na dupla assinatura com *"Contrato assinado não recebe, altera nem perde linha — acréscimo é contrato novo (D-V4)"*.
+- **A causa, medida e não deduzida:** `conferir_item_contrato` aceitava uma única mudança fora de rascunho, a ligação do pacote vendido, comparando `to_jsonb(NEW) - 'pacote_cliente_id' - 'atualizado_em'` com o mesmo recorte de `OLD`. `itens_contrato.valor_total` é `GENERATED ALWAYS AS (...) STORED`, e **num gatilho `BEFORE` a coluna gerada ainda não foi calculada: vem nula em `NEW`**, enquanto `OLD` tem o valor. As duas linhas nunca eram iguais, a exceção nunca valia, e caía na recusa geral.
+- **Por que engana:** a mensagem é verdadeira sobre a regra (contrato assinado não muda linha) e falsa sobre a causa (ninguém estava mudando linha). Quem lesse procuraria o defeito no fluxo de assinatura.
+- **Ação:** tirar `valor_total` da comparação, com o motivo escrito ao lado. A coluna é derivada das outras, que continuam comparadas.
+- **Regra que fica:** **ao comparar a linha inteira num gatilho `BEFORE` (`to_jsonb(NEW) = to_jsonb(OLD)`), exclua as colunas geradas.** Vale para todo gatilho de "só esta coluna pode mudar" em tabela que tenha `GENERATED`.
+- **Fonte:** Subetapa 03.8.b, 2026-09-14.
+
+### O gatilho `BEFORE` fala antes da chave estrangeira — um UUID inventado mede o gatilho, não a chave
+- **Gatilho:** Subetapa 03.8.b, evidência de banco em produção. O caso "plano inexistente não entra" esperava `23503` e recebeu `23514` com "o plano pertence a outro paciente".
+- **A causa:** os gatilhos `BEFORE` rodam **antes** da verificação de integridade referencial. `conferir_item_contrato` busca o paciente do plano; com um UUID inexistente a busca vem nula, é diferente do paciente do contrato, e o gatilho recusa primeiro. A chave estrangeira nunca chegou a ser avaliada.
+- **Ação:** o caso passou a usar um plano **real** de outro paciente da mesma clínica, que é o ataque que a regra existe para barrar e que a chave composta não cobre. O ataque de chave (`23503`) ficou com o pacote de **outra clínica**, que o gatilho não lê.
+- **Regra que fica:** é a lição da 03.8.c ("caso negativo fere UMA regra e confere o NOME dela") com um passo a mais. **Antes de montar um ataque de chave estrangeira, confira se algum gatilho `BEFORE` da tabela lê a linha apontada.** Se lê, o UUID inventado prova o gatilho. Para provar a chave, aponte para uma linha que existe em outra conta.
+- **Fonte:** Subetapa 03.8.b, 2026-09-14.
+
+### Evidência de tela vermelha pode ser defeito do script — imprima o que a tela e o banco responderam antes de mexer no produto
+- **Gatilho:** Subetapa 03.8.b, `evidencia_contrato_na_tela.mjs`. Três vermelhos em execuções diferentes: a captura da impressão vazia, o botão "marcar face" ausente depois da assinatura e a venda de pacote do Financeiro sem contrato.
+- **O teste que decidiu custou uma execução:** a própria evidência passou a imprimir, no ponto da falha, o texto da página, os erros de JavaScript e a resposta da RPC **com a mesma sessão**. O banco respondia certo (as duas células liberadas por contrato, contrato `assinado`), e a página ainda estava vazia. Os erros mostraram *"Failed to execute 'observe' on 'MutationObserver': parameter 1 is not of type 'Node'"*.
+- **As causas, as três do script:** (1) `evaluateOnNewDocument` roda **antes** de o documento ter elemento raiz, e `observe(document.documentElement)` recebe `null`; (2) esperas fixas de 3,5 s contra um Supabase que naquela hora devolvia até `Gateway Timeout`; (3) `select()` num `<select>` cujas opções ainda não tinham chegado não dá erro, não muda nada, e o formulário `required` não envia.
+- **Ação:** observar `document`; esperar pelo **seletor** (`waitForSelector`) e pelas **opções** (`waitForFunction`) em vez de tempo; e a evidência rodada duas vezes seguidas, verde nas duas, antes de ser declarada.
+- **Regra que fica:** **vermelho de evidência de tela é hipótese sobre o produto, não diagnóstico** (`CLAUDE.md` §11). O teste mais barato é fazer o script mostrar, no ponto da falha, o que a tela exibe e o que o banco responde à mesma sessão. E espera fixa não é espera: é aposta sobre a latência do dia.
+- **Fonte:** Subetapa 03.8.b, 2026-09-14.
+
+### Trava nova no banco pede varrer a tela que escreve no objeto travado — senão a tela promete o que o banco recusa
+- **Gatilho:** Subetapa 03.8.b, capturas da evidência de tela. Num orçamento **já contratado**, a recepção via desconto e parcela editáveis, com o aviso "salvar devolve a rascunho". A 052 tinha acabado de travar o orçamento contratado (`trg_orcamentos_contratado`), e o salvar seria recusado.
+- **Por que passou pela suíte e pela evidência de banco:** as duas provam que o banco recusa, e recusa. Nenhuma olha se a tela ainda oferece o gesto. O sintoma só aparece para quem clica: a pessoa segue as instruções da própria tela e recebe um erro.
+- **Ação:** `dinheiroEditavel` passou a considerar o contrato, e a tela diz "congeladas: esta opção já foi contratada". A evidência de tela ganhou a asserção.
+- **Regra que fica:** é a irmã de "estado novo num CHECK exige revisar quem filtrava pelo estado antigo". **Ao criar uma trava de banco sobre um objeto que já tem tela, procure todo controle da tela que escreve nele** e decida, para cada um, se some, congela ou explica. E confira as capturas da evidência olhando, não só pelas asserções: foi olhando a captura que isto apareceu.
+- **Fonte:** Subetapa 03.8.b, 2026-09-14.
+
 ---
 
 ## 6. Armadilhas conhecidas (não repetir)

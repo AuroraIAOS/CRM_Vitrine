@@ -159,9 +159,19 @@ describe("aba_finance — vender_pacote() (Subetapa 01.3)", () => {
     await apagarCliente(admin, clienteId);
   });
 
-  it("agent vende o plano e o saldo nasce com as sessões do item", async () => {
-    const client = await clientAs("agent");
-    const { data, error } = await client.schema("aba_finance").rpc("vender_pacote", {
+  it("vender o pacote gera o saldo com as sessões do item — e desde a 03.8.b só pela dupla assinatura, nunca pelo balcão", async () => {
+    // D-F14 (Max, 2026-09-14): `vender_pacote` deixou de ser executável por
+    // `authenticated`. O saldo de sessões nasce na dupla assinatura do
+    // contrato (suíte 22). A operação continua provada aqui pelo caminho de
+    // servidor, e a recusa ao usuário autenticado é a asserção nova.
+    const agent = await clientAs("agent");
+    const balcao = await agent.schema("aba_finance").rpc("vender_pacote", {
+      p_cliente_id: clienteId,
+      p_pacote_id: fx.pacoteId,
+    });
+    expect(ehErroRls(balcao.error)).toBe(true);
+
+    const { data, error } = await admin.schema("aba_finance").rpc("vender_pacote", {
       p_cliente_id: clienteId,
       p_pacote_id: fx.pacoteId,
     });

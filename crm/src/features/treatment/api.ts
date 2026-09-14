@@ -59,6 +59,12 @@ export type CelulaPlano = {
   recusado_em: string | null;
   executado_em: string | null;
   observacao: string | null;
+  /**
+   * As faces EXECUTADAS, com data e autor gravados pelo banco (Subetapa
+   * 03.8.b, passo 36). `face` nula é a unidade de procedimento sem face.
+   * Vem só por `ler_planos` — a coluna é revogada para `select` direto.
+   */
+  execucoes: { face: string | null; executado_em: string; executado_por: string; executado_por_nome: string | null }[];
 };
 
 export type OpcaoPlano = {
@@ -638,5 +644,202 @@ export function usePacotesDoCatalogo() {
         ativo: p.ativo === true,
       }));
     },
+  });
+}
+
+// ============================================================
+// O contrato (Subetapa 03.8.b)
+// ============================================================
+//
+// NENHUMA MUTAÇÃO DESTE BLOCO ESCREVE EM TABELA. Linha de contrato,
+// documento, assinatura e execução avulsa só nascem pelas funções da
+// migration `052`, que conferem quem chama — `itens_contrato` e
+// `assinaturas_contrato` nem têm escrita para `authenticated`. A tela
+// pergunta, o banco decide, e a recusa aparece como veio.
+//
+// O CONTRATO É LIDO POR `ler_contratos_do_cliente`, que não devolve nada
+// clínico: a recepção, que não tem alcance clínico, é quem mais usa esta
+// parte da tela.
+
+export type SituacaoContrato = {
+  valor_total: number;
+  valor_pago: number;
+  saldo_devedor: number;
+  unidades_previstas: number;
+  unidades_executadas: number;
+  falta_pagamento: boolean;
+  falta_execucao: boolean;
+  pode_encerrar: boolean;
+};
+
+export type ItemContrato = {
+  id: string;
+  tipo: "plano" | "pacote" | "procedimento";
+  nome: string;
+  quantidade: number;
+  valor_unitario: number;
+  valor_total: number;
+  degrau: string | null;
+  pacote_cliente_id: string | null;
+  executadas: number | null;
+};
+
+export type AssinaturaContrato = {
+  parte: "profissional" | "paciente";
+  via: "aprovacao_orcamento" | "presencial";
+  assinada_em: string;
+  hash_assinado: string;
+  registrada_por_nome: string | null;
+};
+
+export type Contrato = {
+  id: string;
+  status: "rascunho" | "assinado" | "ativo" | "encerrado" | "cancelado";
+  orcamento_id: string | null;
+  plano_id: string | null;
+  opcao_rotulo: string | null;
+  profissional_id: string | null;
+  profissional_nome: string | null;
+  /** O banco responde se quem olha é o profissional do contrato — a tela não recalcula. */
+  sou_o_profissional: boolean;
+  valor_bruto: number;
+  desconto_valor: number;
+  valor: number;
+  parcelas: number;
+  taxa_juros: number;
+  taxa_multa_atraso: number;
+  documento_hash: string | null;
+  documento_emitido_em: string | null;
+  assinado_em: string | null;
+  encerrado_em: string | null;
+  criado_em: string;
+  itens: ItemContrato[];
+  assinaturas: AssinaturaContrato[];
+  situacao: SituacaoContrato | null;
+};
+
+export function useContratosDoCliente(clienteId: string | null) {
+  return useQuery({
+    queryKey: ["contratos", clienteId],
+    enabled: !!clienteId,
+    queryFn: async (): Promise<Contrato[]> => {
+      const { data, error } = await finance().rpc("ler_contratos_do_cliente", { p_cliente_id: clienteId });
+      if (error) throw error;
+      return (data ?? []) as Contrato[];
+    },
+  });
+}
+
+/** O documento canônico guardado — o texto que foi assinado, não um novo desenho dele. */
+export function useDocumentoDoContrato(contratoId: string | null) {
+  return useQuery({
+    queryKey: ["contrato-documento", contratoId],
+    enabled: !!contratoId,
+    queryFn: async (): Promise<{ html: string | null; hash: string | null }> => {
+      const { data, error } = await finance()
+        .from("contratos")
+        .select("documento_html, documento_hash")
+        .eq("id", contratoId)
+        .single();
+      if (error) throw error;
+      return { html: (data.documento_html as string) ?? null, hash: (data.documento_hash as string) ?? null };
+    },
+  });
+}
+
+/** Recarrega tudo o que o contrato move: ele mesmo, o documento, o orçamento e a matriz. */
+function useRecarregarContrato(clienteId: string | null) {
+  const qc = useQueryClient();
+  return () => {
+    void qc.invalidateQueries({ queryKey: ["contratos", clienteId] });
+    void qc.invalidateQueries({ queryKey: ["contrato-documento"] });
+    void qc.invalidateQueries({ queryKey: ["treatment-orcamentos"] });
+    void qc.invalidateQueries({ queryKey: ["treatment-planos", clienteId] });
+    void qc.invalidateQueries({ queryKey: ["treatment-execucao-liberada"] });
+    void qc.invalidateQueries({ queryKey: ["health-log", clienteId] });
+  };
+}
+
+function useOperacaoDoContrato<T>(clienteId: string | null, executar: (arg: T) => Promise<unknown>) {
+  const recarregar = useRecarregarContrato(clienteId);
+  return useMutation({ mutationFn: executar, onSuccess: recarregar });
+}
+
+export function useContratarOpcao(clienteId: string | null) {
+  return useOperacaoDoContrato(clienteId, async (orcamentoId: string) => {
+    const { data, error } = await finance().rpc("contratar_opcao", { p_orcamento_id: orcamentoId });
+    if (error) throw error;
+    return data as unknown as string;
+  });
+}
+
+export function useEmitirDocumento(clienteId: string | null) {
+  return useOperacaoDoContrato(clienteId, async (contratoId: string) => {
+    const { data, error } = await finance().rpc("emitir_documento_contrato", { p_contrato_id: contratoId });
+    if (error) throw error;
+    return data as unknown as string;
+  });
+}
+
+export function useAssinarComoProfissional(clienteId: string | null) {
+  return useOperacaoDoContrato(clienteId, async ({ contratoId, hash }: { contratoId: string; hash: string }) => {
+    const { error } = await finance().rpc("assinar_contrato_como_profissional", { p_contrato_id: contratoId, p_hash: hash });
+    if (error) throw error;
+  });
+}
+
+export function useRegistrarAssinaturaPaciente(clienteId: string | null) {
+  return useOperacaoDoContrato(clienteId, async ({ contratoId, hash }: { contratoId: string; hash: string }) => {
+    const { error } = await finance().rpc("registrar_assinatura_paciente", { p_contrato_id: contratoId, p_hash: hash });
+    if (error) throw error;
+  });
+}
+
+export function useEncerrarContrato(clienteId: string | null) {
+  return useOperacaoDoContrato(clienteId, async (contratoId: string) => {
+    const { error } = await finance().rpc("encerrar_contrato", { p_contrato_id: contratoId });
+    if (error) throw error;
+  });
+}
+
+export function useRegistrarExecucaoItem(clienteId: string | null) {
+  return useOperacaoDoContrato(clienteId, async (itemId: string) => {
+    const { error } = await finance().rpc("registrar_execucao_item", { p_item_id: itemId });
+    if (error) throw error;
+  });
+}
+
+/** Quais células do plano podem ser executadas, e por quê (`contrato` ou `dispensa`). */
+export function useExecucaoLiberada(planoId: string | null) {
+  return useQuery({
+    queryKey: ["treatment-execucao-liberada", planoId],
+    enabled: !!planoId,
+    queryFn: async (): Promise<Map<string, string>> => {
+      const { data, error } = await finance().rpc("execucao_liberada_no_plano", { p_plano_id: planoId });
+      if (error) throw error;
+      return new Map((data ?? []).map((r: { celula_id: string; liberada_por: string }) => [r.celula_id, r.liberada_por]));
+    },
+  });
+}
+
+/**
+ * MARCAR A FACE EXECUTADA (passo 36). A data e o autor são gravados pelo
+ * BANCO — o navegador manda só qual face. Sem `.select()`: `face` é coluna
+ * revogada, e pedir de volta daria `42501` com cara de RLS.
+ */
+export function useMarcarFaceExecutada(planoId: string | null, clienteId: string | null) {
+  const { profile } = useAuth();
+  const recarregar = useRecarregarContrato(clienteId);
+  return useMutation({
+    mutationFn: async ({ celulaId, face }: { celulaId: string; face: string | null }) => {
+      const { error } = await treatment().from("execucoes_face").insert({
+        account_id: profile!.accountId,
+        plano_id: planoId,
+        procedimento_plano_id: celulaId,
+        face,
+      });
+      if (error) throw error;
+    },
+    onSuccess: recarregar,
   });
 }

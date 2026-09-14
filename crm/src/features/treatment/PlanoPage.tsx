@@ -9,6 +9,10 @@ import { rotuloDoDegrau, rotuloDoPrecoAplicado } from "@/features/finance/precos
 import {
   useAcrescentarItem,
   useAprovarOrcamento,
+  useContratarOpcao,
+  useContratosDoCliente,
+  useExecucaoLiberada,
+  useMarcarFaceExecutada,
   useCriarDiagnostico,
   useCriarOpcao,
   useCriarPlano,
@@ -31,6 +35,8 @@ import {
   type Orcamento,
   type Plano,
 } from "./api";
+import { ContratosDoPaciente } from "./ContratosDoPaciente";
+import { htmlDoOrcamento, imprimirHtml } from "./impressao";
 
 /**
  * Tela do módulo `treatment` — rótulo **"Plano"** (Subetapas 03.8.a e 03.8.c).
@@ -242,10 +248,12 @@ function PainelOrcamento({
   orcamento,
   planoId,
   clienteId,
+  pacienteNome,
 }: {
   orcamento: Orcamento;
   planoId: string;
   clienteId: string;
+  pacienteNome: string;
 }) {
   const { profile } = useAuth();
   const ehAdmin = profile?.accountRole === "admin" || profile?.accountRole === "owner";
@@ -255,6 +263,9 @@ function PainelOrcamento({
   const trocar = useTrocarProfissional(planoId, clienteId);
   const condicoes = useDefinirCondicoes(planoId, clienteId);
   const aprovar = useAprovarOrcamento(planoId, clienteId);
+  const contratar = useContratarOpcao(clienteId);
+  const { data: contratos = [] } = useContratosDoCliente(clienteId);
+  const contrato = contratos.find((c) => c.orcamento_id === orcamento.id && c.status !== "cancelado") ?? null;
 
   const [pendente, setPendente] = useState<{ id: string | null; nome: string; linhas: LinhaSimulacao[] } | null>(null);
   const [desconto, setDesconto] = useState(String(orcamento.desconto_valor ?? 0));
@@ -273,7 +284,10 @@ function PainelOrcamento({
   // pode mexer num orçamento aprovado — e o efeito é devolvê-lo a rascunho
   // (D-F3). Travar o campo obrigaria a pedir ao profissional que
   // "desaprovasse" primeiro, que é trabalho sem valor.
-  const dinheiroEditavel = ehAdmin && orcamento.estado !== "recusado";
+  // Orçamento CONTRATADO não muda mais (migration `052`, D-V4): o contrato é
+  // cópia fiel dele. Deixar o campo aberto prometeria uma devolução a
+  // rascunho que o banco recusa — achado pela evidência de tela da 03.8.b.
+  const dinheiroEditavel = ehAdmin && orcamento.estado !== "recusado" && !contrato;
   const executor = profissionais.find((p) => p.id === orcamento.profissional_id) ?? null;
 
   async function pedirTroca(profissionalId: string) {
@@ -330,7 +344,40 @@ function PainelOrcamento({
       )}
       <Erro erro={aprovar.error} />
 
-      {/* Quem executa — a única escolha que move o preço. */}
+      {/* E4 e E5: o aprovado vai ao paciente IMPRESSO, e a opção escolhida
+          vira contrato. Quem pode contratar é a recepção — a tela mostra o
+          botão a todos os que veem o aprovado e o banco recusa os demais,
+          com o motivo. */}
+      {aprovado && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-content px-2.5 py-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => imprimirHtml(`Orçamento — ${pacienteNome}`, htmlDoOrcamento(orcamento, pacienteNome))}
+          >
+            Imprimir orçamento
+          </Button>
+          {contrato ? (
+            <span className="text-[10.5px] text-muted-foreground" data-contratado>
+              Esta opção já foi contratada — o contrato está em Contratos, abaixo.
+            </span>
+          ) : (
+            <>
+              <Button
+                size="sm"
+                disabled={contratar.isPending}
+                onClick={() => contratar.mutate(orcamento.id)}
+              >
+                {contratar.isPending ? "Contratando…" : "Contratar esta opção"}
+              </Button>
+              <span className="text-[10.5px] text-muted-foreground">
+                As outras opções orçadas deste plano ficam registradas como recusadas.
+              </span>
+            </>
+          )}
+        </div>
+      )}
+      <Erro erro={contratar.error} />
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[11px] text-secondary-foreground">Executado por</span>
         <select
@@ -395,7 +442,9 @@ function PainelOrcamento({
       <div className="flex flex-col gap-2 rounded-md border border-border bg-content p-2.5">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-medium text-secondary-foreground">Condições comerciais</span>
-          {!ehAdmin && (
+          {contrato ? (
+            <span className="text-[10px] text-muted-foreground">congeladas: esta opção já foi contratada</span>
+          ) : !ehAdmin && (
             <span className="text-[10px] text-muted-foreground">desconto, parcela e juros são da recepção</span>
           )}
         </div>
@@ -584,6 +633,62 @@ function DoOdontograma({
 }
 
 // ============================================================
+// A execução de uma célula, face a face (Subetapa 03.8.b, passo 36)
+// ============================================================
+/**
+ * Uma célula de procedimento tem uma unidade de trabalho por face planejada
+ * — ou uma só, quando foi planejada sem face. Cada unidade executada mostra
+ * a DATA e o AUTOR que o banco gravou; cada unidade que falta vira um botão,
+ * se a execução estiver liberada, ou a explicação de por que não está.
+ */
+function ExecucaoDaCelula({
+  celula,
+  liberadaPor,
+  marcando,
+  aoMarcar,
+}: {
+  celula: Plano["procedimentos"][number];
+  liberadaPor: string | null;
+  marcando: boolean;
+  aoMarcar: (face: string | null) => void;
+}) {
+  const unidades: (string | null)[] = celula.faces?.length ? celula.faces : [null];
+  const feitas = new Map((celula.execucoes ?? []).map((e) => [e.face ?? "", e]));
+  const faltam = unidades.filter((u) => !feitas.has(u ?? ""));
+
+  return (
+    <div className="flex flex-col gap-0.5 pl-1 text-[10px]" data-execucao-celula={celula.id}>
+      {(celula.execucoes ?? []).map((e) => (
+        <span key={e.face ?? "-"} className="text-success" data-face-executada={e.face ?? "unidade"}>
+          ✓ {e.face ?? "executado"} · {data.format(new Date(e.executado_em))}
+          {e.executado_por_nome ? ` · ${e.executado_por_nome}` : ""}
+        </span>
+      ))}
+      {faltam.length > 0 && liberadaPor && (
+        <span className="flex flex-wrap items-center gap-1">
+          {faltam.map((u) => (
+            <button
+              key={u ?? "-"}
+              type="button"
+              disabled={marcando}
+              onClick={() => aoMarcar(u)}
+              className="rounded-[4px] border border-border px-1.5 py-0.5 text-[10px] text-secondary-foreground hover:bg-content disabled:opacity-45"
+              data-marcar-face={u ?? "unidade"}
+            >
+              marcar {u ?? "executado"}
+            </button>
+          ))}
+          {liberadaPor === "dispensa" && <span className="text-muted-foreground">(dispensado de contrato)</span>}
+        </span>
+      )}
+      {faltam.length > 0 && !liberadaPor && (
+        <span className="text-muted-foreground">sem contrato assinado — não se executa</span>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
 // A matriz: fase na linha, opção na coluna — e a montagem dela
 // ============================================================
 function proximoRotulo(existentes: string[]): string {
@@ -616,6 +721,11 @@ function Matriz({
   const criarDiagnostico = useCriarDiagnostico(clienteId);
   const acrescentar = useAcrescentarItem(plano.id, clienteId);
   const remover = useRemoverItem(plano.id, clienteId);
+  // PASSO 36: marcar a face executada. Liberada é o BANCO que diz — contrato
+  // assinado ou dispensa do proprietário (D-V8) —; a tela só mostra o botão
+  // onde ele vai ser aceito e explica onde não vai.
+  const { data: liberadas } = useExecucaoLiberada(plano.id);
+  const marcarFace = useMarcarFaceExecutada(plano.id, clienteId);
 
   const nomeDoPacote = useMemo(() => new Map(pacotes.map((p) => [p.id, p.nome])), [pacotes]);
 
@@ -742,8 +852,8 @@ function Matriz({
                         <div className="flex flex-col gap-1">
                           {celulas.length === 0 && <span className="text-[10.5px] text-muted-foreground">—</span>}
                           {celulas.map((c) => (
+                            <div key={c.id} className="flex flex-col gap-0.5">
                             <span
-                              key={c.id}
                               data-celula={c.pacote_id ? "pacote" : "procedimento"}
                               className={`group flex items-baseline justify-between gap-1.5 text-[11px] ${c.recusado_em ? "text-muted-foreground line-through" : "text-foreground"}`}
                             >
@@ -769,6 +879,15 @@ function Matriz({
                                 </button>
                               )}
                             </span>
+                            {c.procedimento_id && !c.recusado_em && (c.estado === "planejado" || c.estado === "em_execucao" || c.estado === "executado") && (
+                              <ExecucaoDaCelula
+                                celula={c}
+                                liberadaPor={liberadas?.get(c.id) ?? null}
+                                marcando={marcarFace.isPending}
+                                aoMarcar={(face) => marcarFace.mutate({ celulaId: c.id, face })}
+                              />
+                            )}
+                            </div>
                           ))}
                         </div>
                       </td>
@@ -788,6 +907,7 @@ function Matriz({
         </div>
       )}
       <Erro erro={remover.error} />
+      <Erro erro={marcarFace.error} />
 
       {fila.length > 0 && (
         <div className="flex flex-col gap-1.5 rounded-md border border-border bg-content p-2.5">
@@ -1051,7 +1171,15 @@ function NovoPlano({ clienteId, aoCriar }: { clienteId: string; aoCriar: (id: st
  * não devolve nada clínico, e lê cada orçamento por `ler_orcamentos`, que já
  * esconde dente e face de quem não tem alcance.
  */
-function OrcamentosDaRecepcao({ clienteId, planosOrcados }: { clienteId: string; planosOrcados: { plano_id: string; criado_em: string }[] }) {
+function OrcamentosDaRecepcao({
+  clienteId,
+  pacienteNome,
+  planosOrcados,
+}: {
+  clienteId: string;
+  pacienteNome: string;
+  planosOrcados: { plano_id: string; criado_em: string }[];
+}) {
   const [planoId, setPlanoId] = useState(planosOrcados[planosOrcados.length - 1]?.plano_id ?? null);
   const { data: orcamentos = [], isPending } = useOrcamentos(planoId);
 
@@ -1076,7 +1204,9 @@ function OrcamentosDaRecepcao({ clienteId, planosOrcados }: { clienteId: string;
       {isPending && <span className="text-[11px] text-muted-foreground">Carregando os orçamentos…</span>}
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
         {planoId &&
-          orcamentos.map((o) => <PainelOrcamento key={o.id} orcamento={o} planoId={planoId} clienteId={clienteId} />)}
+          orcamentos.map((o) => (
+            <PainelOrcamento key={o.id} orcamento={o} planoId={planoId} clienteId={clienteId} pacienteNome={pacienteNome} />
+          ))}
       </div>
     </div>
   );
@@ -1157,7 +1287,9 @@ export function PlanoPage() {
         </Card>
       )}
 
-      {vistaDaRecepcao && <OrcamentosDaRecepcao clienteId={clienteId} planosOrcados={planosOrcados} />}
+      {vistaDaRecepcao && (
+        <OrcamentosDaRecepcao clienteId={clienteId} pacienteNome={paciente?.nome ?? "Paciente"} planosOrcados={planosOrcados} />
+      )}
 
       {(criandoPlano || (!isPending && !error && planos.length === 0 && !vistaDaRecepcao)) && (
         <Card className="flex flex-col gap-2 p-4">
@@ -1226,7 +1358,12 @@ export function PlanoPage() {
           />
 
           {orcamento ? (
-            <PainelOrcamento orcamento={orcamento} planoId={plano.id} clienteId={clienteId} />
+            <PainelOrcamento
+              orcamento={orcamento}
+              planoId={plano.id}
+              clienteId={clienteId}
+              pacienteNome={paciente?.nome ?? "Paciente"}
+            />
           ) : (
             <Card className="flex flex-col gap-2 p-3.5">
               <span className="text-[13px] font-medium text-foreground">Orçamento</span>
@@ -1249,6 +1386,14 @@ export function PlanoPage() {
             </Card>
           )}
         </div>
+      )}
+
+      {/* Os contratos aparecem SEMPRE, para os dois lados. O pacote vendido no
+          Financeiro (D-F14) nasce contrato sem plano e sem orçamento, e é para
+          cá que o aviso de lá manda a recepção — esconder o bloco sem plano
+          deixaria esse contrato sem tela onde se assinar. */}
+      {!isPending && (
+        <ContratosDoPaciente clienteId={clienteId} pacienteNome={paciente?.nome ?? "Paciente"} />
       )}
     </div>
   );

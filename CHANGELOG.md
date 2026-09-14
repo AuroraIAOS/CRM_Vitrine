@@ -2,6 +2,18 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-09-14 (Subetapa 03.8.b — o contrato)
+
+- **A opção escolhida vira contrato num clique.** No orçamento aprovado, a recepção clica em "Contratar esta opção". O contrato nasce com o plano e com cada pacote da opção, pelos valores que o profissional aprovou, e as outras opções orçadas ficam registradas como recusadas. Um contrato pode ter, ao mesmo tempo, o plano, um pacote e um procedimento avulso.
+- **O orçamento aprovado se imprime** para o paciente levar para casa, com os itens, os valores e as condições. Quem imprime sem acesso ao prontuário recebe o mesmo orçamento sem dente e sem face.
+- **O contrato tem um documento com código.** "Emitir documento" gera o texto do contrato e um código de conferência. O mesmo contrato gera sempre o mesmo código, e qualquer mudança nele gera outro. O papel impresso sai com o código e com as linhas de assinatura.
+- **As duas assinaturas ficam registradas.** Quando o contrato é igual ao orçamento que o profissional aprovou, a assinatura dele vem da própria aprovação; se a recepção acrescentou algo, ele assina em pessoa. O paciente assina o papel, e a recepção registra digitando o código impresso, que precisa ser o do documento atual. Mudar o contrato depois de emitido descarta o documento e as assinaturas feitas sobre ele.
+- **Nada se executa sem contrato assinado pelas duas partes.** Antes disso, a tela diz que o procedimento não se executa, e o sistema recusa. O proprietário pode dispensar um procedimento dessa exigência, com uma justificativa escrita e o nome dele no registro; a dispensa se revoga, mas nunca se apaga.
+- **O profissional marca cada face executada**, e a data e o nome dele aparecem na célula do plano. Quando todas as faces estão marcadas, o procedimento fica executado sozinho.
+- **A cobrança nasce da assinatura.** Com as duas assinaturas, o contrato gera as faturas previstas, uma por parcela, e vende as sessões dos pacotes contratados.
+- **O contrato só se encerra quando não falta dinheiro nem trabalho.** A tela mostra as duas coisas lado a lado: quanto falta receber e quanto do trabalho já foi feito, contando faces do plano, sessões do pacote e procedimentos avulsos. Pagar tudo com uma face por fazer não encerra o contrato, e executar tudo com saldo em aberto também não; o botão "Encerrar" diz o que falta.
+- **Vender pacote no Financeiro agora cria um contrato.** A venda passou a gerar um contrato em rascunho com o pacote, pelo preço das tabelas. As sessões e a fatura só nascem quando o contrato tiver as duas assinaturas. Os contratos antigos continuam como estavam.
+
 ## [+1.0] - 2026-09-13 (Subetapa 03.8.c — o plano se monta na tela)
 
 - **O plano de tratamento nasce na tela.** O profissional cria o plano, abre as opções concorrentes (A, B, …), registra diagnósticos e põe cada item na fase certa, sem que ninguém precise mexer no banco. Até aqui a tela só mostrava um plano que já existisse.

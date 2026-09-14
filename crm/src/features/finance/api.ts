@@ -179,71 +179,36 @@ export function useCriarFaturaAvulsa() {
 }
 
 /**
- * Venda de plano — `contratos`/faturas/item nascem por INSERT direto
- * (não fazem parte das seis operações protegidas); `saldos_plano`/
- * `planos_cliente` nascem só através de `aba_finance.vender_pacote()`
- * (Qualidade da Subetapa 02.8: nunca escrita direta nessas duas
- * tabelas). O contrato é o documento comercial "guarda-chuva" da venda
- * (cadeia `contratos → clientes → pessoas`); a fatura é a cobrança
- * dentro dele, e `vender_pacote()` é quem de fato gera o saldo de
- * sessões a consumir.
+ * Venda de pacote — desde a Subetapa 03.8.b, PELO CONTRATO (D-F14).
+ *
+ * Até a 03.8.b esta função criava o contrato já `ativo`, a fatura `aberta`
+ * e o saldo de sessões na hora, sem assinatura de ninguém. A D-V8 fechou
+ * esse caminho no banco: contrato novo não nasce `ativo`, e
+ * `vender_pacote()` deixou de ser executável por usuário autenticado.
+ *
+ * Agora a venda cria o CONTRATO EM RASCUNHO com a linha do pacote, com o
+ * preço resolvido pela escada (ninguém digita valor). O resto é o mesmo
+ * fluxo do plano, na tela do paciente: emitir o documento, o profissional
+ * assinar, a recepção registrar a assinatura do paciente — e é a dupla
+ * assinatura que solta a fatura prevista e o saldo de sessões.
  */
 export function useVenderPacote() {
-  const { profile } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { clienteId: string; pacoteId: string; pacoteNome: string; precoTotal: number; dataVencimento?: string }) => {
-      const { data: contrato, error: e0 } = await db()
-        .from("contratos")
-        .insert({
-          account_id: profile!.accountId,
-          cliente_id: input.clienteId,
-          pacote_id: input.pacoteId,
-          descricao: `Plano: ${input.pacoteNome}`,
-          valor: input.precoTotal,
-          status: "ativo",
-          data_inicio: hojeISO(),
-        })
-        .select("id")
-        .single();
-      if (e0) throw e0;
-
-      const { data: fatura, error } = await db()
-        .from("faturas")
-        .insert({
-          account_id: profile!.accountId,
-          cliente_id: input.clienteId,
-          contrato_id: contrato.id,
-          status: "aberta",
-          data_vencimento: input.dataVencimento || null,
-        })
-        .select("id")
-        .single();
+    mutationFn: async (input: { clienteId: string; pacoteId: string }) => {
+      const { data: contrato, error } = await db().rpc("criar_contrato_avulso", { p_cliente_id: input.clienteId });
       if (error) throw error;
-
-      const { error: e2 } = await db().from("itens_fatura").insert({
-        account_id: profile!.accountId,
-        fatura_id: fatura.id,
-        descricao: `Plano: ${input.pacoteNome}`,
-        quantidade: 1,
-        valor_unitario: input.precoTotal,
+      const { error: e2 } = await db().rpc("acrescentar_item_contrato", {
+        p_contrato_id: contrato,
+        p_procedimento_id: null,
+        p_pacote_id: input.pacoteId,
+        p_quantidade: 1,
       });
       if (e2) throw e2;
-
-      const { error: e3 } = await db().rpc("vender_pacote", {
-        p_cliente_id: input.clienteId,
-        p_pacote_id: input.pacoteId,
-        p_preco_total: input.precoTotal,
-        p_fatura_id: fatura.id,
-      });
-      if (e3) throw e3;
-
-      return fatura.id as string;
+      return contrato as unknown as string;
     },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["faturas"] });
-      void qc.invalidateQueries({ queryKey: ["planos-vendidos"] });
-      void qc.invalidateQueries({ queryKey: ["resumo-financeiro"] });
+    onSuccess: (_id, input) => {
+      void qc.invalidateQueries({ queryKey: ["contratos", input.clienteId] });
     },
   });
 }
