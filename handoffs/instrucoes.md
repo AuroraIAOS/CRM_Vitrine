@@ -1146,6 +1146,9 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Mutação para provar teste de segurança: uma por execução.** Mutação que derruba o fixture de outro bloco faz o vermelho dele parecer prova. Fonte: Subetapa 03.10.
 - **Contagem de log de Edge Function como evidência: janela folgada.** `query_logs` é eventualmente consistente; o banco é a fonte da contagem. Fonte: Subetapa 03.10.
 
+- **Guarda de segredo testada com chave de EXEMPLO passa verde e não prova nada.** O `gitleaks` traz em lista de permissão as credenciais de exemplo da documentação (`AKIAIOSFODNN7EXAMPLE`, `wJalrXUtnFEMI/K7MDENG/...`): com elas no índice ele varre, acha zero e sai 0. Para provar um hook de varredura, use segredo com forma real e não catalogado (um `ghp_` de 36 caracteres, por exemplo) — medido ao montar o hook de commit. Fonte: Subetapa 03.10, 2026-09-15.
+- **Filtro de hook por sufixo de nome pega arquivo vizinho.** `instrucoes.md$` casou `leitor-instrucoes.md` e barrou a escrita do subagente na primeira execução ao vivo; o filtro passou a exigir o caminho (`handoffs/instrucoes.md$`). Hook novo se testa também com o arquivo que NÃO é o alvo. Fonte: Subetapa 03.10, 2026-09-15.
+
 ---
 
 ## 7. Candidatos a promoção

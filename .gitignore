@@ -264,3 +264,4 @@ screenshots/
 # de TESTE, com validade de 1h. Nunca senha. Existe para a suite nao
 # reautenticar a cada arquivo e estourar o rate limit do Supabase Auth.
 crm/tests/rls/.sessoes-teste.json
+.tsc-carimbo

@@ -65,3 +65,9 @@ Marcar o status de conclusão em `docs/00_PLANO_E_CRITERIOS.md` sempre que uma E
 
 ## 15. Escopo v01 — não expandir sem aprovação
 - Evolution GO, RAG versionado em arquivo, CLI de clonagem automatizada e `HaveIBeenPwned` estão **fora do MVP** (ver `docs/01_ARQUITETURA.md` §5). Se uma subetapa parecer exigir um desses, parar e reportar — não implementar por conta própria.
+
+## 16. Mapa do código e automações da sessão (autorizado por Max em 2026-09-15)
+- `docs/CODEBASE_MAP.md` é a **porta de entrada de toda sessão**: consultar antes de abrir arquivo, para não varrer o repositório. Ele traz as regras de função nova, as guardas permanentes, os precedentes de token e de Storage, o próximo número de migration e o de suíte. Atualizar com `/cartographer` ao fechar etapa, ou quando uma subetapa mudar a fundação.
+- Leitura pesada vai para subagente, não para a conversa: `leitor-instrucoes` (devolve só as entradas de `handoffs/instrucoes.md` que tocam um tema) e `auditor-migration` (confere a migration nova contra as regras deste arquivo e do mapa). Varredura ampla usa o `Explore`.
+- Hooks do projeto (`.claude/settings.json` + `.claude/hooks/`) cumprem por mecanismo o que antes dependia de lembrança: `gitleaks` antes de todo commit, guarda do `.env` (§4), recusa de `merge`/`push` para o `main` (§13), integridade do `instrucoes.md` e `tsc --noEmit` no fim do turno que mexeu em `crm/src`. Hook que barra explica o motivo — ler o motivo é parte do trabalho, não obstáculo a contornar.
+- `/hash-normalizado` é o procedimento de comparar teste e produção ao fechar subetapa que aplica migration.

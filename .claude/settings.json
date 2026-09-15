@@ -16,5 +16,63 @@
       "Bash(npx tsc --noEmit *)",
       "Bash(git check-ignore *)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell|Read|Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guarda-segredos.mjs\"",
+            "timeout": 15,
+            "statusMessage": "Guarda do .env"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guarda-git.mjs\"",
+            "timeout": 15,
+            "statusMessage": "Guarda do merge (CLAUDE.md 13)"
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/gitleaks-antes-do-commit.mjs\"",
+            "if": "Bash(git commit *)",
+            "timeout": 120,
+            "statusMessage": "Varrendo segredos com gitleaks"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/integridade-instrucoes.mjs\"",
+            "timeout": 15,
+            "statusMessage": "Integridade do instrucoes.md"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/tsc-fim-de-turno.mjs\"",
+            "timeout": 180,
+            "statusMessage": "tsc --noEmit (se o turno mexeu em crm/src)"
+          }
+        ]
+      }
+    ]
   }
 }
