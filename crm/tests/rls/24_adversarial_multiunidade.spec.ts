@@ -40,9 +40,16 @@ const SCHEMAS_APP = [
  * Tabelas que `authenticated` não lê de jeito nenhum, POR DESENHO — o `42501`
  * é a própria proteção. `public.active_accounts` só se escreve por
  * `set_active_account` e só se lê por `active_account_id` (054, verificação
- * c). Qualquer OUTRA tabela ilegível faz a varredura falhar.
+ * c). `aba_health.tentativas_token_externo` e `aba_health.remessas_externas`
+ * (059, Subetapa 03.10) são só do servidor: sem GRANT e sem policy — a
+ * caixa de entrada abre por função com log na 03.11. Qualquer OUTRA tabela
+ * ilegível faz a varredura falhar.
  */
-const SEM_PRIVILEGIO_POR_DESENHO = ["public.active_accounts"];
+const SEM_PRIVILEGIO_POR_DESENHO = [
+  "public.active_accounts",
+  "aba_health.tentativas_token_externo",
+  "aba_health.remessas_externas",
+];
 
 const admin = adminClient();
 

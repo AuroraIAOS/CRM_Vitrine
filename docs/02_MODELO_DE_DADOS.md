@@ -498,3 +498,34 @@ Esta seção existe para que o versionamento futuro **não redescubra o desenho*
 2. **O convênio fica FORA da escada como pagador.** Quando existir, entra como **ajuste contratual** sobre a diferença — lançamento nomeado e reportável —, e "quem pagou" vira coluna própria, **nunca** um valor de `pagamentos.forma_pagamento`. Foi por isso que a 03.6.b trocou o valor `'plano'` daquele CHECK por **`'saldo_pacote'`**: aquele valor nunca foi forma de pagamento nem pagador, é liquidação contra saldo pré-pago.
 
 Convênio de verdade com TISS/TUSS, CID-10 e elegibilidade eletrônica segue sendo o **item 33** da lista de futuro `+1.0`, fora do MVP por `CLAUDE.md` §15.
+
+## 14. Comunicação externa por token (Subetapa 03.10, decisão de Max de 2026-09-15)
+
+A infraestrutura dos itens 7, 18, 19 e 23 (exportação, caixa de exames, assinatura remota, encaminhamento) é **um mecanismo só**, portado do CRM Sindcom (`sql/20_comunicacao_externa.sql`, `sql/21_remessas_recepcao.sql`, Edge Function `receber-remessa`) com a regra de `CLAUDE.md` §14: portar a lógica, traduzir os nomes. Este documento não tinha destino para ele; Max decidiu na abertura da 03.10.
+
+### 14.1 Onde mora: pela natureza de quem inicia, não pelo mecanismo
+
+| Quem inicia | Exemplos | Schema | Regime |
+|---|---|---|---|
+| **O profissional**, levando dado da clínica para fora ou trazendo dado de fora para o prontuário | envio e recepção de documento, compartilhamento, referência e contrarreferência, exportação de prontuário, assinatura remota do paciente | **`aba_health`** | o mais criterioso, e deve continuar assim — dado privado e sensível da LGPD; toda concessão é sobre um paciente e passa por `pode_acessar(cliente_id, …)` |
+| **O lead ou o cliente**, por conta própria | autoagendamento (03.19) | **`aba_messaging`**, em tabela própria | comunicação externa sem a exigência de RLS/RBAC/IBAC tão restritiva quanto a clínica |
+
+A 03.19 porta o mesmo mecanismo (inclusive o freio por token) em `aba_messaging`; não consome as tabelas de `aba_health`.
+
+### 14.2 As peças (migration `059`)
+
+| Sindcom | Vitrine | O que muda no porte |
+|---|---|---|
+| `envios_campanha` | `aba_health.concessoes_externas` | `cliente_id` obrigatório; destinatário em `aba_people.pessoas` (FK composta por conta); `finalidade` fechada (`recepcao_exame`, `assinatura_paciente`, `exportacao_prontuario`, `encaminhamento`); **só `token_hash`** (sha256 de 32 bytes em base64url — o token cru sai uma vez, na emissão); validade com teto de 90 dias; **`usos_maximos`** (vazio = reutilizável, 1 = uso único) com consumo por `UPDATE` condicional |
+| `tentativas_remessa` | `aba_health.tentativas_token_externo` | guarda o **hash** do texto recebido (nunca o texto); `motivo` com CHECK; só `service_role` |
+| `remessas_dados` | `aba_health.remessas_externas` | recorte da evidência imutável (caminho, mime detectado, tamanho, sha256, IP, user-agent); a máquina `recebida → validada → importada → rejeitada` é da 03.11 |
+| bucket `remessas` | bucket `remessas-externas` | privado, 20 MB, PDF/JPEG/PNG; policy de leitura em `storage.objects` pelo mesmo critério clínico |
+| `receber-remessa` | Edge Function `token-externo` | token no cabeçalho `x-token-externo`, nunca na URL; tipo do arquivo pelos bytes |
+
+**Referência a alvo, nunca polimórfica.** Cada subetapa consumidora acrescenta à concessão a SUA coluna de alvo (FK composta por conta, com arco exclusivo quando houver mais de uma) — nunca um par `tipo`/`id`, que seria invisível a `public.fks_sem_isolamento_de_conta()` (`handoffs/instrucoes.md` §6).
+
+### 14.3 As três lições que vêm junto com o porte
+
+1. **O freio conta por token, nunca pela entidade** — 5 falhas de token em 15 minutos travam aquele texto; travar o laboratório daria a um atacante o poder de silenciar uma clínica inteira. Erro de arquivo não freia.
+2. **`file_size_limit` e `allowed_mime_types` no próprio bucket** — segunda camada, independente da Edge Function.
+3. **Policy ausente em `storage.objects` não nega: faz o arquivo sumir** (`"Object not found"`).

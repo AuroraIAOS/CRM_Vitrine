@@ -1059,6 +1059,27 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Regra que fica:** **para provar ausência numa lista paginada, compare o total que a tela declara com o total do banco.** Procurar um nome na primeira página prova só que ele não está na primeira página.
 - **Fonte:** Subetapa 03.9, 2026-09-14.
 
+
+### Suíte verde de primeira em ataque novo não prova nada até ficar vermelha — e mutação que derruba o fixture de outro bloco não prova esse bloco
+- **Gatilho:** Subetapa 03.10. O `25_token_externo.spec.ts` passou 27/27 na primeira execução. Teste de segurança que nunca foi visto vermelho pode estar medindo a coisa errada (lição da 03.7: "se a proteção sumisse agora, qual asserção ficaria vermelha?").
+- **Ação:** mutação deliberada **no banco de testes**, com a correção restaurada reaplicando a migration idempotente. M1: `token_externo_freado` contando pela conta, e não pelo token. M2: `DROP POLICY` da leitura do bucket.
+- **O que a primeira tentativa ensinou:** as duas mutações juntas deixaram vermelho o bloco do freio (certo) e fizeram o bloco do bucket cair no `beforeAll` — porque o freio mutado, contando pela conta, travou o próprio upload da fixture. O vermelho do bucket não provava nada sobre a policy. **Uma mutação por execução**: com M2 sozinha, o controle positivo caiu exatamente com `"Object not found"` — a lição 3 do Sindcom, medida aqui — e todo o resto seguiu verde.
+- **Regra que fica:** em P-sub, os testes das lições centrais só valem depois de vistos vermelhos por mutação isolada; uma mutação cujo efeito atravessa o fixture de outro bloco contamina a leitura, e o vermelho "certo" pode ser o vermelho errado.
+- **Evidência:** 4 vermelhos no bloco do freio com M1; 1 vermelho (controle positivo, `Object not found`) com M2; 27/27 depois de reaplicar a 059.
+- **Fonte:** Subetapa 03.10, 2026-09-15.
+
+### `query_logs` com janela curta devolve log de Edge Function FALTANDO linha — é atraso de ingestão, não defeito
+- **Gatilho:** Subetapa 03.10, evidência em produção. A consulta aos `function_logs` com janela até 1 minuto depois da execução devolveu 12 linhas de desfecho para 14 requisições — faltavam `arquivo_invalido` e um `valido`, embora a tabela de tentativas tivesse os dois motivos.
+- **O teste que decidiu antes de caçar bug:** repetir a mesma consulta com a janela estendida em 13 minutos. As 14 linhas estavam lá, com o carimbo original (a de `arquivo_invalido` às 22:02:08.991).
+- **Regra que fica:** log da plataforma é **eventualmente consistente**. Contagem de log como evidência se faz com janela folgada depois da execução; divergência entre log e banco se confere de novo antes de virar suspeita — o banco, que é transacional, é a fonte da contagem.
+- **Fonte:** Subetapa 03.10, 2026-09-15.
+
+### Token de endpoint público viaja em CABEÇALHO, nunca na query string — o log de borda guarda a URL inteira
+- **Gatilho:** Subetapa 03.10, desenho da Edge Function `token-externo`. O Sindcom mandava o token em `?token=` no GET; aqui o token dá acesso a dado clínico.
+- **Ação:** o token vai em `x-token-externo` (declarado no `Access-Control-Allow-Headers`); a página pública lê o token do próprio endereço e o repassa por cabeçalho. A função loga uma linha por desfecho com método e motivo, sem token e sem identificador; o rastro completo (hash, concessão, IP) fica em `aba_health.tentativas_token_externo`, que só o servidor lê.
+- **Evidência:** `function_edge_logs` da produção mostram `POST | 200 | …/functions/v1/token-externo`, sem query; os `function_logs` só `{"evento":"token_externo","metodo":…,"desfecho":…}`.
+- **Fonte:** Subetapa 03.10, 2026-09-15; precedente medido do `hub.verify_token` da Meta nesta mesma seção.
+
 ---
 
 ## 6. Armadilhas conhecidas (não repetir)
@@ -1105,8 +1126,8 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Suíte de teste nunca aponta para o banco de produção**, e a proteção é **erro**, não aviso — fallback silencioso para produção é pior que não separar. Fonte: Subetapa 02.15.
 - **Em automação de navegador, nunca injetar espera longa dentro do script avaliado** — estoura o tempo do CDP e trava o processo de renderização, que o Chrome compartilha entre abas do mesmo domínio. A "aba nova" que você abre para confirmar herda o travamento e fabrica uma reprodução falsa. Usar a espera do próprio harness. Fonte: Subetapa 02.15.
 - **Ordem das guardas em Edge Function:** método → autenticação → papel → configuração → corpo → efeito. Conferir configuração antes de autenticar entrega estado interno a anônimo. Ao auditar funções escritas em épocas diferentes, comparar a ordem **entre elas** — a divergência entre irmãs acha o defeito mais barato que ler cada uma. Fonte: Subetapa 02.15.
-- **Policy ausente em `storage.objects` não NEGA — faz o arquivo SUMIR.** Com RLS ligada e zero policies, o papel `authenticated` inteiro fica de fora, e o erro devolvido é **`"Object not found"`** — que parece arquivo inexistente, não permissão negada. Quem construir a leitura de um bucket novo sem saber disso passa horas caçando o arquivo errado, em vez de escrever a policy que falta. Medido no CRM Sindcom (`sql/21_remessas_recepcao.sql`). Gatilho: **Subetapas 03.10 e 03.11**, ao ler a caixa de entrada de exames. Diretriz A5 do benchmark.
-- **Freio de endpoint público conta por token, NUNCA pela entidade.** Travar a entidade permite a um atacante **silenciar um usuário legítimo só errando token de propósito** — travar o laboratório bloquearia o envio de exames de uma clínica inteira. É negação de serviço criada pelo próprio mecanismo de defesa. Contar por token, com `motivo` enumerado (`token_inexistente` / `expirado` / `revogado` / `arquivo_invalido`). Medido no CRM Sindcom. Gatilho: **Subetapas 03.10 e 03.19**. Diretriz A6 do benchmark; registrada também em `docs/05_COMPLIANCE_E_ETICA.md` §5.6.
+- **Policy ausente em `storage.objects` não NEGA — faz o arquivo SUMIR.** Com RLS ligada e zero policies, o papel `authenticated` inteiro fica de fora, e o erro devolvido é **`"Object not found"`** — que parece arquivo inexistente, não permissão negada. Quem construir a leitura de um bucket novo sem saber disso passa horas caçando o arquivo errado, em vez de escrever a policy que falta. Medido no CRM Sindcom (`sql/21_remessas_recepcao.sql`). Gatilho: **Subetapas 03.10 e 03.11**, ao ler a caixa de entrada de exames. Diretriz A5 do benchmark. **[CONFIRMADA na 03.10 por mutação no banco de testes — ver §5.]**
+- **Freio de endpoint público conta por token, NUNCA pela entidade.** Travar a entidade permite a um atacante **silenciar um usuário legítimo só errando token de propósito** — travar o laboratório bloquearia o envio de exames de uma clínica inteira. É negação de serviço criada pelo próprio mecanismo de defesa. Contar por token, com `motivo` enumerado (`token_inexistente` / `expirado` / `revogado` / `arquivo_invalido`). Medido no CRM Sindcom. Gatilho: **Subetapas 03.10 e 03.19**. Diretriz A6 do benchmark; registrada também em `docs/05_COMPLIANCE_E_ETICA.md` §5.6. **[CONFIRMADA na 03.10 por mutação no banco de testes — ver §5.]**
 - **CSS de biblioteca de terceiro é global e pode sequestrar os tokens do design system.** `:root`, `html`, `body`, elemento nu e classe genérica (`.dark`, `.btn`) escapam de qualquer componente. Listar os seletores de topo e cruzar com os tokens do projeto ANTES de importar; escopar offline com PostCSS se houver colisão. O sintoma chega atrasado — só depois de alguém abrir a rota preguiçosa — e aparece em telas sem relação com o que foi feito. Fonte: Subetapa 03.7.
 - **Precache de PWA baixa tudo na primeira visita e desfaz a divisão por rota.** A saída do `vite build` continua correta e o usuário baixa 4× mais. Conferir o manifesto do `sw.js`, não só a lista de chunks, sempre que entrar dependência pesada. Fonte: Subetapa 03.7.
 - **Componente de terceiro com estado em singleton de módulo vaza entre registros num SPA.** Trocar de paciente sem recarregar a página mantém a boca do anterior. O reset é do integrador, e reset por objeto vazio precisa ser LIDO no código da biblioteca — no odontograma, `globals` (com `edentulous`, que é achado clínico) sobrevive a um `importStatus({})`. Fonte: Subetapa 03.7.
@@ -1120,6 +1141,10 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **`pode_acessar(NULL, …)` numa política não compara a conta da linha.** Toda política de tabela com `account_id` passa por `is_account_member(account_id…)` ou por `pode_*(cliente_id…)`; `public.politicas_sem_cerca_de_conta()` recusa o resto. Fonte: Subetapa 03.9.
 - **Trava comercial (nível contratado) mora ANTES de todo atalho de `owner`** — em `access.can` e também em `aba_health.pode_acessar`, que atalha sem passar por `access.can`. `public.atalhos_de_owner_sem_nivel()` recusa atalho novo sem a trava. Fonte: Subetapa 03.9.
 - **Função chamada por linha não é `LANGUAGE sql` + `SECURITY DEFINER`:** não se expande em linha e é replanejada a cada chamada aninhada (855 µs × 81 µs medidos na 03.9). Custo de autorização se mede antes e depois, nunca se supõe. Fonte: Subetapa 03.9.
+
+- **Tabela só do servidor (sem GRANT e sem policy) entra na lista de ilegíveis por desenho da suíte 24** (`SEM_PRIVILEGIO_POR_DESENHO`), senão a varredura de multiunidade fica vermelha com `42501` que é a própria proteção. Fonte: Subetapa 03.10 (`tentativas_token_externo`, `remessas_externas`).
+- **Mutação para provar teste de segurança: uma por execução.** Mutação que derruba o fixture de outro bloco faz o vermelho dele parecer prova. Fonte: Subetapa 03.10.
+- **Contagem de log de Edge Function como evidência: janela folgada.** `query_logs` é eventualmente consistente; o banco é a fonte da contagem. Fonte: Subetapa 03.10.
 
 ---
 
