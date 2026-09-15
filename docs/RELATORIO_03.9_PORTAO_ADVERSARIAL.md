@@ -1,5 +1,7 @@
 # RELATÓRIO — Subetapa 03.9, portão completo: multiunidade + trava de nível por módulo
 
+> **Atualização de 2026-09-14, depois do parecer.** Max ordenou o merge **aplicando todas as ressalvas**. O merge foi feito por *fast-forward* (`5857cdd..a38b670`) em `etapa-03/plano-mvp-odontologico`. As quatro Edge Functions foram implantadas em produção, com `ezbr_sha256` idêntico ao do teste, e a tela foi publicada. A passada no navegador contra o site público deu **16/16**, em duas execuções seguidas. **A ressalva 3 derrubou uma suposição deste relatório:** o custo por linha não era "duas consultas indexadas", era **855 µs por chamada contra 17,5 µs**. A migration `058` levou a 81 µs, com a suíte inteira e as duas evidências de produção verdes depois dela. Detalhe no §9. O texto abaixo é o do parecer, e fica como registro.
+
 **Data:** 2026-09-14
 **Bench:** `bench/03.9-multiunidade-trava-de-nivel`, criado a partir de `etapa-03/plano-mvp-odontologico` em `5857cdd`
 **Escopo atacado:** o núcleo de permissão — `public.profiles`, `public.is_account_member()`, `access.can()` e `aba_health.pode_acessar()`, e tudo o que descobre "a conta do chamador": 319 políticas, 39 funções que leem `profiles`, 4 Edge Functions e a autenticação da tela. Mais a camada nova de nível comercial.
@@ -282,3 +284,39 @@ Na primeira aplicação, a `funcoes_sem_conta_ativa` já apontou duas funções 
 **O merge deve vir junto com a publicação da tela e das quatro Edge Functions em produção**, porque é esse passo que tira a 03.9 de `⚠️ PENDENTE`.
 
 O CODE entregou o parecer e parou. **Ordenar o merge é atribuição exclusiva de Max** (`CLAUDE.md` §13).
+
+---
+
+## 9. Fechamento — as ressalvas aplicadas depois do merge
+
+| Ressalva | O que foi feito | Resultado |
+|---|---|---|
+| 1. Tela e Edge Functions em produção | 4 Edge Functions implantadas em produção (`verify_jwt` ligado), tela publicada por FTP | `ezbr_sha256` idêntico ao do teste nas quatro; 44 arquivos, 0 divergências |
+| 2. Passada no navegador | `evidencia_multiunidade_na_tela.mjs` contra o site público | **16/16** em duas execuções seguidas |
+| 3. Custo por linha | medido; causa testada; migration `058` | `is_account_member` **855 → 81 µs**; `access.can` **499 → 101 µs**; `pode_acessar` **519 → 86 µs** |
+| 4. Rede, matriz, D-F18 | mantidas como pendências vigiadas | decisão de Max / subetapa própria |
+
+**A ressalva 3, com o método.** A suposição do parecer ("duas consultas indexadas a mais") não foi escrita como resultado; foi medida, e estava errada.
+
+| Medida (banco de testes, 20 mil chamadas, mediana de 5) | µs/chamada |
+|---|---|
+| `is_account_member` antes da 054 | 17,5 |
+| `is_account_member` da 054 | 855 |
+| `active_account_id()` chamada sozinha | 42 |
+| variante temporária: `is_account_member` SQL → `active_account_id` PL/pgSQL | 76 |
+| variante temporária: as duas em PL/pgSQL | 47 |
+
+**O que o experimento separou:**
+- A função é barata sozinha e cara aninhada, então o custo não estava nas consultas.
+- `LANGUAGE sql` com `SECURITY DEFINER` não se expande em linha, e o corpo é preparado de novo a cada execução do comando que a chama.
+- Em PL/pgSQL, o plano fica guardado por sessão.
+
+A `058` aplicou a variante das duas em PL/pgSQL.
+
+**Dois vermelhos do script de tela, nenhum do produto.**
+- **Primeira execução:** esperava clientes que ficavam fora da primeira dobra da lista.
+- **Segunda execução:** apostou que a lista vinha ordenada por data de criação, e ela agrupa por vínculo.
+
+Nas duas, o diagnóstico impresso no ponto da falha mostrava a tela da demonstração com **só** gente da demonstração. O controle passou a ser o contador da tela comparado com o banco ("Todas · 32" contra 32; "Todas · 2" contra 2), que não depende de ordem. Uma terceira falha, na limpeza, também era do script: apagava o perfil antes do funcionário ativo e esbarrava no CHECK `funcionarios_ativo_exige_login`. O resíduo final foi zero em todas as execuções.
+
+**O que fica aberto, com medição:** depois da 058, uma política típica ainda chama `is_account_member` e `access.can` por linha. A saída documentada pelo Supabase é envolver em `select` o que não depende da linha, que vira `initPlan`. Isso atinge cerca de 280 políticas e está registrado como pendência vigiada.

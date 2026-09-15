@@ -1044,6 +1044,21 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Regra que fica:** **o que depende da sessão do usuário se resolve com o JWT do usuário.** `service_role` serve para escrever depois de a identidade estar resolvida, nunca para resolvê-la.
 - **Fonte:** Subetapa 03.9, 2026-09-14.
 
+### Função `LANGUAGE sql` + `SECURITY DEFINER` chamada de DENTRO de outra função é replanejada a cada linha — 42 µs sozinha, ~500 µs aninhada
+- **Gatilho:** Subetapa 03.9, ressalva 3 do parecer do portão ("custo por linha não medido"), aplicada depois do merge.
+- **A suposição que não sobreviveu:** o parecer supôs "duas consultas indexadas a mais". Medido no banco de testes (20 mil chamadas, mediana de 5): `is_account_member` foi de **17,5 µs para 855 µs**, e `access.can` e `pode_acessar` foram a ~500 µs. Numa tabela de 10 mil linhas, uma leitura iria a ~9 s.
+- **O teste que achou a causa, antes de escrevê-la:** `active_account_id()` chamada **sozinha** custava 42 µs; aninhada, ~500 µs. Funções temporárias com a mesma lógica em PL/pgSQL mediram 76 µs (só a interna) e 47 µs (as duas). `LANGUAGE sql` com `SECURITY DEFINER` (ou com `SET`) **não se expande em linha**, e o corpo é preparado de novo a cada execução do comando que a chama. PL/pgSQL guarda o plano por sessão.
+- **Ação:** migration `058`, com as duas funções em PL/pgSQL e a mesma regra: 81/101/86 µs. Suíte inteira e as duas evidências de produção repetidas depois.
+- **Regra que fica:** **função chamada por linha (numa política ou dentro de outra função que roda por linha) não é `LANGUAGE sql` + `SECURITY DEFINER`.** E custo de autorização é MEDIDO na subetapa que o muda, nunca suposto no parecer: `SELECT count(*) FROM generate_series(1, N) WHERE f(...)` com as claims setadas, antes e depois, custa um minuto. Próximo degrau, documentado pelo Supabase: envolver em `(select …)` a chamada que não usa dado da linha (initPlan, uma vez por consulta).
+- **Fonte:** Subetapa 03.9, 2026-09-14. Supabase, "RLS Performance and Best Practices".
+
+### Evidência de tela que adivinha a ORDEM da lista fica vermelha sem defeito no produto — meça o que a tela afirma (o contador), não onde a linha cai
+- **Gatilho:** Subetapa 03.9, passada no navegador pela troca de clínica. Duas execuções vermelhas: a primeira esperava clientes quaisquer da demonstração (fora da primeira dobra), a segunda supôs ordem por data de criação (a lista agrupa por vínculo).
+- **O que decidiu:** o diagnóstico impresso no ponto da falha (lição da 03.8.b) mostrou a tela da demonstração com **só** gente da demonstração: o isolamento estava certo e a asserção estava errada.
+- **Ação:** o controle passou a ser o **contador da tela contra o banco** ("Todas · 32" × 32; "Todas · 2" × 2), que sobe se uma linha de outra clínica vazar, independentemente de onde ela caia; mais uma pessoa que a lista mostra no topo (a dona).
+- **Regra que fica:** **para provar ausência numa lista paginada, compare o total que a tela declara com o total do banco.** Procurar um nome na primeira página prova só que ele não está na primeira página.
+- **Fonte:** Subetapa 03.9, 2026-09-14.
+
 ---
 
 ## 6. Armadilhas conhecidas (não repetir)
@@ -1104,6 +1119,7 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Escrita em tabela de vínculo (pessoa × conta) se faz pelo `id` do vínculo, nunca pela pessoa.** Fonte: Subetapa 03.9.
 - **`pode_acessar(NULL, …)` numa política não compara a conta da linha.** Toda política de tabela com `account_id` passa por `is_account_member(account_id…)` ou por `pode_*(cliente_id…)`; `public.politicas_sem_cerca_de_conta()` recusa o resto. Fonte: Subetapa 03.9.
 - **Trava comercial (nível contratado) mora ANTES de todo atalho de `owner`** — em `access.can` e também em `aba_health.pode_acessar`, que atalha sem passar por `access.can`. `public.atalhos_de_owner_sem_nivel()` recusa atalho novo sem a trava. Fonte: Subetapa 03.9.
+- **Função chamada por linha não é `LANGUAGE sql` + `SECURITY DEFINER`:** não se expande em linha e é replanejada a cada chamada aninhada (855 µs × 81 µs medidos na 03.9). Custo de autorização se mede antes e depois, nunca se supõe. Fonte: Subetapa 03.9.
 
 ---
 

@@ -2,7 +2,7 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
-## [+1.0] - 2026-09-14 (Subetapa 03.9 — multiunidade e nível contratado) · no bench, aguardando merge
+## [+1.0] - 2026-09-14 (Subetapa 03.9 — multiunidade e nível contratado)
 
 - **O mesmo login trabalha em mais de uma clínica.** Quem pertence a dois consultórios entra com e-mail e senha e escolhe em qual vai trabalhar. Os dados de uma clínica nunca aparecem na outra: pacientes, prontuário, agenda, financeiro e notificações seguem a clínica escolhida. O papel também é o dela, então quem é dono numa e profissional na outra tem, em cada uma, só o que aquele papel permite.
 - **A escolha vale por aparelho.** Trocar de clínica no computador não troca a do celular. A troca fica no cabeçalho, e o sistema volta à tela inicial já na clínica nova.
