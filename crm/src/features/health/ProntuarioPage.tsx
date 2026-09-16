@@ -7,6 +7,7 @@ import { LegendaMapa, MapaClinico } from "./MapaClinico";
 import { AnamneseTab } from "./AnamneseTab";
 import { EvolucoesTab } from "./EvolucoesTab";
 import { AnexosTab } from "./AnexosTab";
+import { ExamesTab } from "./ExamesTab";
 import { ConsentimentosTab } from "./ConsentimentosTab";
 import { ConcessoesPanel } from "./ConcessoesPanel";
 import {
@@ -77,6 +78,7 @@ const ABAS_TEXTO = [
   { chave: "anamnese", rotulo: "Anamnese" },
   { chave: "evolucoes", rotulo: "Evoluções" },
   { chave: "anexos", rotulo: "Anexos" },
+  { chave: "exames", rotulo: "Exames" },
   { chave: "consentimentos", rotulo: "Consentimentos" },
 ] as const;
 
@@ -98,9 +100,14 @@ function SelecionarCliente() {
             Escolha o cliente. Cada abertura de prontuário grava uma linha em <code>aba_health.log_acesso</code>.
           </span>
         </div>
-        <Link to="/prontuario/mapas" className="text-[11px] text-primary underline-offset-2 hover:underline">
-          Biblioteca de mapas clínicos
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link to="/prontuario/exames" className="text-[11px] text-primary underline-offset-2 hover:underline">
+            Caixa de entrada de exames
+          </Link>
+          <Link to="/prontuario/mapas" className="text-[11px] text-primary underline-offset-2 hover:underline">
+            Biblioteca de mapas clínicos
+          </Link>
+        </div>
       </div>
 
       <Card className="flex flex-col divide-y">
@@ -641,6 +648,7 @@ function ProntuarioDoCliente({ clienteId }: { clienteId: string }) {
               />
             )}
             {aba === "anexos" && <AnexosTab clienteId={clienteId} evolucoes={evolucoes} podeEscrever={podeEscrever} />}
+            {aba === "exames" && <ExamesTab clienteId={clienteId} />}
             {aba === "consentimentos" && <ConsentimentosTab clienteId={clienteId} podeEscrever={podeEscrever} />}
           </div>
         )}

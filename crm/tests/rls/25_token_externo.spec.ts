@@ -83,11 +83,14 @@ describe("token externo: concessão, freio por token, remessa e bucket (Subetapa
   let paciente: string;        // conta compartilhada
   let laboratorio: string;     // pessoa destinatária, conta compartilhada
   let pacienteOutra: string;   // conta descartável
+  let laboratorioOutra: string; // fornecedor da conta descartável
 
   const concessoes: string[] = [];
   const hashesFalsos: string[] = [];
 
-  async function inserirPessoa(conta: string, nome: string, cliente: boolean) {
+  // 060 (03.11): link de exame só se emite para fornecedor ativo — o
+  // laboratório do fixture é fornecedor desde então.
+  async function inserirPessoa(conta: string, nome: string, cliente: boolean, fornecedor = false) {
     const { data: p, error } = await admin.schema("aba_people").from("pessoas")
       .insert({ account_id: conta, nome_exibicao: nome }).select("id").single();
     if (error) throw error;
@@ -95,6 +98,11 @@ describe("token externo: concessão, freio por token, remessa e bucket (Subetapa
       const { error: e2 } = await admin.schema("aba_people").from("clientes")
         .insert({ id: p.id, account_id: conta, razao_social: nome, status: "ativo" });
       if (e2) throw e2;
+    }
+    if (fornecedor) {
+      const { error: e3 } = await admin.schema("aba_people").from("fornecedores")
+        .insert({ id: p.id, account_id: conta, razao_social: nome });
+      if (e3) throw e3;
     }
     return p.id as string;
   }
@@ -142,7 +150,7 @@ describe("token externo: concessão, freio por token, remessa e bucket (Subetapa
     ctx = await loadContext();
     [owner, agent, viewer] = await Promise.all([clientAs("owner"), clientAs("agent"), clientAs("viewer")]);
     paciente = await inserirPessoa(ctx.accountId, "Paciente 03.10", true);
-    laboratorio = await inserirPessoa(ctx.accountId, "Laboratório 03.10", false);
+    laboratorio = await inserirPessoa(ctx.accountId, "Laboratório 03.10", false, true);
 
     const u = await createThrowawayUser(admin, "token-externo-outra");
     const client = await entrar(u.email, u.password);
@@ -150,6 +158,7 @@ describe("token externo: concessão, freio por token, remessa e bucket (Subetapa
     if (error) throw error;
     outra = { userId: u.userId, client, conta: perfil.account_id };
     pacienteOutra = await inserirPessoa(outra.conta, "Paciente da outra 03.10", true);
+    laboratorioOutra = await inserirPessoa(outra.conta, "Laboratório da outra 03.10", false, true);
   }, 60_000);
 
   afterAll(async () => {
@@ -176,8 +185,9 @@ describe("token externo: concessão, freio por token, remessa e bucket (Subetapa
     } finally {
       await dono.end();
     }
-    for (const [conta, id] of [[ctx.accountId, paciente], [ctx.accountId, laboratorio], [outra?.conta, pacienteOutra]]) {
+    for (const [conta, id] of [[ctx.accountId, paciente], [ctx.accountId, laboratorio], [outra?.conta, pacienteOutra], [outra?.conta, laboratorioOutra]]) {
       if (!id) continue;
+      await admin.schema("aba_people").from("fornecedores").delete().eq("id", id).eq("account_id", conta);
       await admin.schema("aba_people").from("clientes").delete().eq("id", id).eq("account_id", conta);
       await admin.schema("aba_people").from("pessoas").delete().eq("id", id).eq("account_id", conta);
     }
@@ -283,16 +293,16 @@ describe("token externo: concessão, freio por token, remessa e bucket (Subetapa
   // ------------------------------------------------------------------
   describe("fronteira de conta e nível contratado", () => {
     it("a outra clínica emite para o próprio paciente, mas não para paciente desta nem com destinatário desta", async () => {
-      const propria = await emitir(outra.client, { cliente: pacienteOutra, pessoa: pacienteOutra });
+      const propria = await emitir(outra.client, { cliente: pacienteOutra, pessoa: laboratorioOutra });
       expect(propria.error).toBeNull();
 
-      expect((await emitir(outra.client, { cliente: paciente, pessoa: pacienteOutra })).error?.code).toBe("42501");
+      expect((await emitir(outra.client, { cliente: paciente, pessoa: laboratorioOutra })).error?.code).toBe("42501");
       expect((await emitir(outra.client, { cliente: pacienteOutra, pessoa: laboratorio })).error?.code).toBe("42501");
     });
 
     it("a outra clínica não enxerga nem revoga concessão desta, e vice-versa", async () => {
       const desta = await emitirOk(owner);
-      const daOutra = await emitirOk(outra.client, { cliente: pacienteOutra, pessoa: pacienteOutra });
+      const daOutra = await emitirOk(outra.client, { cliente: pacienteOutra, pessoa: laboratorioOutra });
 
       const { data: vistas } = await outra.client.schema("aba_health").from("concessoes_externas").select("id, account_id");
       expect((vistas ?? []).every((v) => v.account_id === outra.conta)).toBe(true);
@@ -312,7 +322,7 @@ describe("token externo: concessão, freio por token, remessa e bucket (Subetapa
           `INSERT INTO licensing.tier_modules (tier_key, module_key, enabled)
              SELECT 'teste_03_10', m.key, m.key <> 'health' FROM access.modules m ON CONFLICT DO NOTHING`);
         await dono.query("UPDATE licensing.account_limits SET tier_key = 'teste_03_10' WHERE account_id = $1", [outra.conta]);
-        const cortado = await emitir(outra.client, { cliente: pacienteOutra, pessoa: pacienteOutra });
+        const cortado = await emitir(outra.client, { cliente: pacienteOutra, pessoa: laboratorioOutra });
         expect(cortado.error?.code).toBe("42501");
       } finally {
         await dono.query("UPDATE licensing.account_limits SET tier_key = 'diamante' WHERE account_id = $1", [outra.conta]);
@@ -561,7 +571,8 @@ describe("token externo: concessão, freio por token, remessa e bucket (Subetapa
             AND table_name IN ('concessoes_externas', 'tentativas_token_externo', 'remessas_externas') ORDER BY 1, 2`);
       expect(rows.map((r) => `${r.t}.${r.c}`)).toEqual([
         "concessoes_externas.canal", "concessoes_externas.finalidade",
-        "remessas_externas.arquivo_caminho", "remessas_externas.mime", "remessas_externas.nome_original",
+        "remessas_externas.arquivo_caminho", "remessas_externas.mime", "remessas_externas.motivo_rejeicao",
+        "remessas_externas.nome_original",
         "remessas_externas.status", "remessas_externas.user_agent",
         "tentativas_token_externo.metodo", "tentativas_token_externo.motivo", "tentativas_token_externo.user_agent",
       ]);

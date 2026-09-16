@@ -113,6 +113,7 @@ async function limpar() {
     await passo("paciente de fixture", () => servico.schema("aba_people").from("clientes").delete().eq("id", criado.paciente));
     await passo("pessoa do paciente", () => servico.schema("aba_people").from("pessoas").delete().eq("id", criado.paciente));
   }
+  if (criado.laboratorio) await passo("fornecedor de fixture", () => servico.schema("aba_people").from("fornecedores").delete().eq("id", criado.laboratorio));
   if (criado.laboratorio) await passo("laboratório de fixture", () => servico.schema("aba_people").from("pessoas").delete().eq("id", criado.laboratorio));
 }
 
@@ -127,6 +128,8 @@ try {
   exigir(await servico.schema("aba_people").from("clientes").insert({ id: pac.id, account_id: DEMO, razao_social: "Evidência 03.10 — paciente", status: "ativo" }), "cliente");
   const lab = exigir(await servico.schema("aba_people").from("pessoas").insert({ account_id: DEMO, nome_exibicao: "Evidência 03.10 — laboratório" }).select("id").single(), "laboratório");
   criado.laboratorio = lab.id;
+  // Desde a 060 (03.11), link de exame só se emite para fornecedor ativo.
+  exigir(await servico.schema("aba_people").from("fornecedores").insert({ id: lab.id, account_id: DEMO, razao_social: "Evidência 03.10 — laboratório" }), "fornecedor");
 
   const emitir = async (extra = {}) => {
     const linhas = exigir(await dona.schema("aba_health").rpc("emitir_concessao_externa", {

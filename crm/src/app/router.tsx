@@ -88,6 +88,12 @@ const MessagingPage = lazy(() =>
 const ProntuarioPage = lazy(() =>
   import("@/features/health/ProntuarioPage").then((m) => ({ default: m.ProntuarioPage })),
 );
+const CaixaDeEntradaPage = lazy(() =>
+  import("@/features/health/CaixaDeEntradaPage").then((m) => ({ default: m.CaixaDeEntradaPage })),
+);
+const EnviarExamePage = lazy(() =>
+  import("@/features/externo/EnviarExamePage").then((m) => ({ default: m.EnviarExamePage })),
+);
 const MapasClinicosPage = lazy(() =>
   import("@/features/health/MapasClinicosPage").then((m) => ({ default: m.MapasClinicosPage })),
 );
@@ -142,6 +148,17 @@ export const router = createBrowserRouter([
       </Suspense>
     ),
   },
+  // `/enviar-exame` (Subetapa 03.11): página PÚBLICA do laboratório, fora
+  // do RoleGate. O token vem no fragmento `#` e a autorização é da Edge
+  // Function `token-externo`, nunca desta rota.
+  {
+    path: "/enviar-exame",
+    element: (
+      <Suspense fallback={<CarregandoRota />}>
+        <EnviarExamePage />
+      </Suspense>
+    ),
+  },
   {
     element: <RoleGate />,
     children: [
@@ -158,6 +175,7 @@ export const router = createBrowserRouter([
           // Rota estática antes da dinâmica não é acidente: `mapas`
           // também casaria com `:clienteId`.
           { path: "prontuario/mapas", element: <MapasClinicosPage /> },
+          { path: "prontuario/exames", element: <CaixaDeEntradaPage /> },
           { path: "prontuario/:clienteId", element: <ProntuarioPage /> },
           // `/plano` (Subetapa 03.8.a) — a matriz clínica da 03.8 ganha
           // porta, junto da vista financeira dela. Mesma divisão de

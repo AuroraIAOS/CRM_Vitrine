@@ -1080,6 +1080,35 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Evidência:** `function_edge_logs` da produção mostram `POST | 200 | …/functions/v1/token-externo`, sem query; os `function_logs` só `{"evento":"token_externo","metodo":…,"desfecho":…}`.
 - **Fonte:** Subetapa 03.10, 2026-09-15; precedente medido do `hub.verify_token` da Meta nesta mesma seção.
 
+### CHECK com os estados da máquina não impede pulo nem volta — a transição mora num gatilho que compara OLD e NEW
+- **Gatilho:** Subetapa 03.11, porte da máquina `recebida → validada → importada → rejeitada` de `remessas_dados` (Sindcom `sql/20`). Lá a máquina era só o CHECK dos quatro valores mais o gatilho de imutabilidade que deixava mudar `status`. Um CHECK olha a linha nova sozinha: `recebida → importada` e `importada → recebida` passam nele, e a função da tela é a única coisa entre o dono do banco (ou uma função futura) e o pulo.
+- **Ação:** o mesmo gatilho `BEFORE UPDATE` que congela a evidência também confere o par `OLD.status → NEW.status` contra a lista fechada de transições, exige carimbo novo (`processada_em`/`processada_por`) a cada transição e recusa mexer no carimbo sem mudar o estado. A função de negócio faz o `UPDATE` condicional ao estado de origem (`WHERE status = ANY(origens)`), que resolve a corrida: duas decisões simultâneas, uma passa.
+- **Evidência:** `26_caixa_de_entrada_exames.spec.ts`, "nem o dono do banco pula estado…", pela conexão de dono; a mutação que acrescenta `importada` à lista de destinos de `recebida` derrubou exatamente esse teste.
+- **Fonte:** Subetapa 03.11, 2026-09-16 (migration 060).
+
+### "Rejeitado não deixa resíduo legível" em Storage são duas camadas: a policy nega na transação, a Edge Function apaga depois
+- **Gatilho:** Subetapa 03.11. SQL não apaga `storage.objects` (`42501`, entrada da 02.9 nesta seção), então a rejeição, que é transação de banco, não consegue levar os bytes junto.
+- **Ação:** (1) a função da policy de leitura (`pode_ler_remessa_externa`) nega o objeto cujo registro está `rejeitada`, o que vale no mesmo commit da rejeição; (2) a Edge Function `remessa-rejeitar` chama a RPC **como o usuário** (client anon com o `Authorization` dele, para a autorização e o log serem do banco), apaga com `service_role` **só o caminho que o banco devolveu**, nunca um vindo do corpo, e carimba `arquivo_expurgado_em` por função só de servidor; (3) a cada chamada ela varre as rejeitadas sem carimbo, o que cobre quem rejeitou pela RPC direta e expurgo que falhou antes.
+- **Evidência:** suíte 26, "rejeição pela RPC direta": URL assinada negada na hora, objeto ainda no bucket, e sumido depois da próxima passagem da Edge Function. Mutação que tira `rejeitada` da policy derruba esse teste. Em produção, `evidencia_caixa_exames.mjs` 21/21.
+- **Fonte:** Subetapa 03.11, 2026-09-16; decisão de Max no mesmo dia (`docs/02` §14.4).
+
+### Página pública que recebe token: fragmento `#`, não caminho nem query — o `#` não sai do navegador
+- **Gatilho:** Subetapa 03.11, página `/enviar-exame` do laboratório. A entrada da 03.10 já tirou o token da URL da Edge Function; faltava o endereço da PÁGINA, que a hospedagem (Hostgator) registra em log de acesso como qualquer outro.
+- **Ação:** o link é `/enviar-exame#<token>`. O navegador nunca manda o fragmento ao servidor. A página lê `location.hash` no inicializador do `useState` (leitura pura, porque o StrictMode chama o inicializador duas vezes), tira o fragmento da barra com `history.replaceState` num efeito e repassa o token em `x-token-externo`.
+- **Evidência:** `crm/src/features/externo/EnviarExamePage.tsx`; rota publicada em HTTP 200.
+- **Fonte:** Subetapa 03.11, 2026-09-16.
+
+### Endurecer a pré-condição de uma função compartilhada quebra os fixtures de quem já a consumia — varra suítes E scripts de evidência antes de aplicar
+- **Gatilho:** Subetapa 03.11. `emitir_concessao_externa` passou a exigir fornecedor ativo para `recepcao_exame`. A suíte 25 e `evidencia_token_externo.mjs` (03.10) emitiam para uma pessoa comum e teriam ficado vermelhas sem defeito de produto. O script de evidência roda em produção, então a quebra só apareceria na próxima vez que alguém precisasse dele.
+- **Ação:** antes de aplicar, fazer `grep` do nome da função em `crm/tests` **e** em `crm/scripts`, ajustar o fixture no mesmo commit (o laboratório virou fornecedor, com limpeza) e reexecutar os dois consumidores.
+- **Evidência:** suítes 25 + 26 = 40/40; `evidencia_token_externo.mjs` reexecutada em produção, 28/28.
+- **Fonte:** Subetapa 03.11, 2026-09-16.
+
+### Script que só precisa de variável do `.env` lê o arquivo por caminho — `--env-file` na linha de comando é barrado pelo hook do §4
+- **Gatilho:** Subetapa 03.11, mutação no banco de testes. `node --env-file=../.env …` foi recusado pelo hook de guarda do `.env` (`CLAUDE.md` §4), que não distingue "carregar" de "imprimir".
+- **Ação:** o script lê o `.env` por caminho absoluto dentro do próprio código, como `provisionar_banco.mjs` faz (`lerEnv`), e recusa se a URL for a de produção. Fora de `crm/`, `pg` é resolvido com `createRequire("…/crm/package.json")`.
+- **Fonte:** Subetapa 03.11, 2026-09-16.
+
 ---
 
 ## 6. Armadilhas conhecidas (não repetir)

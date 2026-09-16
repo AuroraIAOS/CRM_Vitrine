@@ -529,3 +529,15 @@ A 03.19 porta o mesmo mecanismo (inclusive o freio por token) em `aba_messaging`
 1. **O freio conta por token, nunca pela entidade** — 5 falhas de token em 15 minutos travam aquele texto; travar o laboratório daria a um atacante o poder de silenciar uma clínica inteira. Erro de arquivo não freia.
 2. **`file_size_limit` e `allowed_mime_types` no próprio bucket** — segunda camada, independente da Edge Function.
 3. **Policy ausente em `storage.objects` não nega: faz o arquivo sumir** (`"Object not found"`).
+
+### 14.4 A caixa de entrada de exames (Subetapa 03.11, decisões de Max de 2026-09-16)
+
+O `docs/02` não dizia onde o exame importado mora nem o que é `validada`. Max decidiu na abertura da 03.11:
+
+| Ponto | Decisão | Por quê |
+|---|---|---|
+| Destino do exame importado | **A remessa `importada` é o exame.** Não há cópia para `anexos-clinicos` nem tabela nova: o arquivo fica em `remessas-externas`, e o prontuário lista as remessas importadas do paciente por função com `log_acesso` | transição atômica em SQL; a cadeia de evidência (sha256, IP, user-agent, concessão) segue presa ao arquivo que o prontuário mostra |
+| `validada` | **Conferência explícita e obrigatória**: o profissional confirma que abriu o arquivo, que ele é deste paciente e que está legível. Importar só a partir de `validada` | o aceite é a trava que impede arquivo de terceiro de cair no prontuário, e ela exige dois atos (conferir e aceitar) |
+| Rejeitada | **Leitura negada e bytes apagados.** A policy do bucket nega leitura no mesmo instante da transição, e a Edge Function autenticada `remessa-rejeitar` apaga o objeto pela API do Storage, carimbando `arquivo_expurgado_em`. Fica a evidência sem conteúdo (sha256, IP, user-agent, motivo, autor) | SQL não apaga `storage.objects` (`42501`); o arquivo de terceiro pode ser de outro paciente |
+
+**Máquina de estados** (imposta por gatilho, vale inclusive para `service_role`): `recebida → validada → importada`; `recebida | validada → rejeitada`. `importada` e `rejeitada` são finais. `processada_em` e `processada_por` são carimbados em toda transição, e `motivo_rejeicao` é obrigatório em `rejeitada`. O laboratório é pessoa de `aba_people.fornecedores`: a finalidade `recepcao_exame` não se emite para quem não for fornecedor da clínica.

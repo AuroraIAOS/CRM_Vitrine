@@ -2,6 +2,14 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-09-16 (Subetapa 03.11 — caixa de entrada de exames)
+
+- **O laboratório manda o exame por link.** Em Prontuário → Caixa de entrada de exames, a clínica escolhe o paciente e o laboratório, define por quantos dias o link vale e se aceita um arquivo só, e copia o link para entregar ao laboratório. O link aparece uma única vez. O laboratório abre, vê o nome da clínica e o prazo, e envia um PDF, JPEG ou PNG de até 20 MB, sem login e sem ver nenhum dado do paciente.
+- **O exame não entra no prontuário sozinho.** O arquivo cai na caixa de entrada com a data, o IP e o navegador de onde veio. O profissional abre o arquivo e confirma que ele é daquele paciente e está legível. Só depois dessa conferência aparece "Aceitar no prontuário", e só o aceite leva o exame para a nova aba Exames do paciente.
+- **O exame errado é rejeitado e apagado.** Rejeitar pede um motivo, e o arquivo deixa de abrir na mesma hora e sai do armazenamento. Fica o registro de que ele chegou, de onde, quando, quem rejeitou e por quê, sem o conteúdo.
+- **Link de exame só vai para laboratório**, ou seja, uma pessoa cadastrada como fornecedor ativo da clínica.
+- **Cada olhar fica registrado.** Abrir a caixa de entrada, abrir os exames do paciente, conferir, aceitar e rejeitar gravam uma linha no registro de acesso do prontuário, com quem fez. Quem não tem acesso clínico (a recepção, por exemplo) não vê os exames na caixa.
+
 ## [+1.0] - 2026-09-14 (Subetapa 03.9 — multiunidade e nível contratado)
 
 - **O mesmo login trabalha em mais de uma clínica.** Quem pertence a dois consultórios entra com e-mail e senha e escolhe em qual vai trabalhar. Os dados de uma clínica nunca aparecem na outra: pacientes, prontuário, agenda, financeiro e notificações seguem a clínica escolhida. O papel também é o dela, então quem é dono numa e profissional na outra tem, em cada uma, só o que aquele papel permite.
