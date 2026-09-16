@@ -49,6 +49,7 @@ const SEM_PRIVILEGIO_POR_DESENHO = [
   "public.active_accounts",
   "aba_health.tentativas_token_externo",
   "aba_health.remessas_externas",
+  "aba_health.assinaturas_externas", // 03.12: lida só por ler_assinaturas_externas()
 ];
 
 const admin = adminClient();

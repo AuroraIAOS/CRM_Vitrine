@@ -2,7 +2,7 @@
 last_mapped: 2026-09-15T20:50:41Z
 total_files: 481
 total_tokens: 15449695
-mapped_commit: 9d59b39 (+ Subetapas 03.10 e 03.11)
+mapped_commit: 9d59b39 (+ Subetapas 03.10, 03.11 e 03.12)
 ---
 
 # Mapa do código — CRM Vitrine
@@ -20,7 +20,7 @@ graph TB
     subgraph Supabase
         PGRST["PostgREST<br/>(schemas expostos por pgrst.db_schemas)"]
         EF["Edge Functions<br/>ia-* / whatsapp-* / token-externo / remessa-rejeitar"]
-        ST[("Storage<br/>anexos-clinicos · remessas-externas (privados)")]
+        ST[("Storage<br/>anexos-clinicos · remessas-externas · assinaturas-pacientes (privados)")]
         subgraph Postgres
             CORE["public · access · licensing<br/>(núcleo em inglês)"]
             MOD["aba_people · aba_catalog · aba_scheduling<br/>aba_finance · aba_health · aba_sales<br/>aba_automations · aba_ai · aba_messaging · aba_treatment"]
@@ -59,7 +59,7 @@ CRM_Vitrine/
 │   ├── tests/adversarial-ui/ # semeador de payload XSS (não é spec)
 │   ├── scripts/              # provisionar banco de teste, seeds, evidencia_*, deploy
 │   └── .env.test             # só e-mails/senha dos 4 usuários de teste
-├── db/migrations/            # 001–060 (sem 049) + README com mapa Maximus→Vitrine
+├── db/migrations/            # 001–061 (sem 049) + README com mapa Maximus→Vitrine
 ├── supabase/functions/       # 7 Edge Functions
 ├── docs/                     # plano, arquitetura, modelo de dados, compliance, relatórios de portão
 ├── handoffs/                 # HANDOFF_* e instrucoes.md (Gatilho→Ação→Evidência→Fonte)
@@ -98,8 +98,9 @@ Todo arquivo abre com cabeçalho `-- ====` (origem no Maximus/Sindcom, decisões
 | **054–058** | **03.9: conta ativa por sessão, trava de nível, guardas permanentes, plpgsql** — ver abaixo |
 | **059** | **03.10: token externo em `aba_health`** — `concessoes_externas` (só hash), `tentativas_token_externo` (freio por token), `remessas_externas` (imutável), bucket `remessas-externas`, funções `emitir_`/`revogar_concessao_externa` e seis de servidor — `docs/02` §14 |
 | **060** | **03.11: caixa de entrada de exames** — máquina `recebida → validada → importada`, `→ rejeitada` imposta por GATILHO; `ler_caixa_de_entrada()`/`ler_exames_importados()` com log por linha; `processar_remessa_externa()`; policy do bucket nega rejeitada; expurgo só servidor; `recepcao_exame` exige fornecedor ativo — `docs/02` §14.4 |
+| **061** | **03.12: assinatura do paciente por link** — `modelos_consentimento` (versionado), alvo da concessão em arco (`contrato_id`/`evolucao_id`/`modelo_consentimento_id`), `emitir_link_assinatura()` (uso único, 72 h), `assinaturas_externas` (imutável), via `link` no contrato, aceite na evolução, freio conta data errada, bucket `assinaturas-pacientes` — `docs/02` §14.5 |
 
-**Próxima migration: 061.**
+**Próxima migration: 062.**
 
 ### Funções transversais de segurança (o que toda função nova usa)
 
@@ -128,6 +129,7 @@ Guardas (057, só `service_role`, contrato "zero linhas"): `politicas_sem_cerca_
 - **Storage**: único bucket é `anexos-clinicos` (014), caminho `conta-<uuid>/cliente-<uuid>/<arquivo>` (3 segmentos), URL assinada TTL 60 s, nunca persistida.
 - **Comunicação externa por token (Sindcom `sql/20`, `sql/21`)**: portada na **059/03.10** para `aba_health` (ação do profissional). O que vier de lead/cliente (03.19) vai para `aba_messaging` em tabela própria (`docs/02` §14). Consumidoras 03.11–03.14 acrescentam a SUA coluna de alvo na concessão, nunca par tipo/id.
 - **Segundo bucket**: `remessas-externas` (059), caminho `conta-<uuid>/concessao-<uuid>/<uuid>.<ext>`, só leitura por `pode_ler_remessa_externa` (que nega `rejeitada`, 060); escrita só pela Edge Function `token-externo`; apagar só pela `remessa-rejeitar` (SQL não apaga `storage.objects`).
+- **Terceiro bucket**: `assinaturas-pacientes` (061), só PNG, caminho `conta-<uuid>/concessao-<uuid>/<uuid>.png`, leitura por `pode_ler_assinatura_externa`. Link de assinatura: `/assinar#<token>`; hash do texto sempre calculado no servidor (`documento_para_assinatura`).
 - **A remessa importada é o exame** (03.11): não há cópia para `anexos-clinicos`; o prontuário lista por `ler_exames_importados`. Link público do laboratório: `/enviar-exame#<token>` (fragmento não chega ao servidor).
 
 ## Edge Functions (`supabase/functions/`)
@@ -138,9 +140,11 @@ Guardas (057, só `service_role`, contrato "zero linhas"): `politicas_sem_cerca_
 | `ia-responder` | decifra chave, busca conhecimento, chama provedor | `verify_jwt`; identidade via client anon com Authorization repassado | idem |
 | `whatsapp-configurar` | valida credencial na Meta, cifra token | `verify_jwt` | idem |
 | `whatsapp-enviar` | envia via Graph API (janela 24 h) | `verify_jwt`; `account_id` reafirmado | idem |
-| `token-externo` | endpoint público do link externo: GET resolve, POST recebe arquivo | **`verify_jwt` desligado**; o token (cabeçalho `x-token-externo`, nunca na URL) é a autenticação; freio e consumo no banco | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
+| `token-externo` | endpoint público do link externo: GET resolve, POST recebe arquivo (exame) ou abre/assina documento (assinatura) | **`verify_jwt` desligado**; o token (cabeçalho `x-token-externo`, nunca na URL) é a autenticação; freio e consumo no banco | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
 | `remessa-rejeitar` | rejeita a remessa como o usuário e apaga os bytes do bucket; varre rejeitadas sem expurgo | `verify_jwt`; RPC com o Authorization do usuário, remoção com `service_role` só do caminho devolvido pelo banco | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` |
 | `whatsapp-webhook` | recebe eventos Meta | **`verify_jwt` desligado**; HMAC-SHA256 `X-Hub-Signature-256` sobre corpo bruto | `META_APP_SECRET`, `META_WEBHOOK_VERIFY_TOKEN`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
+
+Deploy: função pequena pelo MCP; função grande pelo CLI a partir do arquivo (`npx supabase functions deploy <nome> --project-ref <ref> [--no-verify-jwt] --use-api`), conferindo `ezbr_sha256` nos dois projetos.
 
 Padrão: escrevem com `service_role` (RLS não protege) → reafirmam conta/papel à mão; CORS/OPTIONS explícito nas chamadas do browser; o par cifrar/decifrar de cada segredo fica em só dois arquivos.
 
@@ -156,14 +160,14 @@ Padrão: escrevem com `service_role` (RLS não protege) → reafirmam conta/pape
 | `catalog` | `aba_catalog` | `aceita_faces` derivada por trigger; seed SIGTAP |
 | `scheduling` | `aba_scheduling` | apresentação por perfil, não por rota; mapeia `23P01`/`23514` |
 | `finance` | `aba_finance` | `precos.ts` explica proveniência; venda de pacote nasce rascunho |
-| `health` | `aba_health` | caixa de exames em `exames.ts` + `CaixaDeEntradaPage.tsx` (`/prontuario/exames`) + `ExamesTab.tsx`; ~40 arquivos; hub `ProntuarioPage.tsx` (924 l); `api.ts` (978 l); odontograma autoral (`OdontogramaClinico.tsx`, `odontograma.ts`, `dentes/*.svg` + `contrato.json`); anexos em Storage |
+| `health` | `aba_health` | assinatura por link em `assinaturaPorLink.ts` + `LinkAssinatura.tsx` (usado também no contrato); caixa de exames em `exames.ts` + `CaixaDeEntradaPage.tsx` (`/prontuario/exames`) + `ExamesTab.tsx`; ~40 arquivos; hub `ProntuarioPage.tsx` (924 l); `api.ts` (978 l); odontograma autoral (`OdontogramaClinico.tsx`, `odontograma.ts`, `dentes/*.svg` + `contrato.json`); anexos em Storage |
 | `treatment` | `aba_treatment` + `aba_finance` | `PlanoPage.tsx` (1400 l, maior arquivo), `api.ts` (845 l), `ContratosDoPaciente.tsx`, `impressao.ts` (`escaparHtml`) |
 | `sales` | `aba_sales` | Kanban com update otimista |
 | `automations` | `aba_automations` | motor no banco; client só dispara e lê logs |
 | `ai` | `aba_ai` | chave só via `ia-configurar`; portão de aceite do termo |
 | `messaging` | `aba_messaging` | realtime; token só via `whatsapp-configurar` |
 | `settings` | `access`, `public` | 11 seções em `?secao=`; matriz de permissões |
-| `externo` | — | página PÚBLICA `/enviar-exame` (fora do RoleGate); fala só com a Edge Function `token-externo` |
+| `externo` | — | páginas PÚBLICAS `/enviar-exame` e `/assinar` (fora do RoleGate); falam só com a Edge Function `token-externo` |
 | `auth`, `convite`, `dashboard` | — | login/escolha de clínica; aceite de convite; KPIs (`indisponivel` ≠ 0) |
 
 Convenções: um `api.ts` por feature com hooks TanStack Query, `snake_case`→`camelCase` à mão (exceto `treatment/api.ts`, que mantém snake); rótulos em `Record<>` no topo do `api.ts`; nunca `select('*')` em tabela com coluna revogada; permissão nunca recalculada no client; query keys em arrays literais.
@@ -175,7 +179,7 @@ Convenções: um `api.ts` por feature com hooks TanStack Query, `snake_case`→`
 - `ambiente.ts` = guarda de ambiente: exige `SUPABASE_TEST__URL`/`_ANON_KEY`/`_SERVICE_ROLE_KEY` e **lança** se o host for o de produção.
 - `helpers.ts`: `adminClient()`, `anonClient()`, `clientAs(role)`, `createThrowawayUser`, `loadContext()`, `ehErroRls()` vs `ehErroConstraintOuTrigger()`.
 - `pg.d.ts`: conexão direta de dono (specs 20, 22, 23) para gatilhos que recusam até `service_role`.
-- Specs: `00` cross-account · `01–09` um por módulo · `10–12, 17, 18, 24` adversariais · `13` convite · `14` motor · `15` agente IA · `16` preferências · `19–23` treatment/orçamento/opção/contrato/evolução · `25` token externo (endpoint público, freio, bucket) · `26` caixa de entrada de exames (máquina, log, expurgo). **Próximo: `27_`.**
+- Specs: `00` cross-account · `01–09` um por módulo · `10–12, 17, 18, 24` adversariais · `13` convite · `14` motor · `15` agente IA · `16` preferências · `19–23` treatment/orçamento/opção/contrato/evolução · `25` token externo (endpoint público, freio, bucket) · `26` caixa de entrada de exames (máquina, log, expurgo) · `27` assinatura do paciente por link. **Próximo: `28_`.**
 
 ## Scripts (`crm/scripts`)
 
@@ -189,6 +193,7 @@ Convenções: um `api.ts` por feature com hooks TanStack Query, `snake_case`→`
 | `conferir_precache.mjs`, `validar_dentes_svg.mjs` | guardas do `npm run build` |
 | `test_webhook_meta.mjs` | prova HMAC do webhook |
 | `evidencia_token_externo.mjs` | 03.10 em produção: os desfechos do token, freio e bucket |
+| `evidencia_assinatura_link.mjs` | 03.12 em produção: os três documentos assinados pelo celular, data errada, link usado e expirado |
 | `evidencia_caixa_exames.mjs` | 03.11 em produção: ciclo laboratório → caixa → conferir → aceitar/rejeitar, com contagem de log |
 
 Não há script para varredura de segredos nem para hash normalizado: são consultas ad hoc via MCP (`instrucoes.md` §5, por volta das linhas 451, 900–907, 1138).
@@ -221,7 +226,7 @@ Não há script para varredura de segredos nem para hash normalizado: são consu
 
 ## Guia de navegação
 
-- **Nova tabela/função de módulo**: `docs/02` §1 → migration `db/migrations/061_*.sql` (modelo: 052/056) → guardas da 057 → `provisionar_banco.mjs --de 061` → spec `crm/tests/rls/27_*.spec.ts` → MCP em produção → hash normalizado.
+- **Nova tabela/função de módulo**: `docs/02` §1 → migration `db/migrations/062_*.sql` (modelo: 052/056) → guardas da 057 → `provisionar_banco.mjs --de 062` → spec `crm/tests/rls/28_*.spec.ts` → MCP em produção → hash normalizado.
 - **Novo schema**: migrations de exposição (046 como modelo) + `access.modules` + `licensing.tier_modules` + `app/nav.ts` (`MODULE_ROUTE`).
 - **Edge Function nova**: `supabase/functions/<nome>/` seguindo `whatsapp-webhook` (pública, HMAC) ou `ia-configurar` (JWT + service_role); env novo → revisar `.gitignore`.
 - **Tela nova**: `features/<modulo>/api.ts` + página + `app/router.tsx` (lazy).

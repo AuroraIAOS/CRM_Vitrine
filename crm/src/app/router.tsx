@@ -91,6 +91,9 @@ const ProntuarioPage = lazy(() =>
 const CaixaDeEntradaPage = lazy(() =>
   import("@/features/health/CaixaDeEntradaPage").then((m) => ({ default: m.CaixaDeEntradaPage })),
 );
+const AssinarPage = lazy(() =>
+  import("@/features/externo/AssinarPage").then((m) => ({ default: m.AssinarPage })),
+);
 const EnviarExamePage = lazy(() =>
   import("@/features/externo/EnviarExamePage").then((m) => ({ default: m.EnviarExamePage })),
 );
@@ -156,6 +159,16 @@ export const router = createBrowserRouter([
     element: (
       <Suspense fallback={<CarregandoRota />}>
         <EnviarExamePage />
+      </Suspense>
+    ),
+  },
+  // `/assinar` (Subetapa 03.12): página PÚBLICA de assinatura do paciente,
+  // fora do RoleGate; token no fragmento, autorização na Edge Function.
+  {
+    path: "/assinar",
+    element: (
+      <Suspense fallback={<CarregandoRota />}>
+        <AssinarPage />
       </Suspense>
     ),
   },

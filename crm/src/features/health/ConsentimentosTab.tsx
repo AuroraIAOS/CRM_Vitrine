@@ -10,6 +10,8 @@ import {
   useRevogarConsentimento,
   type TipoConsentimento,
 } from "./api";
+import { LinkAssinatura } from "./LinkAssinatura";
+import { useModelosConsentimento, usePublicarModelo, type ModeloConsentimento } from "./assinaturaPorLink";
 
 const formatoData = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
 
@@ -103,6 +105,8 @@ export function ConsentimentosTab({ clienteId, podeEscrever }: { clienteId: stri
         </div>
       )}
 
+      {podeEscrever && <AssinaturaPeloCelular clienteId={clienteId} />}
+
       <div className="flex flex-col gap-2">
         <span className="font-mono text-[9.5px] uppercase tracking-wider text-muted-foreground">Histórico</span>
         {isLoading && <span className="text-[11px] text-muted-foreground">Carregando…</span>}
@@ -135,6 +139,91 @@ export function ConsentimentosTab({ clienteId, podeEscrever }: { clienteId: stri
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Consentimento assinado pelo celular (Subetapa 03.12): o paciente lê o
+ * TEXTO do modelo de termo vigente da clínica, e o hash é desse texto.
+ * Publicar uma versão nova tira a anterior de uso; a antiga nunca muda.
+ */
+function AssinaturaPeloCelular({ clienteId }: { clienteId: string }) {
+  const { data: modelos = [] } = useModelosConsentimento();
+  const publicar = usePublicarModelo();
+  const [editando, setEditando] = useState<ModeloConsentimento["tipo"] | null>(null);
+  const [titulo, setTitulo] = useState("");
+  const [texto, setTexto] = useState("");
+
+  return (
+    <div className="flex flex-col gap-2 rounded-md border p-3">
+      <span className="font-mono text-[9.5px] uppercase tracking-wider text-muted-foreground">
+        Assinatura pelo celular
+      </span>
+      {TIPOS_CONSENTIMENTO.map((t) => {
+        const modelo = modelos.find((m) => m.tipo === t);
+        return (
+          <div key={t} className="flex flex-col gap-1.5 border-b pb-2 last:border-b-0">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[11px] text-secondary-foreground">
+                {ROTULO_CONSENTIMENTO[t]}
+                {modelo ? ` — ${modelo.titulo} (versão ${modelo.versao})` : " — sem termo cadastrado"}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditando(t);
+                  setTitulo(modelo?.titulo ?? "");
+                  setTexto(modelo?.texto ?? "");
+                }}
+                className="text-[10.5px] text-primary underline-offset-2 hover:underline"
+              >
+                {modelo ? "Publicar nova versão do termo" : "Cadastrar termo"}
+              </button>
+            </div>
+            {modelo && <LinkAssinatura documento="consentimento" documentoId={modelo.id} clienteId={clienteId} />}
+            {editando === t && (
+              <div className="flex flex-col gap-1.5">
+                <input
+                  value={titulo}
+                  onChange={(e) => setTitulo(e.target.value)}
+                  placeholder="Título do termo"
+                  maxLength={160}
+                  className="h-8 rounded-md border px-2 text-[11px]"
+                />
+                <textarea
+                  value={texto}
+                  onChange={(e) => setTexto(e.target.value)}
+                  rows={6}
+                  placeholder="Texto completo que o paciente vai ler e assinar"
+                  className="rounded-md border px-2 py-1.5 text-[11px] leading-relaxed"
+                />
+                <span className="text-[10px] text-muted-foreground">
+                  Publicar cria a versão seguinte; a versão anterior sai de uso e o que já foi assinado nela continua valendo.
+                  Só administrador publica.
+                </span>
+                {publicar.error && (
+                  <span className="text-[10.5px] text-destructive">{(publicar.error as Error).message}</span>
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    disabled={publicar.isPending || titulo.trim().length < 3 || texto.trim().length < 20}
+                    onClick={() =>
+                      publicar.mutate({ tipo: t, titulo, texto }, { onSuccess: () => setEditando(null) })
+                    }
+                  >
+                    Publicar termo
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditando(null)}>
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

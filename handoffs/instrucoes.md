@@ -1109,6 +1109,34 @@ Formato de toda entrada: Gatilho → Ação → Evidência → Fonte.
 - **Ação:** o script lê o `.env` por caminho absoluto dentro do próprio código, como `provisionar_banco.mjs` faz (`lerEnv`), e recusa se a URL for a de produção. Fora de `crm/`, `pg` é resolvido com `createRequire("…/crm/package.json")`.
 - **Fonte:** Subetapa 03.11, 2026-09-16.
 
+### Script de mutação que quebra antes de aplicar deixa a suíte VERDE — e parece prova de que o teste é fraco, ou de nada
+- **Gatilho:** Subetapa 03.12, prova por mutação da suíte 27. As três rodadas deram 15/15. O script de mutação tinha uma quebra de linha real dentro de uma string JavaScript (escrita a partir de Python) e morria com erro de sintaxe; o laço seguia, a suíte rodava contra o banco intacto e ficava verde.
+- **Ação:** o laço de mutação imprime a linha "mutação aplicada: <função>" e **só se lê o resultado da suíte se essa linha apareceu**. Mutação é troca de trecho literal conferida por `includes` antes de aplicar (o script lança se o trecho não existir), e a restauração é reaplicar a migration (idempotente). Troca de trecho que precisa de quebra de linha vira troca de uma palavra só.
+- **Evidência:** refeitas, as três mutações derrubaram 1, 2 e 1 testes, cada uma no caso certo.
+- **Fonte:** Subetapa 03.12, 2026-09-16.
+
+### Edge Function grande vai a produção pelo Supabase CLI a partir do arquivo — transcrever 400 linhas no MCP é convite a erro de cópia
+- **Gatilho:** Subetapa 03.12. A `token-externo` passou de 260 para 400 linhas. O `deploy_edge_function` do MCP exige o conteúdo inteiro no pedido.
+- **Ação:** `npx supabase functions deploy <nome> --project-ref <ref> --no-verify-jwt --use-api` (o `--no-verify-jwt` só para função pública), a partir de `C:/GitHub/CRM_Vitrine`, primeiro no projeto de testes e depois em produção. O `--use-api` empacota sem Docker. A prova continua sendo o `ezbr_sha256` de `list_edge_functions` igual nos dois projetos. Migration segue pelo MCP, com comentários, como antes.
+- **Evidência:** `token-externo` com `ezbr_sha256` `379dca3e…` nos dois projetos e `verify_jwt` falso nos dois.
+- **Fonte:** Subetapa 03.12, 2026-09-16.
+
+### GRANT de coluna montado pelo catálogo não inclui coluna criada depois — reemita para as colunas novas
+- **Gatilho:** Subetapa 03.12. A 059 deu `SELECT` em `concessoes_externas` coluna a coluna, montando a lista pelo `information_schema` daquele momento (para o `token_hash` ficar de fora). As colunas de alvo acrescentadas pela 061 nasceriam **sem** `SELECT` para `authenticated`, e a tela que lista os links receberia `42501`, que parece RLS. *Previsto ao escrever a 061 e evitado nela — não medido como erro.*
+- **Ação:** toda migration que acrescenta coluna a tabela com narrowing reemite `GRANT SELECT (<colunas novas>)` e confere com `has_column_privilege` na verificação final (a 061 confere que `contrato_id` sai e `token_hash` não).
+- **Fonte:** Subetapa 03.12, 2026-09-16.
+
+### Documento assinado por link: o hash é do texto que o SERVIDOR mostrou, e a data de nascimento freia como token errado
+- **Gatilho:** Subetapa 03.12, desenho da assinatura remota.
+- **Ação:** (1) uma função só de servidor (`documento_para_assinatura`) monta o texto exato e calcula o sha256; a página devolve o hash que recebeu, nunca calcula. Na assinatura, o banco recalcula e recusa se diferir (`documento_indisponivel`) — é o que impede assinar documento que mudou entre abrir e assinar. (2) A confirmação de data de nascimento é **tentativa de adivinhar**: entra no freio de 15 minutos por token **e** num teto de 10 erros na vida da concessão, porque 5 por janela derrubariam uma data de nascimento em dias. (3) A Edge Function confere data e hash **antes** de subir o desenho, e apaga o desenho se o registro falhar.
+- **Evidência:** suíte 27 (documento alterado entre abrir e assinar deixa o contrato em rascunho; 5 datas erradas freiam aquele link e o link vizinho do mesmo paciente abre).
+- **Fonte:** Subetapa 03.12, 2026-09-16.
+
+### CHECK de domínio muda depois da migration de origem — a lista vigente é a do banco, não a da migration que criou a coluna
+- **Gatilho:** Subetapa 03.12. Os modelos de termo foram escritos com os três tipos de consentimento da 013; o banco já tinha quatro (`procedimento_informado`). Quem pegou foi o `tsc`, pelo tipo da tela.
+- **Ação:** antes de copiar um domínio para tabela nova, ler o CHECK vigente (`pg_get_constraintdef`) no banco de testes.
+- **Fonte:** Subetapa 03.12, 2026-09-16.
+
 ---
 
 ## 6. Armadilhas conhecidas (não repetir)

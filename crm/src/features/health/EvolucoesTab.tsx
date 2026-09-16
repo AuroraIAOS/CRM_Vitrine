@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { LinkAssinatura } from "./LinkAssinatura";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -237,7 +238,8 @@ export function EvolucoesTab({
       {historico.map((e) => {
         const original = e.adendoDeId ? porId.get(e.adendoDeId) : null;
         const marcacoes = ehTipoMapa(e.mapaTipo) ? marcacoesValidas(e.mapaTipo, e.marcacoes) : [];
-        const podeRecusar = podeEscrever && e.travada && !e.adendoDeId && !e.recusaAssinaturaEm;
+        const podeRecusar =
+          podeEscrever && e.travada && !e.adendoDeId && !e.recusaAssinaturaEm && !e.assinaturaPacienteEm;
         return (
           <div key={e.id} data-evolucao-id={e.id} className="grid grid-cols-[74px_1fr] gap-3 border-b py-2.5">
             <span className="font-mono text-[10px] text-muted-foreground">
@@ -249,6 +251,7 @@ export function EvolucoesTab({
                 {e.adendoDeId && <Badge tone="neutral">adendo</Badge>}
                 {e.intercorrencia && <Badge tone="danger">intercorrência</Badge>}
                 {e.recusaAssinaturaEm && <Badge tone="warning">paciente recusou assinar</Badge>}
+                {e.assinaturaPacienteEm && <Badge tone="success">paciente assinou</Badge>}
                 {ehTipoMapa(e.mapaTipo) && <Badge tone="neutral">{MAPAS[e.mapaTipo].rotulo}</Badge>}
                 {marcacoes.length > 0 && (
                   <span className="text-[10px] text-muted-foreground">{marcacoes.length} marcação(ões)</span>
@@ -293,6 +296,21 @@ export function EvolucoesTab({
                     <span className="block text-secondary-foreground">Motivo: {e.recusaAssinaturaMotivo}</span>
                   )}
                 </div>
+              )}
+
+              {e.assinaturaPacienteEm && (
+                <div data-testid="assinatura-paciente" className="rounded-md border border-dashed px-2.5 py-1.5 text-[10.5px]">
+                  <span className="text-foreground">
+                    Paciente assinou pelo celular em {formatoDataHora.format(new Date(e.assinaturaPacienteEm))}
+                  </span>
+                  <span className="block font-mono text-muted-foreground">
+                    Texto assinado: sha256 {e.assinaturaPacienteHash?.slice(0, 16)}…
+                  </span>
+                </div>
+              )}
+
+              {podeRecusar && recusaDe !== e.id && adendoDe !== e.id && (
+                <LinkAssinatura documento="evolucao" documentoId={e.id} />
               )}
 
               {adendoDe !== e.id && recusaDe !== e.id && (podeEscrever && e.travada) && (

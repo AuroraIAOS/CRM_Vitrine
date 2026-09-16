@@ -6,10 +6,19 @@
 // ela emitiu (`aba_health.emitir_concessao_externa`). Mesma classe de risco
 // do `whatsapp-webhook` — e, diferente dele, serve dado clínico.
 //
-// DUAS AÇÕES, as duas pelo mesmo freio:
+// AÇÕES, todas pelo mesmo freio:
 //   GET   → o link vale? devolve clínica, finalidade e prazo. Nada do paciente.
-//   POST  → recebe UM arquivo (multipart, campo `arquivo`), guarda no bucket
-//           privado `remessas-externas` e grava a remessa imutável.
+//   POST  → `recepcao_exame` (03.10/03.11): recebe UM arquivo (multipart,
+//           campo `arquivo`), guarda no bucket privado `remessas-externas` e
+//           grava a remessa imutável.
+//   POST  → `assinatura_paciente` (03.12):
+//           JSON `{acao:"abrir", data_nascimento}` → confirma a data e devolve
+//           o documento com o hash do texto exato;
+//           multipart `acao=assinar`, `data_nascimento`, `hash`, `desenho`
+//           (PNG) → confirma de novo, guarda o desenho no bucket privado
+//           `assinaturas-pacientes` e grava a assinatura na mesma transação
+//           que alimenta o contrato, a evolução ou o consentimento.
+//           Data de nascimento errada conta no freio daquele token.
 //
 // O TOKEN VIAJA NO CABEÇALHO `x-token-externo`, nunca na URL: a query
 // string entra nos logs de acesso da plataforma em texto puro — medido com
@@ -49,6 +58,8 @@ const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 
 const BUCKET = "remessas-externas";
 const TAMANHO_MAXIMO = 20 * 1024 * 1024; // o bucket impõe o mesmo (059 §8)
+const BUCKET_ASSINATURAS = "assinaturas-pacientes";
+const DESENHO_MAXIMO = 512 * 1024; // o bucket impõe o mesmo (061 §11)
 
 const ORIGENS_PERMITIDAS = [
   "https://vitrine.strategicepiphany.com",
@@ -87,6 +98,11 @@ const MENSAGEM: Record<string, string> = {
   finalidade_incompativel: "Este link não recebe arquivos.",
   falha_upload: "Não foi possível guardar o arquivo. Tente de novo em alguns minutos.",
   falha_registro: "Não foi possível registrar o envio. Tente de novo.",
+  confirmacao_invalida: "A data de nascimento não confere com o cadastro da clínica.",
+  confirmacao_bloqueada: "Este link foi bloqueado por excesso de datas erradas. Peça um novo à clínica.",
+  documento_indisponivel: "Este documento mudou ou já foi assinado. Peça um novo link à clínica.",
+  desenho_invalido: "Desenhe a assinatura antes de enviar.",
+  acao_invalida: "Pedido inválido para este link.",
 };
 
 // Uma linha por desfecho no log da plataforma: método e motivo, NUNCA o
@@ -183,6 +199,11 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  // ------------------------------------------------------- assinatura
+  if (r.finalidade === "assinatura_paciente") {
+    return await tratarAssinatura(req, token, r, ip, ua);
+  }
+
   // ---------------------------------------------------------- recepção
   if (!r.aceita_arquivo) {
     await registrarRecusa(token, "finalidade_incompativel", ip, ua);
@@ -260,3 +281,123 @@ Deno.serve(async (req: Request) => {
     mensagem: "Recebemos o arquivo. A clínica confere antes de juntá-lo ao prontuário.",
   });
 });
+
+// =====================================================================
+// Assinatura do paciente (Subetapa 03.12)
+// =====================================================================
+const DATA = /^\d{4}-\d{2}-\d{2}$/;
+const HASH = /^[0-9a-f]{64}$/;
+
+type Abertura = {
+  ok: boolean;
+  motivo?: string;
+  documento?: { tipo: string; titulo: string; formato: string; conteudo: string; hash: string };
+};
+
+async function abrir(token: string, dataNascimento: string | null, ip: string | null, ua: string | null) {
+  const { data, error } = await admin.rpc("abrir_documento_externo", {
+    p_token: token,
+    // Data malformada vai como nula: o banco a registra como confirmação
+    // inválida, e ela conta no freio igual a uma data errada.
+    p_data_nascimento: dataNascimento && DATA.test(dataNascimento) ? dataNascimento : null,
+    p_ip: ip,
+    p_user_agent: ua,
+  });
+  if (error) {
+    console.error("abrir_documento_externo:", error.message);
+    return null;
+  }
+  return data as Abertura;
+}
+
+async function tratarAssinatura(req: Request, token: string, r: Resolucao, ip: string | null, ua: string | null) {
+  const tipoConteudo = req.headers.get("content-type") ?? "";
+
+  // ---- abrir: confirma a data e devolve o documento
+  if (tipoConteudo.includes("application/json")) {
+    let corpo: { acao?: unknown; data_nascimento?: unknown };
+    try {
+      corpo = await req.json();
+    } catch {
+      return recusa(req, "acao_invalida");
+    }
+    if (corpo.acao !== "abrir") return recusa(req, "acao_invalida");
+    const a = await abrir(token, typeof corpo.data_nascimento === "string" ? corpo.data_nascimento : null, ip, ua);
+    if (!a) return json(req, { ok: false, erro: "Falha ao abrir o documento. Tente de novo." });
+    if (!a.ok) return recusa(req, a.motivo ?? "documento_indisponivel");
+    registrarDesfecho(req, "documento_aberto");
+    return json(req, { ok: true, clinica: r.clinica, documento: a.documento });
+  }
+
+  // ---- assinar: multipart com o desenho
+  const declarado = Number(req.headers.get("content-length") ?? "0");
+  if (declarado > DESENHO_MAXIMO + 64 * 1024) {
+    await registrarRecusa(token, "desenho_invalido", ip, ua);
+    return recusa(req, "desenho_invalido");
+  }
+  let formulario: FormData;
+  try {
+    formulario = await req.formData();
+  } catch {
+    return recusa(req, "acao_invalida");
+  }
+  if (formulario.get("acao") !== "assinar") return recusa(req, "acao_invalida");
+
+  const dataNascimento = String(formulario.get("data_nascimento") ?? "");
+  const hash = String(formulario.get("hash") ?? "");
+
+  // A confirmação e o documento se conferem ANTES de o desenho subir: sem
+  // data certa nada chega ao bucket.
+  const a = await abrir(token, dataNascimento, ip, ua);
+  if (!a) return json(req, { ok: false, erro: "Falha ao conferir o documento. Tente de novo." });
+  if (!a.ok) return recusa(req, a.motivo ?? "documento_indisponivel");
+  if (!HASH.test(hash) || a.documento?.hash !== hash) return recusa(req, "documento_indisponivel");
+
+  const desenho = formulario.get("desenho");
+  if (!(desenho instanceof File)) {
+    await registrarRecusa(token, "desenho_invalido", ip, ua);
+    return recusa(req, "desenho_invalido");
+  }
+  const bytes = new Uint8Array(await desenho.arrayBuffer());
+  const tipo = bytes.length > 0 && bytes.length <= DESENHO_MAXIMO ? detectarTipo(bytes) : null;
+  if (!tipo || tipo.mime !== "image/png") {
+    await registrarRecusa(token, "desenho_invalido", ip, ua);
+    return recusa(req, "desenho_invalido");
+  }
+
+  const caminho = `conta-${r.account_id}/concessao-${r.concessao_id}/${crypto.randomUUID()}.png`;
+  const { error: erroUpload } = await admin.storage.from(BUCKET_ASSINATURAS).upload(caminho, bytes, {
+    contentType: "image/png",
+    upsert: false,
+  });
+  if (erroUpload) {
+    console.error("upload assinatura:", erroUpload.message);
+    await registrarRecusa(token, "falha_upload", ip, ua);
+    return recusa(req, "falha_upload");
+  }
+
+  const { data: gravado, error: erroGravar } = await admin.rpc("registrar_assinatura_externa", {
+    p_token: token,
+    p_data_nascimento: dataNascimento,
+    p_hash: hash,
+    p_caminho: caminho,
+    p_desenho_sha256_hex: await sha256Hex(bytes),
+    p_desenho_tamanho: bytes.length,
+    p_ip: ip,
+    p_user_agent: ua,
+  });
+  const resultado = gravado as { ok: boolean; motivo?: string; documento?: string } | null;
+  if (erroGravar || !resultado?.ok) {
+    // O desenho já subiu; sem a linha ele seria órfão no bucket.
+    await admin.storage.from(BUCKET_ASSINATURAS).remove([caminho]);
+    if (erroGravar) {
+      console.error("registrar_assinatura_externa:", erroGravar.message);
+      await registrarRecusa(token, "falha_registro", ip, ua);
+      return recusa(req, "falha_registro");
+    }
+    return recusa(req, resultado?.motivo ?? "falha_registro");
+  }
+
+  registrarDesfecho(req, "assinado");
+  return json(req, { ok: true, documento: resultado.documento, mensagem: "Assinatura registrada. Obrigado." });
+}

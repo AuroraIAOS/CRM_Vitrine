@@ -429,8 +429,12 @@ describe("token externo: concessão, freio por token, remessa e bucket (Subetapa
       // Nada foi consumido: o uso único continua disponível.
       expect(await chamar("GET", c.token)).toMatchObject({ ok: true, usos_restantes: 1 });
 
-      const assinatura = await emitirOk(owner, { finalidade: "assinatura_paciente" });
-      expect(await chamar("POST", assinatura.token, { bytes: PDF, nome: "x.pdf", tipo: "application/pdf" }))
+      // Desde a 061 (03.12), assinatura só se emite com documento-alvo, por
+      // emitir_link_assinatura; a finalidade que não recebe arquivo segue
+      // provada com `encaminhamento`.
+      expect((await emitir(owner, { finalidade: "assinatura_paciente" })).error?.code).toBe("23514");
+      const encaminhamento = await emitirOk(owner, { finalidade: "encaminhamento" });
+      expect(await chamar("POST", encaminhamento.token, { bytes: PDF, nome: "x.pdf", tipo: "application/pdf" }))
         .toMatchObject({ ok: false, motivo: "finalidade_incompativel" });
     });
 

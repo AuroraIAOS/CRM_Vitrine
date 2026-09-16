@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { LinkAssinatura } from "@/features/health/LinkAssinatura";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -258,6 +259,7 @@ function CartaoContrato({ contrato, clienteId, pacienteNome }: { contrato: Contr
                 </span>
               )}
               <Erro erro={registrarPaciente.error} />
+              {assProf && <LinkAssinatura documento="contrato" documentoId={contrato.id} clienteId={clienteId} />}
             </div>
           )}
         </div>
@@ -269,7 +271,7 @@ function CartaoContrato({ contrato, clienteId, pacienteNome }: { contrato: Contr
           {contrato.assinaturas.map((a) => (
             <span key={a.parte}>
               ✓ {a.parte === "profissional" ? "Profissional" : "Paciente"} —{" "}
-              {a.via === "aprovacao_orcamento" ? "derivada da aprovação" : "presencial"},{" "}
+              {a.via === "aprovacao_orcamento" ? "derivada da aprovação" : a.via === "link" ? "pelo celular, por link" : "presencial"},{" "}
               {dataHora.format(new Date(a.assinada_em))}
               {a.registrada_por_nome ? `, registrada por ${a.registrada_por_nome}` : ""}
             </span>

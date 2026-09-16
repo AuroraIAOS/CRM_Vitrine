@@ -686,7 +686,7 @@ export type ItemContrato = {
 
 export type AssinaturaContrato = {
   parte: "profissional" | "paciente";
-  via: "aprovacao_orcamento" | "presencial";
+  via: "aprovacao_orcamento" | "presencial" | "link";
   assinada_em: string;
   hash_assinado: string;
   registrada_por_nome: string | null;

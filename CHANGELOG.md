@@ -2,6 +2,15 @@
 
 Convenção: `+0.1` = correções/melhorias · `+1.0` = novas funcionalidades/serviços.
 
+## [+1.0] - 2026-09-16 (Subetapa 03.12 — assinatura do paciente pelo celular)
+
+- **O paciente assina pelo celular.** No contrato, na evolução assinada pelo profissional e nos consentimentos, "Enviar para o paciente assinar pelo celular" gera um QR code e um link. O paciente abre, confirma a data de nascimento, lê o documento, desenha a assinatura com o dedo e envia. Não precisa de login nem de estar na clínica.
+- **O contrato se fecha à distância.** Quando o profissional já assinou, a assinatura do paciente pelo celular completa o contrato do mesmo jeito que a assinatura no papel: ele passa a assinado, e as faturas e a liberação da execução seguem como antes.
+- **A evolução tem o aceite do paciente.** Evolução assinada pelo paciente mostra o selo "paciente assinou", com data. Aceite e recusa não convivem: uma evolução tem um ou outro.
+- **Termos de consentimento cadastrados pela clínica.** Na aba Consentimentos, o administrador cadastra o texto de cada termo. Revisar um termo publica uma versão nova, e o que já foi assinado na versão anterior continua valendo. O paciente assina o texto completo, não só o nome do termo.
+- **Cada assinatura guarda a prova do que foi assinado:** data e hora, endereço de rede, o desenho, se veio por QR ou por link, e o código do texto exato que o paciente leu. Se o documento mudar depois de o link ser gerado, o link deixa de servir. É assinatura eletrônica simples, e a tela diz isso: não é certificado digital ICP-Brasil.
+- **O link protege o documento.** Vale 72 horas e para uma assinatura só, pode ser cancelado, e cinco datas de nascimento erradas travam aquele link por 15 minutos. Enviar por WhatsApp, SMS ou e-mail ainda não existe: a clínica mostra o QR ou copia o link.
+
 ## [+1.0] - 2026-09-16 (Subetapa 03.11 — caixa de entrada de exames)
 
 - **O laboratório manda o exame por link.** Em Prontuário → Caixa de entrada de exames, a clínica escolhe o paciente e o laboratório, define por quantos dias o link vale e se aceita um arquivo só, e copia o link para entregar ao laboratório. O link aparece uma única vez. O laboratório abre, vê o nome da clínica e o prazo, e envia um PDF, JPEG ou PNG de até 20 MB, sem login e sem ver nenhum dado do paciente.

@@ -393,6 +393,9 @@ export type Evolucao = {
   recusaAssinaturaEm: string | null;
   recusaAssinaturaPor: string | null;
   recusaAssinaturaMotivo: string | null;
+  /** Aceite do paciente por link (03.12): exclusivo com a recusa, gravado pelo banco. */
+  assinaturaPacienteEm: string | null;
+  assinaturaPacienteHash: string | null;
 };
 
 export function useEvolucoes(clienteId: string | null) {
@@ -423,6 +426,8 @@ export function useEvolucoes(clienteId: string | null) {
           travada: e.travada === true,
           recusaAssinaturaEm: (e.recusa_assinatura_em as string) ?? null,
           recusaAssinaturaPor: (e.recusa_assinatura_por as string) ?? null,
+          assinaturaPacienteEm: (e.assinatura_paciente_em as string) ?? null,
+          assinaturaPacienteHash: (e.assinatura_paciente_hash as string) ?? null,
           recusaAssinaturaMotivo: (e.recusa_assinatura_motivo as string) ?? null,
         }))
         .sort((a, b) => b.registradoEm.localeCompare(a.registradoEm));

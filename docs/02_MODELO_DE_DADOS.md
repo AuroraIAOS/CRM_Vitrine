@@ -541,3 +541,15 @@ O `docs/02` não dizia onde o exame importado mora nem o que é `validada`. Max 
 | Rejeitada | **Leitura negada e bytes apagados.** A policy do bucket nega leitura no mesmo instante da transição, e a Edge Function autenticada `remessa-rejeitar` apaga o objeto pela API do Storage, carimbando `arquivo_expurgado_em`. Fica a evidência sem conteúdo (sha256, IP, user-agent, motivo, autor) | SQL não apaga `storage.objects` (`42501`); o arquivo de terceiro pode ser de outro paciente |
 
 **Máquina de estados** (imposta por gatilho, vale inclusive para `service_role`): `recebida → validada → importada`; `recebida | validada → rejeitada`. `importada` e `rejeitada` são finais. `processada_em` e `processada_por` são carimbados em toda transição, e `motivo_rejeicao` é obrigatório em `rejeitada`. O laboratório é pessoa de `aba_people.fornecedores`: a finalidade `recepcao_exame` não se emite para quem não for fornecedor da clínica.
+
+### 14.5 Assinatura do paciente por link (Subetapa 03.12, decisões de Max de 2026-09-16)
+
+| Ponto | Decisão |
+|---|---|
+| Documentos | **Os três**: a parte do paciente no **contrato** (nova via `link` em `aba_finance.assinaturas_contrato`, alimentando o mesmo estado `assinado` da D-V9), o **aceite da evolução travada** (ao lado da recusa da D-F16) e os **consentimentos** |
+| Canais | **Só QR code e copiar link** nesta subetapa. Nenhum disparo automático: e-mail e SMS não têm provedor no projeto, e WhatsApp fica para depois |
+| Antes de ver o documento | O paciente **confirma a data de nascimento**; data errada conta no freio daquele token |
+| Registro | **Desenho da assinatura** em bucket privado + **sha256 do texto exato apresentado**, data, canal, IP, user-agent e a concessão usada. Assinatura eletrônica simples, **não ICP-Brasil** — e a tela diz isso |
+| Texto do termo | **Modelos de termo da clínica** (`aba_health.modelos_consentimento`): texto por tipo, com versão; revisar é publicar versão nova, a antiga nunca muda. O link aponta para o modelo e o hash é do texto dele |
+
+**Peças novas:** `aba_health.modelos_consentimento`; colunas de alvo em `concessoes_externas` (`contrato_id`, `evolucao_id`, `modelo_consentimento_id`, arco exclusivo, FK composta por conta); `aba_health.assinaturas_externas` (evidência imutável); bucket privado `assinaturas-pacientes` (só PNG); colunas `assinatura_paciente_em`/`assinatura_paciente_hash` em `evolucoes`, mutuamente exclusivas com a recusa. A ação do paciente não grava `log_acesso` (a coluna de autor exige usuário da clínica): o rastro externo é `tentativas_token_externo` + `assinaturas_externas`.
